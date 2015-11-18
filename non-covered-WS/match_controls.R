@@ -53,7 +53,7 @@ for(county in fips) {
 	if(!select.jobs) next
 	
 	# Sample results
-	# for rounding use a version of the truncate-replicate-sample method (Lovelace,  Ballas, 2013)
+	# for rounding use a version of the truncate-replicate-sample (TRS) method (Lovelace,  Ballas, 2013)
 	distr.trunc <- trunc(res.distr) # truncated results
 	distr.rmd <- res.distr - distr.trunc # remainders; used as probabilities
 	# iterate over sectors
@@ -69,30 +69,21 @@ for(county in fips) {
 				warning('No records available for sampling ', res.distr[cp,fsec], ' jobs in county ', county, ', CP ', cpid, ', sector ', secid)
 				next
 			}
+			N <- distr.trunc[cp,fsec] + sample(c(0,1), 1, prob=c(1-distr.rmd[cp,fsec], distr.rmd[cp,fsec])) # add one probabilistically (TRS method)
+			if(N == 0) next
 			job.keys <- jobs.sec.cp$Key %>% as.character
-			if(nrow(jobs.sec.cp) == distr.trunc[cp,fsec]) { # the truncated cell matches the number of records
+			if(nrow(jobs.sec.cp) == N) { # the cell matches the number of records
 				jobs[job.keys,'selected'] %<>% add(1)
-				rmd.keys <- job.keys
 			} else {
-				if(nrow(jobs.sec.cp) > distr.trunc[cp,fsec]) { # more records available; sample 
-					sampled.keys <- sample(job.keys, distr.trunc[cp,fsec])
+				if(nrow(jobs.sec.cp) > N) { # more records available; sample 
+					sampled.keys <- sample(job.keys, N)
 					jobs[sampled.keys,'selected']  %<>% add(1)
-					rmd.keys <- job.keys[!(job.keys %in% sampled.keys)]
 				} else { # less records available; sample with replacement
 					# repeat the key array so that enough records can be sampled
-					keys <- rep(job.keys, ceiling(res.distr[cp,fsec]/nrow(jobs.sec.cp)))
-					sampled.keys <- sample(keys, distr.trunc[cp,fsec]) 
+					sampled.keys <- rep(job.keys, ceiling(N/nrow(jobs.sec.cp))) %>% sample(N) 
 					freq <- table(sampled.keys)
-					jobs[names(freq),'selected'] %<>% add(freq)
-					rmd.keys <- keys			
+					jobs[names(freq),'selected'] %<>% add(freq)			
 				}
-			}
-			# remainder
-			if(distr.rmd[cp,fsec]==0) next
-			add.one <- sample(c(FALSE,TRUE), 1, prob=c(1-distr.rmd[cp,fsec], distr.rmd[cp,fsec])) # should one be added or not
-			if(add.one) {
-				sampled.key <- sample(rmd.keys, 1)
-				jobs[sampled.key,'selected']  %<>% add(1)
 			}
 		}
 	}
