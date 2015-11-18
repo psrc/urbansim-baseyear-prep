@@ -17,7 +17,8 @@ colnames(jobs)[colnames(jobs)=="CPID"] <- "CP_id"
 fips <- sectors$FIPS %>% unique
 for(county in fips) {
 	CPs <- CPsums %>% subset(FIPS==county)  %>% extract(,'CP_id') %>%  as.character
-	not.in.acs <- jobs$FIPS == county & !(jobs$CP_id %in% CPs)	 
+	not.in.acs <- jobs$FIPS == county & !(jobs$CP_id %in% CPs)
+	if(sum(not.in.acs)==0) next	 
 	fipsrmd <- CPs[grep(pattern="rmd$", x=CPs)]
 	jobs[which(not.in.acs), 'CP_id'] <- fipsrmd
 }
@@ -89,6 +90,6 @@ for(county in fips) {
 	}
 }
 if(select.jobs) write.table(jobs, file="tblOutput.csv", sep=',', row.names=FALSE)
-cat('\nTotals: ')
+cat('\nTotals:\n')
 df <- data.frame(jobs=sum(jobs$selected), CPs=sum(CPsums$Estimate), Sectors=sum(sectors$SectorJobs))
 print(df)

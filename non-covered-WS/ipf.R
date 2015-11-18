@@ -30,6 +30,7 @@ ipf <- function(Margins_, seedAry, maxiter=100, closure=0.001) {
         for(margin in margins) {
             marginTotal <- apply(resultAry, margin, sum)
             marginCoeff <- Margins_[[margin]]/marginTotal
+            marginCoeff[marginTotal == 0 & Margins_[[margin]] == 0.001] <- 1
             marginCoeff[is.infinite(marginCoeff)] <- 0
             resultAry <- sweep(resultAry, margin, marginCoeff, "*")
             marginChecks[margin] <- sum(abs(1 - marginCoeff))
@@ -38,7 +39,7 @@ ipf <- function(Margins_, seedAry, maxiter=100, closure=0.001) {
     }
 	#print(max(marginChecks))
     #If IPF stopped due to number of iterations then output info
-    if(iter == maxiter) cat("IPF stopped due to number of iterations\n")
+    if(iter == maxiter) cat("\nIPF stopped due to number of iterations")
 
     #Return balanced array
     resultAry
