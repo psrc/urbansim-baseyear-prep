@@ -25,14 +25,13 @@ ipf <- function(Margins_, seedAry, maxiter=100, closure=0.001) {
     iter <- 0
     marginChecks <- rep(1, numMargins)
     margins <- seq(1, numMargins)
-	#print(max(marginChecks))
     #Iteratively proportion margins until closure or iteration criteria are met
     while((any(marginChecks > closure)) & (iter < maxiter)) {
         for(margin in margins) {
             marginTotal <- apply(resultAry, margin, sum)
             marginCoeff <- Margins_[[margin]]/marginTotal
             marginCoeff[is.infinite(marginCoeff)] <- 0
-            resultAry <- round(sweep(resultAry, margin, marginCoeff, "*"))
+            resultAry <- sweep(resultAry, margin, marginCoeff, "*")
             marginChecks[margin] <- sum(abs(1 - marginCoeff))
         }    
         iter <- iter + 1

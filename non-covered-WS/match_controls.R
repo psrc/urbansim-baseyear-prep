@@ -49,38 +49,55 @@ for(county in fips) {
 	}
 	
 	# Run IPF
-	res.distr <- ipf(margins, table.ini, maxiter=500, closure=0.01)
+	res.distr <- ipf(margins, table.ini, maxiter=100, closure=0.01)
 	if(!select.jobs) next
 	
-	# Sample results	
+	# Sample results
+	# for rounding use a version of the truncate-replicate-sample method (Lovelace,  Ballas, 2013)
+	distr.trunc <- trunc(res.distr) # truncated results
+	distr.rmd <- res.distr - distr.trunc # remainders; used as probabilities
 	# iterate over sectors
 	for(fsec in 1:nrow(sects)) {
+		if(sects$SectorJobs[fsec] == 0) next
 		secid <- as.character(sects$Sector_Code[fsec])
 		# iterate over CPs
 		for(cp in 1:nrow(CPs)) {
+			if(res.distr[cp,fsec] == 0 || CPs$Estimate[cp] == 0) next
 			cpid <- as.character(CPs$CP_id[cp])
 			jobs.sec.cp <- job.records %>% subset(Sector_Code == secid & CP_id == cpid)
-			if(res.distr[cp,fsec] == 0) next
-			if(nrow(jobs.sec.cp) == res.distr[cp,fsec]) { # the cell matches the number of records
-				jobs[jobs.sec.cp$Key %>% as.character,'selected'] <- jobs[jobs.sec.cp$Key %>% as.character,'selected'] + 1
+			if(nrow(jobs.sec.cp) == 0) {
+				warning('No records available for sampling ', res.distr[cp,fsec], ' jobs in county ', county, ', CP ', cpid, ', sector ', secid)
 				next
 			}
-			if(nrow(jobs.sec.cp) > res.distr[cp,fsec]) { # more records available; sample 
-				sampled.keys <- sample(jobs.sec.cp$Key, res.distr[cp,fsec]) %>% as.character
-				jobs[sampled.keys,'selected'] <- jobs[sampled.keys,'selected'] + 1
-			} else { # less records available; sample with replacement
-				if(nrow(jobs.sec.cp) > 0) {
+			job.keys <- jobs.sec.cp$Key %>% as.character
+			if(nrow(jobs.sec.cp) == distr.trunc[cp,fsec]) { # the truncated cell matches the number of records
+				jobs[job.keys,'selected'] %<>% add(1)
+				rmd.keys <- job.keys
+			} else {
+				if(nrow(jobs.sec.cp) > distr.trunc[cp,fsec]) { # more records available; sample 
+					sampled.keys <- sample(job.keys, distr.trunc[cp,fsec])
+					jobs[sampled.keys,'selected']  %<>% add(1)
+					rmd.keys <- job.keys[!(job.keys %in% sampled.keys)]
+				} else { # less records available; sample with replacement
 					# repeat the key array so that enough records can be sampled
-					keys <- rep(jobs.sec.cp$Key, ceiling(res.distr[cp,fsec]/nrow(jobs.sec.cp)))
-					sampled.keys <- sample(keys, res.distr[cp,fsec]) %>% as.character
+					keys <- rep(job.keys, ceiling(res.distr[cp,fsec]/nrow(jobs.sec.cp)))
+					sampled.keys <- sample(keys, distr.trunc[cp,fsec]) 
 					freq <- table(sampled.keys)
-					jobs[names(freq),'selected'] <- jobs[names(freq),'selected'] + freq
-				} else { # no records available
-					warning('No records available for sampling ', res.distr[cp,fsec], ' jobs in county ', county, ', CP ', cpid, ', sector ', secid)
+					jobs[names(freq),'selected'] %<>% add(freq)
+					rmd.keys <- keys			
 				}
+			}
+			# remainder
+			if(distr.rmd[cp,fsec]==0) next
+			add.one <- sample(c(FALSE,TRUE), 1, prob=c(1-distr.rmd[cp,fsec], distr.rmd[cp,fsec])) # should one be added or not
+			if(add.one) {
+				sampled.key <- sample(rmd.keys, 1)
+				jobs[sampled.key,'selected']  %<>% add(1)
 			}
 		}
 	}
 }
 if(select.jobs) write.table(jobs, file="tblOutput.csv", sep=',', row.names=FALSE)
-cat('\n')
+cat('\nTotals: ')
+df <- data.frame(jobs=sum(jobs$selected), CPs=sum(CPsums$Estimate), Sectors=sum(sectors$SectorJobs))
+print(df)
