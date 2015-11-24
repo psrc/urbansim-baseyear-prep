@@ -18,14 +18,14 @@ hhs[,'household_id'] %<>% add(1)
 colnames(pers)[colnames(pers)=='X'] <- "person_id"
 colnames(pers)[colnames(pers) == "hh_id"] <- "household_id"
 pers[,'household_id'] %<>% add(1)
-colnames(hhs) <- tolower(colnames(hhs))
-colnames(pers) <- tolower(colnames(pers))
+colnames(hhs) %<>% tolower
+colnames(pers) %<>% tolower
 
 # read pums
 pums.hh <- read.table('pums_HH.csv', header=TRUE, sep=',')
 pums.pers <- read.table('pums_person.csv', header=TRUE, sep=',')
-colnames(pums.hh) <- tolower(colnames(pums.hh))
-colnames(pums.pers) <- tolower(colnames(pums.pers))
+colnames(pums.hh) %<>% tolower
+colnames(pums.pers) %<>% tolower
 
 # join hhs with pums
 hhs.join <- merge(hhs, pums.hh, by='serialno')
