@@ -32,6 +32,10 @@ hhs.join <- merge(hhs, pums.hh, by='serialno')
 households <- hhs.join[,c('household_id', 'serialno', 'adj_hh_income', 'ten')]
 colnames(households) <- c('household_id', 'pums_serialno', 'income', 'tenure')
 households[,'income'] %<>% round
+# create a concatenated block-group-id attribute 
+households %<>% cbind(census_block_group_id=apply(
+					data.frame(hhs.join$state, sprintf("%03s", hhs.join$county), sprintf("%06s", hhs.join$tract), hhs.join$block_group), 
+											1, paste, collapse=""))
 
 # join persons with pums
 pers.join <- merge(pers[,c('person_id', 'household_id', 'serialno', 'pnum', 'sex')], 
