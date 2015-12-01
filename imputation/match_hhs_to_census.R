@@ -2,14 +2,20 @@
 # 11/3/2015
 # The script matches residential units to Census counts.
 # Inputs: 
+#	data.year - which year all the data files correspond to
+#	The following files are expected to be in the directory "data{data.year}"
 #	file imputed_buildings.csv (output of impute_buildings.R)
-#	file households2.csv (output of synthpop)
+#	file of HH totals - it is read via the file data{data.year}/read_hh_totals.R
+#			where the name of the file is set,
+#			e.g. households2.csv = output of synthpop, or an OFM dataset.
 #	file parcels.csv (parcels dataset)
-# Outputs: 
+# Outputs:
+#	All output files are written into "data{data.year}".
 #	file imputed_buildings_matched.csv - It has adjusted residential_units.
 #	file imputed_buildings_matched_for_opus.csv - as above but has some parcels attributes removed. 
 #		The latter can be used to convert to an opus cache using:
 #		python -m opus_core.tools.convert_table csv flt -o ~/opus_cache/2010 -d . -t imputed_buildings_matched_for_opus			
+
 library(data.table)
 library(magrittr)
 
