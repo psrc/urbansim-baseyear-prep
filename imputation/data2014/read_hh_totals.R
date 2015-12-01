@@ -6,4 +6,4 @@ hhs14[,'county_id'] <- geoattr %>% substr(4, 5) %>% as.integer
 hhs14[,'tract'] <- geoattr %>% substr(6, 11)  %>% as.integer
 hhs14[,'block_group'] <- geoattr %>% substr(12, 12)  %>% as.integer
 # aggregate over blocks
-hhtots <- hhs14[, list(HH=sum(hh14)), by=.(county_id, tract, block_group)]
+hhtots <- hhs14[, list(HH=sum(hu14)), by=.(county_id, tract, block_group)] # take the housing units attribute
