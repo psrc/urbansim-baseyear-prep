@@ -1,6 +1,7 @@
 # Hana Sevcikova, PSRC
 # 11/3/2015
 # The script imputes building_type_id, residential_units and non_residential_sqft (partly also improvement_value) using a set of regression models.
+# All I/O files are in the directory "data{data.year}" where data.year should be set to correspond to the datasets.
 # Input: file buildings_raw.csv
 # 		In mysql create a table buildings_raw which is a selection of specific buildings attributes joint with some parcels attributes. Use this query:
 # 		create table buildings_hana select a.psrcpin, building_id, year_built, gross_sqft, net_sqft, non_residential_sqft, residential_units, sqft_per_unit, stories, building_type_id, a.improvement_value, county, land_use_type_id, parcel_sqft, tax_exempt, land_value, is_inside_urban_growth_boundary from buildings_estimated as a left join parcels_estimated as b on a.psrcpin=b.psrcpin;
