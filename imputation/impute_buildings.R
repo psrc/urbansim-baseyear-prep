@@ -10,7 +10,9 @@
 
 
 library(data.table)
-bld.raw <- read.table('buildings_raw.csv', sep=',', header=TRUE)
+data.year <- 2010 # data files will be taken from "data{data.year}"
+data.dir <- paste0("data", data.year)
+bld.raw <- read.table(file.path(data.dir, 'buildings_raw.csv'), sep=',', header=TRUE)
 
 # impute building_type_id from land use types
 lut.bt.pairs <- list('1'=1, # agriculture 
@@ -214,7 +216,7 @@ logical.cols <- colnames(bld)[sapply(bld, is.logical)]
 for(attr in logical.cols) bld[,attr] <- as.integer(bld[,attr])
 for(attr in colnames(bld)) bld[which(is.na(bld[,attr])), attr] <- 0
 # write out resulting buildings	
-write.table(bld, file="imputed_buildings.csv", sep=',', row.names=FALSE)
+write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
 cat('\nResults written into imputed_buildings.csv\n")
 
 

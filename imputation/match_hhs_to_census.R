@@ -11,22 +11,28 @@
 #		The latter can be used to convert to an opus cache using:
 #		python -m opus_core.tools.convert_table csv flt -o ~/opus_cache/2010 -d . -t imputed_buildings_matched_for_opus			
 library(data.table)
+library(magrittr)
 
-bld.raw <- read.table("imputed_buildings.csv", sep=',', header=TRUE)
+data.year <- 2010 # data files will be taken from "data{data.year}"
+data.dir <- paste0("data", data.year)
+pcl.block.group.id.name <- "census_2010_block_group_id"
 
-hhs <- data.table(read.table("households2.csv", sep=',', header=TRUE))
+# load data
+bld.raw <- read.table(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
+source(file.path(data.dir, "read_hh_totals.R")) # reads HH totals from the data directory (creates object hhtots)
+pcl <- read.table(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
 
-pcl <- read.table("parcels.csv", sep=',', header=TRUE)
-pcl <- cbind(pcl, tract=as.integer(substr(pcl$census_2010_block_group_id, 6, 11)))
-pcl <- cbind(pcl, block_group=as.integer(substr(pcl$census_2010_block_group_id, 12, 12)))
-pcl <- data.table(pcl)
+# extract tract and block group attributes
+pcl %<>% cbind(tract= (extract2(., pcl.block.group.id.name) %>% substr(6,11) %>% as.integer))
+pcl %<>% cbind(block_group=(extract2(., pcl.block.group.id.name) %>% substr(12, 12) %>% as.integer)) %>% data.table
 setkey(pcl, psrcpin)
 
+# set-up the buildings table and merge with parcels
 bld <- data.table(bld.raw)
 setkey(bld, building_id, psrcpin)
-bld <- cbind(bld, residential_units_orig=bld$residential_units)
+bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
 bld[bld$imp_residential_units>0,'residential_units_orig'] <- 0
-bld <- merge(bld, pcl[,.(psrcpin, census_2010_block_group_id, county_id, tract, block_group)])
+bld %<>% merge(pcl[,c("psrcpin", pcl.block.group.id.name, "county_id", "tract", "block_group"), with=FALSE])
 
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
@@ -39,17 +45,16 @@ resbld <- bld[building_type_id %in% allrestypes, .N, by=c('county_id', 'tract', 
 colnames(resbld)[4] <- 'Nres'
 impmfbld <- bld[building_type_id %in% mftypes & imp_residential_units > 0, .N, by=c('county_id', 'tract', 'block_group')]
 colnames(impmfbld)[4] <- 'Nimpmf'
-nbld <- merge(nbld, nmfbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
+nbld %<>% merge(nmfbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
 nbld[is.na(nbld$Nmf), 'Nmf'] <- 0
-nbld <- merge(nbld, resbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
+nbld %<>% merge(resbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
 nbld[is.na(nbld$Nres), 'Nres'] <- 0
-nbld <- merge(nbld, impmfbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
+nbld %<>% merge(impmfbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
 nbld[is.na(nbld$Nimpmf), 'Nimpmf'] <- 0
-du <- merge(du, nbld, by=c('county_id', 'tract', 'block_group'))
+du %<>% merge(nbld, by=c('county_id', 'tract', 'block_group'))
 
-nhh <- hhs[, .N, by=c('county', 'tract', 'block_group')]
-colnames(nhh)[c(1,4)] <- c('county_id', 'HH')
-duhh <- merge(du, nhh, by=c('county_id', 'tract', 'block_group'))
+# merge with HH totals (created in read_hh_totals.R)
+duhh <- merge(du, hhtots, by=c('county_id', 'tract', 'block_group'))
 negdt <- subset(duhh, DU < HH)
 print(sum(with(negdt, HH-DU)))
 
@@ -208,11 +213,11 @@ tot.orig <- sum(with(bld, residential_units_orig))
 cat('\nTotal change: ', tot-tot.orig, ' residential units (from ', tot.orig, ' to ', tot, ')')
 
 # write outputs
-write.table(bld, file="imputed_buildings_matched.csv", sep=',', row.names=FALSE)
+write.table(bld, file=file.path(data.dir, "imputed_buildings_matched.csv"), sep=',', row.names=FALSE)
 # for exportng to opus cache, remove the parcels attributes, since they are not needed
 bld.for.opus <- bld[,-which(colnames(bld)%in% c('census_2010_block_group_id', 'tract', 'block_group', 'is_inside_urban_growth_boundary', 'tax_exempt')), with=FALSE]
 colnames(bld.for.opus)[1] <- 'parcel_id'
-write.table(bld.for.opus, file="imputed_buildings_matched_for_opus.csv", sep=',', row.names=FALSE)
+write.table(bld.for.opus, file=file.path(data.dir, "imputed_buildings_matched_for_opus.csv"), sep=',', row.names=FALSE)
 
 
 # The code below is for some diagnostics only
