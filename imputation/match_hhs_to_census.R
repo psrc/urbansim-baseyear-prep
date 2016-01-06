@@ -19,9 +19,10 @@
 library(data.table)
 library(magrittr)
 
-data.year <- 2010 # data files will be taken from "data{data.year}"
+data.year <- 2014 # data files will be taken from "data{data.year}"
 data.dir <- paste0("data", data.year)
 pcl.block.group.id.name <- "census_2010_block_group_id"
+pcl.id <- if(data.year < 2014) 'psrcpin' else 'parcel_id'
 
 # load data
 bld.raw <- read.table(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
@@ -31,14 +32,14 @@ pcl <- read.table(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
 # extract tract and block group attributes
 pcl %<>% cbind(tract= (extract2(., pcl.block.group.id.name) %>% substr(6,11) %>% as.integer))
 pcl %<>% cbind(block_group=(extract2(., pcl.block.group.id.name) %>% substr(12, 12) %>% as.integer)) %>% data.table
-setkey(pcl, psrcpin)
+#setkey(pcl, pcl.id)
 
 # set-up the buildings table and merge with parcels
 bld <- data.table(bld.raw)
-setkey(bld, building_id, psrcpin)
+#setkey(bld, building_id, pcl.id)
 bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
 bld[bld$imp_residential_units>0,'residential_units_orig'] <- 0
-bld %<>% merge(pcl[,c("psrcpin", pcl.block.group.id.name, "county_id", "tract", "block_group"), with=FALSE])
+bld %<>% merge(pcl[,c(pcl.id, pcl.block.group.id.name, "county_id", "tract", "block_group"), with=FALSE], by=c(pcl.id, "county_id"))
 
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
