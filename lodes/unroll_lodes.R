@@ -32,3 +32,6 @@ for(bl in ublocks) {
 	append <- TRUE
 	jid <- jid+njobs
 }
+
+# convert it from command line into Opus cache:
+# python -m opus_core.tools.convert_table csv flt -d . -o /path/to/opus/cache/2014 -t jobs
