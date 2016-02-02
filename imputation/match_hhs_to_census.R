@@ -25,9 +25,10 @@ pcl.block.group.id.name <- "census_2010_block_group_id"
 pcl.id <- if(data.year < 2014) 'psrcpin' else 'parcel_id'
 
 # load data
-bld.raw <- read.table(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
+bld.imp <- read.table(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
 source(file.path(data.dir, "read_hh_totals.R")) # reads HH totals from the data directory (creates object hhtots)
 pcl <- read.table(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
+#pcl <- read.table(file.path(data.dir, "parcelslatlon.csv"), sep=',', header=TRUE)
 
 # extract tract and block group attributes
 pcl %<>% cbind(tract= (extract2(., pcl.block.group.id.name) %>% substr(6,11) %>% as.integer))
@@ -35,35 +36,25 @@ pcl %<>% cbind(block_group=(extract2(., pcl.block.group.id.name) %>% substr(12, 
 #setkey(pcl, pcl.id)
 
 # set-up the buildings table and merge with parcels
-bld <- data.table(bld.raw)
+bld <- data.table(bld.imp)
 #setkey(bld, building_id, pcl.id)
 bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
 bld[bld$imp_residential_units>0,'residential_units_orig'] <- 0
-bld %<>% merge(pcl[,c(pcl.id, pcl.block.group.id.name, "county_id", "tract", "block_group"), with=FALSE], by=c(pcl.id, "county_id"))
+bld %<>% merge(pcl[,c(pcl.id, pcl.block.group.id.name, "county_id", "tract", "block_group", "city_id"), with=FALSE], by=c(pcl.id, "county_id"))
 
+match.by <- c('county_id', 'tract', 'block_group')
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
-du <- bld[, sum(residential_units), by=c('county_id', 'tract', 'block_group')]
-colnames(du)[4] <- 'DU'
-nbld <- bld[, .N, by=c('county_id', 'tract', 'block_group')]
-nmfbld <- bld[building_type_id %in% mftypes, .N, by=c('county_id', 'tract', 'block_group')]
-colnames(nmfbld)[4] <- 'Nmf'
-resbld <- bld[building_type_id %in% allrestypes, .N, by=c('county_id', 'tract', 'block_group')]
-colnames(resbld)[4] <- 'Nres'
-impmfbld <- bld[building_type_id %in% mftypes & imp_residential_units > 0, .N, by=c('county_id', 'tract', 'block_group')]
-colnames(impmfbld)[4] <- 'Nimpmf'
-nbld %<>% merge(nmfbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
-nbld[is.na(nbld$Nmf), 'Nmf'] <- 0
-nbld %<>% merge(resbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
-nbld[is.na(nbld$Nres), 'Nres'] <- 0
-nbld %<>% merge(impmfbld, by=c('county_id', 'tract', 'block_group'), all.x=TRUE)
-nbld[is.na(nbld$Nimpmf), 'Nimpmf'] <- 0
-du %<>% merge(nbld, by=c('county_id', 'tract', 'block_group'))
+du <- as.data.frame(bld[, list(DU=sum(residential_units), number_of_buildings=.N, Nmf=sum(building_type_id %in% mftypes),
+					Nres=sum(building_type_id %in% allrestypes), Nimpmf=sum(building_type_id %in% mftypes & imp_residential_units > 0),
+					DUimp=sum(residential_units * imp_residential_units * (building_type_id %in% allrestypes))), by=match.by])
 
 # merge with HH totals (created in read_hh_totals.R)
-duhh <- merge(du, hhtots, by=c('county_id', 'tract', 'block_group'))
+duhh <- data.table(merge(du, hhtots, by=match.by))
 negdt <- subset(duhh, DU < HH)
 print(sum(with(negdt, HH-DU)))
+#subset(duhh, DU-HH > 1500) %$% cbind(., dif=DU-HH)
+# duhh[,list(DU=sum(DU), DUofm=sum(HH), DUimp=sum(DUimp)), by=county_id] %$% cbind(., dif=DU-DUofm)
 
 set.seed(1)
 imputed.du <- 0
@@ -107,7 +98,8 @@ for (i in 1:nrow(s)){
 	} else { # distribute units across MF buildings
 		imp.idx <- bidx
 	}
-	probs <- bld$residential_units[imp.idx]/sum(bld$residential_units[imp.idx])
+	sDUimp <- sum(bld$residential_units[imp.idx])
+	probs <- if(sDUimp == 0) rep(1, length=length(imp.idx))/length(imp.idx) else bld$residential_units[imp.idx]/sDUimp
 	if(length(imp.idx)==1) {
 		imp.idx <- rep(imp.idx,2) # sample interprets things differently if the first number is just one integer
 		probs <- rep(probs,2)
@@ -139,7 +131,8 @@ for (i in 1:nrow(s)){
 	} else { # distribute units across res buildings
 		imp.idx <- bidx
 	}
-	probs <- bld$residential_units[imp.idx]/sum(bld$residential_units[imp.idx])
+	sDUimp <- sum(bld$residential_units[imp.idx])
+	probs <- if(sDUimp == 0) rep(1, length=length(imp.idx))/length(imp.idx) else bld$residential_units[imp.idx]/sDUimp
 	if(length(imp.idx)==1) {
 		imp.idx <- rep(imp.idx,2) # sample interprets things differently if the first number is just one integer
 		probs <- rep(probs,2)
@@ -171,7 +164,8 @@ for (i in 1:nrow(s)){
 	} else { # distribute units across buildings
 		imp.idx <- bidx
 	}
-	probs <- bld$non_residential_sqft[imp.idx]/sum(bld$non_residential_sqft[imp.idx]) # take non-res sqft as  a proxy for the size
+	sSQimp <- sum(bld$non_residential_sqft[imp.idx])
+	probs <- if(sSQimp == 0) rep(1, length=length(imp.idx))/length(imp.idx) else bld$non_residential_sqft[imp.idx]/sSQimp # take non-res sqft as  a proxy for the size
 	if(length(imp.idx)==1) {
 		imp.idx <- rep(imp.idx,2) # sample interprets things differently if the first number is just one integer
 		probs <- rep(probs,2)
@@ -209,7 +203,7 @@ for (i in 1:nrow(s)){
 	sampled.idx <- sample(bidx, reduction, replace=TRUE, prob=probs)
 	tab <- table(sampled.idx)
 	row.idx <- as.integer(names(tab))
-	value <- pmax(max(bld$stories[row.idx],1)*2, bld$residential_units[row.idx] - tab)
+	value <- pmax(pmin(pmax(bld$stories[row.idx],1)*2, bld$residential_units[row.idx]), bld$residential_units[row.idx] - tab)
 	reduced.du <- reduced.du + sum(bld$residential_units[row.idx] - value)
 	reduced.bld <- reduced.bld + sum((bld$residential_units[row.idx] - value) > 0)
 	bld[row.idx, "residential_units"] <- as.integer(value)
@@ -222,8 +216,11 @@ cat('\nTotal change: ', tot-tot.orig, ' residential units (from ', tot.orig, ' t
 # write outputs
 write.table(bld, file=file.path(data.dir, "imputed_buildings_matched.csv"), sep=',', row.names=FALSE)
 # for exportng to opus cache, remove the parcels attributes, since they are not needed
-bld.for.opus <- bld[,-which(colnames(bld)%in% c('census_2010_block_group_id', 'tract', 'block_group', 'is_inside_urban_growth_boundary', 'tax_exempt')), with=FALSE]
-colnames(bld.for.opus)[1] <- 'parcel_id'
+bld.for.opus <- as.data.frame(bld[,-which(colnames(bld)%in% c('census_2010_block_group_id', 'tract', 'block_group', 'is_inside_urban_growth_boundary', 'tax_exempt_flag', 
+												'net_sqft', 'gross_sqft', 'land_use_type_id', 'land_value', 'parcel_sqft', 'number_of_buildings')), with=FALSE])
+colnames(bld.for.opus)[colnames(bld.for.opus) == pcl.id] <- 'parcel_id'
+colnames(bld.for.opus) <- paste0(colnames(bld.for.opus), ':i4')
+for(col in colnames(bld.for.opus)) bld.for.opus[,col] <- as.integer(bld.for.opus[,col])
 write.table(bld.for.opus, file=file.path(data.dir, "imputed_buildings_matched_for_opus.csv"), sep=',', row.names=FALSE)
 
 

@@ -13,7 +13,8 @@
 library(data.table)
 data.year <- 2014 # data files will be taken from "data{data.year}"
 data.dir <- paste0("data", data.year)
-bld.raw <- read.table(file.path(data.dir, 'buildings_raw.csv'), sep=',', header=TRUE)
+#bld.raw <- read.table(file.path(data.dir, 'buildings_raw.csv'), sep=',', header=TRUE)
+bld.raw <- read.table(file.path(data.dir, 'buildings_raw.tab'), sep='\t', header=TRUE, stringsAsFactors=FALSE, quote="\`")
 pcl_id <- if(data.year < 2014) 'psrcpin' else 'parcel_id'
 impute.net.sqft <- data.year < 2014
 residential.bts <- c(19, 12, 4, 11, 34)
@@ -59,7 +60,7 @@ for(lut in names(lut.bt.pairs)) {
 	lut.idx <- bld$land_use_type_id==as.integer(lut)
 	nocode.vacant <- bld$building_type_id %in% c(28, 32, 22)
 	idx <- lut.idx & ( bld$building_type_id==0 | (nocode.vacant & nounits))
-	if(lut %in% c(13:15,24)) {#if residential LUT and ...
+	if(lut %in% c(13:15,24)) {# if residential LUT and ...
 		# ... non-res-sqft is zero then convert "no code" and "vacant" BT 
 		idx <- idx | (lut.idx & nocode.vacant & bld$non_residential_sqft == 0)
 		# ... non-res BT (excl. mixed use and group quarters) and residential units are non-zero and non_residential_sqft is zero, then change BT
@@ -67,6 +68,9 @@ for(lut in names(lut.bt.pairs)) {
 	}
 	bld[which(idx), 'building_type_id'] <- lut.bt.pairs[[lut]]
 }
+# reclassify records for LUT 30 that have res units and no non-res sqft into MF 
+idx <- with(bld, land_use_type_id==30 & !building_type_id %in% c(10,33,6, residential.bts) & residential_units > 0 & non_residential_sqft == 0)
+bld[which(idx), 'building_type_id'] <- 12
 cat('\nImputed ', sum(bld$building_type_id != bld$building_type_id_orig), ' values of building_type_id.')
 
 #impute single family
@@ -74,7 +78,8 @@ before.du <- sum(bld$residential_units)
 imputed <- rep(FALSE, nrow(bld))
 idx <- bld$building_type_id %in% c(19, 11) & bld$residential_units == 0
 # special cases of SF
-special.parcels <- c(492180) 
+#special.parcels <- c(492180) 
+special.parcels <- c()
 idx <- which(idx | (bld$parcel_id %in% special.parcels & bld$residential_units == 0 & bld$building_type_id %in% c(12,4)))
 bld[idx,'residential_units'] <- 1
 imputed[idx] <- TRUE
@@ -109,9 +114,8 @@ bld[bld$building_type_id %in% c(12, 4) & is.na(bld$sqft_per_unit), 'sqft_per_uni
 
 # add column number_of_buildings
 dt <- data.table(bld)
-tmp <- dt[, .N, by=pcl_id]
+tmp <- dt[, list(number_of_buildings=.N, number_of_mf_buildings=sum(building_type_id %in% c(12,14))), by=pcl_id]
 bld <- merge(bld, tmp, by=pcl_id)
-colnames(bld)[ncol(bld)] <- 'number_of_buildings'
 is.res <- bld$building_type_id %in% residential.bts
 
 # impute net_sqft for multi-family residential using linear regression 
@@ -320,9 +324,14 @@ cat('\nResults written into imputed_buildings.csv\n")
 # dtmf[, list(avg_sqft_per_unit=mean(gross_sqft/residential_units, na.rm=TRUE), Nbuildings=.N), by=county_id]
 
 # look at non-res buildings with residential units
-# idx <- with(bld, !is.na(non_residential_sqft) & residential_units > 0 & !is.na(residential_units) & non_residential_sqft == 0 & !is.res  & !building_type_id %in% c(10,33,6))
+# idx <- with(bld, !is.na(non_residential_sqft) & residential_units > 0 & !is.na(residential_units) & non_residential_sqft > 0 & !is.res  & !building_type_id %in% c(10,33,6))
 # dt <- data.table(bld[idx,])
 # dt[,sum(residential_units), by=.(land_use_type_id, building_type_id)]
+# by cities
+# cities <- read.table(file.path(data.dir, 'cities.csv'), sep=',', header=TRUE)
+# bc <- dt[,list(DU=sum(residential_units), sqft=sum(non_residential_sqft)), by=city_id] %>% merge(cities[,c('city_id', 'city_name')], by='city_id')
+# bc[order(bc$DU, decreasing=TRUE),]
+
 # sum(subset(bld, !building_type_id %in% c(10,33,6, residential.bts) & residential_units > 0 & non_residential_sqft > 0)$residential_units, na.rm=TRUE)
 
 # summary of imputed values
