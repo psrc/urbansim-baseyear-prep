@@ -60,7 +60,7 @@ set.seed(1)
 imputed.du <- 0
 imputed.bld <- 0
 # 1 building: place DU independent of type of building
-s <- subset(negdt, N == 1)
+s <- subset(negdt, number_of_buildings == 1)
 for (i in 1:nrow(s)){
 	bidx <- which(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i]))
 	bld[bidx, "residential_units"] <- bld$residential_units[bidx] + s$HH[i] - s$DU[i]
@@ -73,7 +73,7 @@ cat('\nImputed ', imputed.du, ' units into ', imputed.bld, ' buildings for block
 # > 1 buildings & 1 multi-family building: place DU into that MF building
 last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
-s <- subset(negdt, N > 1 & Nmf==1)
+s <- subset(negdt, number_of_buildings > 1 & Nmf==1)
 for (i in 1:nrow(s)){
 	bidx <- which(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i] & building_type_id %in% mftypes))
 	bld[bidx, "residential_units"] <- bld$residential_units[bidx] + s$HH[i] - s$DU[i]
@@ -88,7 +88,7 @@ last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
 imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
-s <- subset(negdt, N > 1 & Nmf>1)
+s <- subset(negdt, Nres > 1 & Nmf>1)
 for (i in 1:nrow(s)){
 	bidx <- which(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i] & building_type_id %in% mftypes))
 	bidx.imp <- which(bld$imp_residential_units[bidx]>0)
