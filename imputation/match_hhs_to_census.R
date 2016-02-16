@@ -88,8 +88,10 @@ last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
 imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
-s <- subset(negdt, Nres > 1 & Nmf>1)
+s <- subset(negdt, number_of_buildings > 1 & Nmf>1)
+cat('\n')
 for (i in 1:nrow(s)){
+	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i] & building_type_id %in% mftypes))
 	bidx.imp <- which(bld$imp_residential_units[bidx]>0)
 	if(length(bidx.imp) > 0) { # add units to buildings where the DUs were imputed
@@ -121,8 +123,10 @@ last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
 imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
-s <- subset(negdt, N > 1 & Nmf==0 & Nres > 0)
+s <- subset(negdt, number_of_buildings > 1 & Nmf==0 & Nres > 0)
+cat('\n')
 for (i in 1:nrow(s)){
+	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i] & building_type_id %in% allrestypes))
 	bidx.imp <- which(bld$imp_residential_units[bidx]>0)
 	if(length(bidx.imp) > 0) { # add units to buildings where the DUs were imputed
@@ -154,8 +158,10 @@ last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
 imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
-s <- subset(negdt, N > 1 & Nres == 0)
+s <- subset(negdt, number_of_buildings > 1 & Nres == 0)
+cat('\n')
 for (i in 1:nrow(s)){
+	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i]))
 	bidx.imp <- which(bld$building_type_id[bidx] != bld$building_type_id_orig[bidx])
 	if(length(bidx.imp) > 0) { # add units to buildings where building_type was imputed
