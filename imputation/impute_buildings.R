@@ -220,7 +220,7 @@ if(length(idx) > 0) {
 	lmfit2 <- lm(log(residential_units) ~ log(net_sqft), resest2)
 	slmfit2 <- summary(lmfit2)
 	lmpred <- predict(lmfit2, bld[idx,])  + rnorm(length(idx), 0, slmfit2$sigma)
-	bld[idx, 'residential_units'] <- pmax(round(exp(lmpred)))
+	bld[idx, 'residential_units'] <- pmax(1, round(exp(lmpred)))
 	bld[idx, 'imp_residential_units'] <- TRUE
 	cat('\nImputed ', sum(bld[idx, 'residential_units']), '(', length(idx), ' records) residential units for multi-family buildings using net_sqft only.')
 }
@@ -270,6 +270,12 @@ for(county in c(33,35,53,61)) {
 	bld[idxc, 'imp_non_residential_sqft'] <- TRUE
 	cat('\nImputed ', length(idxc), ' records of non_residential_sqft for non-residential buildings in county ', county, ' where improvement value was imputed.')
 }
+
+# set the remainder of missing residential units to 1 
+idx <- which(with(bld,  is.res & is.na(residential_units)))
+bld[idx, 'residential_units'] <- 1
+bld[idx, 'imp_residential_units'] <- TRUE
+cat('\nImputed ', sum(bld[idx, 'residential_units']), ' residential units for the remainder of residential records.')
 
 library(mice)
 bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value', 'year_built', 'stories')]
