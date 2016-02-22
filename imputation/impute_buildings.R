@@ -94,8 +94,8 @@ for(attr in c('building_type_id', 'gross_sqft', 'improvement_value', 'land_use_t
 }
 is.res <- bld$building_type_id %in% residential.bts
 nounits <- bld$residential_units == 0 & bld$non_residential_sqft == 0
-bld[nounits &  is.res,'residential_units'] <- NA
-bld[nounits &  !is.res,'non_residential_sqft'] <- NA
+bld[bld$residential_units == 0 &  is.res, 'residential_units'] <- NA
+bld[bld$non_residential_sqft == 0 &  !is.res,'non_residential_sqft'] <- NA
 bld[nounits &  !is.na(bld$building_type_id) & bld$building_type_id %in% c(10, 33), 'residential_units'] <- NA # mixed use
 bld[nounits &  is.na(bld$building_type_id), c('residential_units', 'non_residential_sqft')] <- NA
 # special cases:

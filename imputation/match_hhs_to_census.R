@@ -52,19 +52,24 @@ if(length(match.by) < 3) hhtots <- data.table(hhtots)[,list(HH=sum(HH)), by=matc
 
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
-du <- as.data.frame(bld[, list(DU=sum(residential_units), number_of_buildings=.N, Nmf=sum(building_type_id %in% mftypes),
-					Nres=sum(building_type_id %in% allrestypes), Nimpmf=sum(building_type_id %in% mftypes & imp_residential_units > 0),
-					DUimp=sum((residential_units - residential_units_orig) * imp_residential_units * (building_type_id %in% allrestypes))), by=match.by])
 
-# merge with HH totals (created in read_hh_totals.R)
-duhh <- merge(du, hhtots, by=match.by, all=TRUE)
-duhh <- subset(duhh, !(is.na(DU) & HH==0)) # remove BGs with zero OFM and no buildings
-duhh[is.na(duhh$DU), c("DU", "number_of_buildings", "Nmf", "Nres", "Nimpmf", "DUimp")] <- 0 # BGs with no buildings in our dataset
-duhh <- data.table(duhh) %$% cbind(., dif=DU-HH)
+create.duhh.dt <- function() {
+	du <- as.data.frame(bld[, list(DU=sum(residential_units), number_of_buildings=.N, Nmf=sum(building_type_id %in% mftypes),
+					Nres=sum(building_type_id %in% allrestypes), Nimpmf=sum(building_type_id %in% mftypes & imp_residential_units > 0),
+					DUimp=sum((residential_units - residential_units_orig) * (residential_units > residential_units_orig) * (building_type_id %in% allrestypes)),
+					DUred=sum((residential_units_orig - residential_units) * (residential_units < residential_units_orig) * (building_type_id %in% allrestypes))), by=match.by])
+	# merge with HH totals (created in read_hh_totals.R)
+	duhh <- merge(du, hhtots, by=match.by, all=TRUE)
+	duhh <- subset(duhh, !(is.na(DU) & HH==0)) # remove BGs with zero OFM and no buildings
+	duhh[is.na(duhh$DU), c("DU", "number_of_buildings", "Nmf", "Nres", "Nimpmf", "DUimp")] <- 0 # BGs with no buildings in our dataset
+	duhh <- data.table(duhh) %$% cbind(., dif=DU-HH)
+}
+
+duhh <- create.duhh.dt()
 negdt <- subset(duhh, dif < 0) 
-print(sum(with(negdt, HH-DU)))
+# print(sum(with(negdt, HH-DU)))
 # head(negdt[order(negdt$dif),], 50)
-# duhh[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id]
+duhh[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id]
 
 set.seed(1)
 imputed.du <- 0
@@ -212,13 +217,15 @@ cat('\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.i
 cat('\nTotals: ', imputed.du, 'units, ', imputed.bld, ' buildings')
 
 # Reduce DUs for MF-buildings where DUs were imputed and Census numbers are lower
-posdt <- subset(duhh, DU > 1.1*HH & Nimpmf > 0 & Nmf > 0)
+posdt <- subset(duhh, DU > 1*HH & Nimpmf > 0 & Nmf > 0)
 s <- posdt
 reduced.du <- 0
 reduced.bld <- 0
 #bld2 <- bld
 if(nrow(s) > 0) {
+	cat('\n')
 for (i in 1:nrow(s)){
+	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% mftypes & bld$imp_residential_units > 0)
 	reduction <- s$DU[i] - s$HH[i]
 	probs <- bld$residential_units[bidx]/sum(bld$residential_units[bidx])
@@ -236,6 +243,36 @@ for (i in 1:nrow(s)){
 }
 cat('\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.') 
 }
+
+# Reduce DUs for MF-buildings where Census numbers are lower
+s <- subset(duhh, DU > 1*HH & Nmf > 0)
+reduced.du <- 0
+reduced.bld <- 0
+if(nrow(s) > 0) {
+	cat('\n')
+for (i in 1:nrow(s)){
+	cat('\rProgress ', round(i/nrow(s)*100), '%')
+	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% mftypes)
+	reduction <- s$DU[i] - s$HH[i]
+	if(sum(bld$residential_units[bidx])==0) next
+	probs <- bld$residential_units[bidx]/sum(bld$residential_units[bidx])
+	if(length(bidx)==1) {
+		bidx <- rep(bidx,2) # sample interprets things differently if the first number is just one integer
+		probs <- rep(probs,2)
+	}
+	sampled.idx <- sample(bidx, reduction, replace=TRUE, prob=probs)
+	tab <- table(sampled.idx)
+	row.idx <- as.integer(names(tab))
+	value <- pmax(pmin(pmax(bld$stories[row.idx],1)*2, bld$residential_units[row.idx]), bld$residential_units[row.idx] - tab)
+	reduced.du <- reduced.du + sum(bld$residential_units[row.idx] - value)
+	reduced.bld <- reduced.bld + sum((bld$residential_units[row.idx] - value) > 0)
+	bld[row.idx, "residential_units"] <- as.integer(value)
+}
+cat('\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.') 
+}
+duhh.end <- create.duhh.dt()
+duhh.end[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), DUred=sum(DUred, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id]
+
 tot <- sum(with(bld, residential_units))
 tot.orig <- sum(with(bld, residential_units_orig))
 cat('\nTotal change: ', tot-tot.orig, ' residential units (from ', tot.orig, ' to ', tot, ')')
