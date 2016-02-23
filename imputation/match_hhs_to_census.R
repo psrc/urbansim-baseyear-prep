@@ -98,7 +98,7 @@ for (i in 1:nrow(s)){
 	imputed.du <- imputed.du + s$HH[i] - s$DU[i]
 	imputed.bld <- imputed.bld + 1
 }
-cat('\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for block groups with 1 MF building.')
+cat('\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for block groups with 1 MF building.\n')
 }
 
 # > 1 multi-family buildings
@@ -108,7 +108,7 @@ imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
 s <- subset(negdt, number_of_buildings > 1 & Nmf>1)
 if(nrow(s) > 0) {
-cat('\n')
+cat('\n\n')
 for (i in 1:nrow(s)){
 	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% mftypes)
@@ -134,8 +134,8 @@ for (i in 1:nrow(s)){
 	imputed.bld <- imputed.bld + length(row.idx)
 	if(length(bidx.imp) > 0) imputed.bld.to.imp <- imputed.bld.to.imp + length(row.idx)
 }
-cat('\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for ', nrow(s), ' block groups with multiple MF buildings, from which ', 
-	imputed.du.to.imp, ' DUs were imputed into ', imputed.bld.to.imp, ' buildings that already had imputed DUs.')
+cat('\n\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for ', nrow(s), ' block groups with multiple MF buildings, from which ', 
+	imputed.du.to.imp, ' DUs were imputed into ', imputed.bld.to.imp, ' buildings that already had imputed DUs.\n')
 }
 
 # 0 multi-family buildings & > 0 residential (other residential type than MF)
@@ -145,7 +145,7 @@ imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
 s <- subset(negdt, number_of_buildings > 1 & Nmf==0 & Nres > 0)
 if(nrow(s) > 0) {
-cat('\n')
+cat('\n\n')
 for (i in 1:nrow(s)){
 	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% allrestypes)
@@ -171,8 +171,8 @@ for (i in 1:nrow(s)){
 	imputed.bld <- imputed.bld + length(row.idx)
 	if(length(bidx.imp) > 0) imputed.bld.to.imp <- imputed.bld.to.imp + length(row.idx)
 }
-cat('\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for ', nrow(s), 'block groups with non-MF residential buildings, from which ', 
-	imputed.du.to.imp, ' DUs were imputed into ', imputed.bld.to.imp, ' buildings that already had imputed DUs.')
+cat('\n\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for ', nrow(s), 'block groups with non-MF residential buildings, from which ', 
+	imputed.du.to.imp, ' DUs were imputed into ', imputed.bld.to.imp, ' buildings that already had imputed DUs.\n')
 }
 
 # 0 residentail buildings (only non-residential type)
@@ -182,7 +182,7 @@ imputed.du.to.imp <- 0
 imputed.bld.to.imp <- 0
 s <- subset(negdt, number_of_buildings > 1 & Nres == 0)
 if(nrow(s) > 0) {
-cat('\n')
+cat('\n\n')
 for (i in 1:nrow(s)){
 	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(do.call(cond.func.name, list(i)))
@@ -211,10 +211,10 @@ for (i in 1:nrow(s)){
 		bld[row.idx, "building_type_id"] <- 12 # set to MF residential
 	}
 }
-cat('\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for ', nrow(s), 'block groups with non-residential buildings, from which ', 
+cat('\n\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last.imputed.bld, ' buildings for ', nrow(s), 'block groups with non-residential buildings, from which ', 
 	imputed.du.to.imp, ' DUs were imputed into ', imputed.bld.to.imp, ' buildings imputed building_type_id.')
 }
-cat('\nTotals: ', imputed.du, 'units, ', imputed.bld, ' buildings')
+cat('\nTotals: ', imputed.du, 'units, ', imputed.bld, ' buildings\n')
 
 # Reduce DUs for MF-buildings where DUs were imputed and Census numbers are lower
 posdt <- subset(duhh, DU > 1*HH & Nimpmf > 0 & Nmf > 0)
@@ -223,7 +223,7 @@ reduced.du <- 0
 reduced.bld <- 0
 bld2 <- bld
 if(nrow(s) > 0) {
-	cat('\n')
+	cat('\n\n')
 for (i in 1:nrow(s)){
 	cat('\rProgress ', round(i/nrow(s)*100), '%')
 	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% mftypes & bld$imp_residential_units > 0)
@@ -241,11 +241,12 @@ for (i in 1:nrow(s)){
 	reduced.bld <- reduced.bld + sum((bld$residential_units[row.idx] - value) > 0)
 	bld[row.idx, "residential_units"] <- as.integer(value)
 }
-cat('\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.') 
+cat('\n\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.\n') 
 }
 
 # Reduce DUs for MF-buildings where Census numbers are lower
-s <- subset(duhh, DU > 1*HH & Nmf > 0)
+duhh2 <- create.duhh.dt()
+s <- subset(duhh2, DU > 1*HH & Nmf > 0)
 reduced.du <- 0
 reduced.bld <- 0
 if(nrow(s) > 0) {
@@ -268,7 +269,7 @@ for (i in 1:nrow(s)){
 	reduced.bld <- reduced.bld + sum((bld$residential_units[row.idx] - value) > 0)
 	bld[row.idx, "residential_units"] <- as.integer(value)
 }
-cat('\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.') 
+cat('\n\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.\n') 
 }
 duhh.end <- create.duhh.dt()
 print(duhh.end[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), DUred=sum(DUred, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
