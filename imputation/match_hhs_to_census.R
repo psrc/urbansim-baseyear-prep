@@ -41,7 +41,7 @@ bld <- data.table(bld.imp)
 #setkey(bld, building_id, pcl.id)
 bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
 bld[bld$imp_residential_units>0,'residential_units_orig'] <- 0
-bld %<>% merge(pcl[,c(pcl.id, pcl.block.group.id.name, "county_id", "tract", "block_group", "city_id"), with=FALSE], by=c(pcl.id, "county_id"))
+bld %<>% merge(pcl[,c(pcl.id, pcl.block.group.id.name, "county_id", "tract", "block_group"), with=FALSE], by=c(pcl.id, "county_id"))
 
 match.by <- c('county_id', 'tract', 'block_group')
 #match.by <- c('county_id', 'tract')
@@ -279,10 +279,12 @@ tot.orig <- sum(with(bld, residential_units_orig))
 cat('\nTotal change: ', tot-tot.orig, ' residential units (from ', tot.orig, ' to ', tot, ')')
 
 # write outputs
-write.table(bld, file=file.path(data.dir, "imputed_buildings_matched.csv"), sep=',', row.names=FALSE)
+building.schema <- c('building_id', 'residential_units', 'non_residential_sqft', 'year_built', 'not_demolish', 'parcel_id', 'land_area', 'improvement_value', 
+					 'stories', 'building_type_id', 'job_capacity', 'sqft_per_unit', 'building_quality_id')
+building.schema.extended <- c(building.schema, 'building_type_id_orig', 'imp_residential_units', 'imp_non_residential_sqft', 'imp_improvement_value', 'residential_units_orig')					 
+write.table(bld[, colnames(bld)%in% building.schema.extended, with=FALSE], file=file.path(data.dir, "imputed_buildings_matched.csv"), sep=',', row.names=FALSE)
 # for exportng to opus cache, remove the parcels attributes, since they are not needed
-bld.for.opus <- as.data.frame(bld[,-which(colnames(bld)%in% c('census_2010_block_group_id', 'tract', 'block_group', 'is_inside_urban_growth_boundary', 'tax_exempt_flag', 
-												'net_sqft', 'gross_sqft', 'land_use_type_id', 'land_value', 'parcel_sqft', 'number_of_buildings')), with=FALSE])
+bld.for.opus <- as.data.frame(bld[,colnames(bld)%in% building.schema, with=FALSE])
 colnames(bld.for.opus)[colnames(bld.for.opus) == pcl.id] <- 'parcel_id'
 colnames(bld.for.opus) <- paste0(colnames(bld.for.opus), ':i4')
 for(col in colnames(bld.for.opus)) bld.for.opus[,col] <- as.integer(bld.for.opus[,col])
