@@ -148,7 +148,7 @@ if(impute.net.sqft) {
 
 # impute residential units if net_sqft and sqft_per_unit is not missing
 idx <- which(is.res & is.na(bld$residential_units) & ! is.na(bld$net_sqft) & bld$sqft_per_unit > 0)
-bld[idx, 'residential_units'] <- round(bld$net_sqft[idx]/bld$sqft_per_unit[idx])
+bld[idx, 'residential_units'] <- max(round(bld$net_sqft[idx]/bld$sqft_per_unit[idx]), 1)
 bld[idx, 'imp_residential_units'] <- TRUE
 cat('\nImputed ', sum(bld$residential_units[idx]), '(', length(idx), ' records) multi-family residential units as net_sqft/sqft_per_unit.')
 

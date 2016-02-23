@@ -69,7 +69,7 @@ duhh <- create.duhh.dt()
 negdt <- subset(duhh, dif < 0) 
 # print(sum(with(negdt, HH-DU)))
 # head(negdt[order(negdt$dif),], 50)
-duhh[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id]
+print(duhh[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
 
 set.seed(1)
 imputed.du <- 0
@@ -221,7 +221,7 @@ posdt <- subset(duhh, DU > 1*HH & Nimpmf > 0 & Nmf > 0)
 s <- posdt
 reduced.du <- 0
 reduced.bld <- 0
-#bld2 <- bld
+bld2 <- bld
 if(nrow(s) > 0) {
 	cat('\n')
 for (i in 1:nrow(s)){
@@ -271,7 +271,7 @@ for (i in 1:nrow(s)){
 cat('\nResidential units reduced by ', reduced.du, ' in ', reduced.bld, ' buildings from ', nrow(s), 'block groups.') 
 }
 duhh.end <- create.duhh.dt()
-duhh.end[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), DUred=sum(DUred, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id]
+print(duhh.end[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), DUimp=sum(DUimp, na.rm=TRUE), DUred=sum(DUred, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
 
 tot <- sum(with(bld, residential_units))
 tot.orig <- sum(with(bld, residential_units_orig))
