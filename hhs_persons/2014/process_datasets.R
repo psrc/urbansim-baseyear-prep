@@ -1,8 +1,8 @@
 # Hana Sevcikova, PSRC, 3/14/2016
 # The scripts takes output from the population synthesizer (households and persons),
-# joins it with the PUMs data and creates datasets as needed for UrbanSim run.
+# and creates datasets as needed for UrbanSim run.
 # 
-# Inputs: files households2.csv, persons2.csv, pums_HH.csv, pums_person.csv
+# Inputs: files households_region.csv, people_region_all_vars.csv
 # Outputs: files households.csv and persons.csv in the directory set in output.dir
 
 library(magrittr)
@@ -29,14 +29,7 @@ pers[,'person_id'] %<>% add(1)
 colnames(hhs) %<>% tolower
 colnames(pers) %<>% tolower
 
-# read pums (not needed)
-# pums.hh <- read.table('pums14hh.csv', header=TRUE, sep=',') # not needed since the HH file has everything
-#pums.pers <- read.table('pums14pers.csv', header=TRUE, sep=',')
-#colnames(pums.hh) %<>% tolower
-#colnames(pums.pers) %<>% tolower
-
 # select the relevant variables from households
-#hhs.join <- merge(hhs, pums.hh, by='serialno')
 households <- hhs[,c('household_id', 'serialno', 'ten')]
 colnames(households) <- c('household_id', 'pums_serialno', 'tenure')
 households[,'household_id'] %<>% as.integer # to avoid scientific notation
@@ -49,11 +42,6 @@ households %<>% cbind(census_2010_block_group_id=apply(
 					data.frame(hhs$state, sprintf("%03s", hhs$county), sprintf("%06s", hhs$tract), hhs$block.group), 
 											1, paste, collapse=""))
 households %<>% cbind(building_id=-1)
-
-# select the relevant variables from persons
-#pers.join <- merge(pers[,c('person_id', 'household_id', 'serialno', 'sex')], 
-#					pums.pers[,c('serialno', 'sporder', 'agep', 'pincp', 'adjinc', 'sch', 'schl', 'schg', 'esr', "wkhp", "relp")], 
-#				by=c('serialno', 'pnum'))
 
 pers.sel <- pers[,c('person_id', 'household_id', 'serialno', 'sex', 'sporder', 'agep', 'pincp', 'adjinc', 'sch', 'schl', 'schg', 'esr', "wkhp", "relp")]
 # get some aggregates from persons table needed in the households table
