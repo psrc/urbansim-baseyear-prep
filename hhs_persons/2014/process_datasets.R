@@ -18,14 +18,23 @@ income_adjustment_factors <- list( "1094136" = (1.007624 * 1.08585701),
                                    "1024037" = (1.007549 * 1.01636470), 
 							"1008425" = (1.008425 * 1.00000000)
 						)
-
-# rename unnamed id to household_id and adjust by one since it starts from 0
+hhs.raw <- hhs
+pers.raw <- pers
+counties <- unique(hhs$county)
+first.hh.id <- 1
+for (cnty in counties) {
+	idx <- which(hhs$county==cnty)
+	dif.id <- first.hh.id - min(hhs$X[idx])
+	hhs$X[idx] <- hhs$X[idx] + dif.id
+	pidx <- which(pers$county==cnty)
+	pers$hh_id[pidx] <- pers$hh_id[idx] + dif.id
+	first.hh.id <- max(hhs$X[idx]) + 1
+}	
+# rename unnamed id to household_id
 colnames(hhs)[colnames(hhs)=='X'] <- "household_id"
-hhs[,'household_id'] %<>% add(1)
 colnames(pers)[colnames(pers)=='X'] <- "person_id"
 colnames(pers)[colnames(pers) == "hh_id"] <- "household_id"
-pers[,'household_id'] %<>% add(1)
-pers[,'person_id'] %<>% add(1)
+pers[,'person_id'] <- 1:nrow(pers)
 colnames(hhs) %<>% tolower
 colnames(pers) %<>% tolower
 
@@ -46,7 +55,9 @@ households %<>% cbind(building_id=-1)
 pers.sel <- pers[,c('person_id', 'household_id', 'serialno', 'sex', 'sporder', 'agep', 'pincp', 'adjinc', 'sch', 'schl', 'schg', 'esr', "wkhp", "relp")]
 # get some aggregates from persons table needed in the households table
 tpers <- data.table(pers.sel)
-households %<>% merge(tpers[,list(persons=.N, children=sum(agep < 18), age_of_head=max(agep), workers=sum(! esr %in% c(0,3,6) )), by="household_id"])
+households %<>% merge(tpers[,list(persons=.N, children=sum(agep < 18), workers=sum(! esr %in% c(0,3,6) )), by="household_id"], by="household_id")
+households %<>% merge(subset(pers.sel, sporder==1)[,c('household_id', 'agep')], by="household_id")
+colnames(households)[colnames(households) == "agep"] <- "age_of_head"
 
 persons <- cbind(data.frame(pers.sel[,c('person_id', 'household_id', 'sex')],
 					member_id=pers.sel$sporder,
