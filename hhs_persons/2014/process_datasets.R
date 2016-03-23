@@ -27,7 +27,7 @@ for (cnty in counties) {
 	dif.id <- first.hh.id - min(hhs$X[idx])
 	hhs$X[idx] <- hhs$X[idx] + dif.id
 	pidx <- which(pers$county==cnty)
-	pers$hh_id[pidx] <- pers$hh_id[idx] + dif.id
+	pers$hh_id[pidx] <- pers$hh_id[pidx] + dif.id
 	first.hh.id <- max(hhs$X[idx]) + 1
 }	
 # rename unnamed id to household_id
@@ -55,16 +55,18 @@ households %<>% cbind(building_id=-1)
 pers.sel <- pers[,c('person_id', 'household_id', 'serialno', 'sex', 'sporder', 'agep', 'pincp', 'adjinc', 'sch', 'schl', 'schg', 'esr', "wkhp", "relp")]
 # get some aggregates from persons table needed in the households table
 tpers <- data.table(pers.sel)
-households %<>% merge(tpers[,list(persons=.N, children=sum(agep < 18), workers=sum(! esr %in% c(0,3,6) )), by="household_id"], by="household_id")
+households %<>% merge(tpers[,list(persons=.N, children=sum(agep < 18), workers=sum(esr %in% c(1,2,4,5))), by="household_id"], by="household_id")
 households %<>% merge(subset(pers.sel, sporder==1)[,c('household_id', 'agep')], by="household_id")
 colnames(households)[colnames(households) == "agep"] <- "age_of_head"
 
+esr <- pers.sel$esr
+esr[is.na(esr)] <- -1
 persons <- cbind(data.frame(pers.sel[,c('person_id', 'household_id', 'sex')],
 					member_id=pers.sel$sporder,
 					age=pers.sel$agep,
 					earnings=(pers.sel$pincp * unlist(income_adjustment_factors[as.character(pers.sel$adjinc)])) %>% round %>% as.integer,
 					edu=pers.sel$schl,
-					employment_status=as.integer(!(pers.sel$esr %in% c(0,3,6))) * (2*(pers.sel$wkhp < 35) + 1*(pers.sel$wkhp >= 35)), # 0 - unemployed, 1 - full time, 2 - part time  
+					employment_status= -1 * (esr %in% c(-1,6)) + 0*(esr==3) + as.integer(esr %in% c(1,2,4,5)) * (2*(is.na(pers.sel$wkhp) | pers.sel$wkhp < 35) + 1*(!is.na(pers.sel$wkhp) & pers.sel$wkhp >= 35)), # 0 - unemployed, 1 - full time, 2 - part time  
 					grade=pers.sel$schg,
 					hours=pers.sel$wkhp,
 					student=as.integer(pers.sel$sch %in% c(2,3)),
@@ -74,9 +76,11 @@ persons[,'household_id'] %<>% as.integer # to avoid scientific notation
 persons[,'person_id'] %<>% as.integer
 persons[is.na(persons)] <- -1
 
+hhs.fin <- households
+pers.fin <- persons
 
 # append column types for Opus	
-attr.types <- list(pums_serialno="S13", census_block_group_id="S12")
+attr.types <- list(pums_serialno="S13", census_2010_block_group_id="S12")
 # default is integer
 colnames(households)[!colnames(households) %in% names(attr.types)] %<>% paste("i4", sep=":")
 colnames(persons)[!colnames(persons) %in% names(attr.types)] %<>% paste("i4", sep=":")
