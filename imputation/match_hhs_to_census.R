@@ -111,6 +111,7 @@ if(nrow(s) > 0) {
 cat('\n\n')
 for (i in 1:nrow(s)){
 	cat('\rProgress ', round(i/nrow(s)*100), '%')
+	#cat(round(i/nrow(s)*100), ', ')
 	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% mftypes)
 	bidx.imp <- which(bld$imp_residential_units[bidx]>0)
 	if(length(bidx.imp) > 0) { # add units to buildings where the DUs were imputed
@@ -148,6 +149,7 @@ if(nrow(s) > 0) {
 cat('\n\n')
 for (i in 1:nrow(s)){
 	cat('\rProgress ', round(i/nrow(s)*100), '%')
+	#cat(round(i/nrow(s)*100), ', ')
 	bidx <- which(do.call(cond.func.name, list(i)) & bld$building_type_id %in% allrestypes)
 	bidx.imp <- which(bld$imp_residential_units[bidx]>0)
 	if(length(bidx.imp) > 0) { # add units to buildings where the DUs were imputed
@@ -282,13 +284,13 @@ cat('\nTotal change: ', tot-tot.orig, ' residential units (from ', tot.orig, ' t
 building.schema <- c('building_id', 'residential_units', 'non_residential_sqft', 'year_built', 'not_demolish', 'parcel_id', 'land_area', 'improvement_value', 
 					 'stories', 'building_type_id', 'job_capacity', 'sqft_per_unit', 'building_quality_id')
 building.schema.extended <- c(building.schema, 'building_type_id_orig', 'imp_residential_units', 'imp_non_residential_sqft', 'imp_improvement_value', 'residential_units_orig')					 
-write.table(bld[, colnames(bld)%in% building.schema.extended, with=FALSE], file=file.path(data.dir, "imputed_buildings_matched.csv"), sep=',', row.names=FALSE)
+#write.table(bld[, colnames(bld)%in% building.schema.extended, with=FALSE], file=file.path(data.dir, "imputed_buildings_matched.csv"), sep=',', row.names=FALSE)
 # for exportng to opus cache, remove the parcels attributes, since they are not needed
 bld.for.opus <- as.data.frame(bld[,colnames(bld)%in% building.schema, with=FALSE])
 colnames(bld.for.opus)[colnames(bld.for.opus) == pcl.id] <- 'parcel_id'
 colnames(bld.for.opus) <- paste0(colnames(bld.for.opus), ':i4')
 for(col in colnames(bld.for.opus)) bld.for.opus[,col] <- as.integer(bld.for.opus[,col])
-write.table(bld.for.opus, file=file.path(data.dir, "imputed_buildings_matched_for_opus.csv"), sep=',', row.names=FALSE)
+#write.table(bld.for.opus, file=file.path(data.dir, "imputed_buildings_matched_for_opus.csv"), sep=',', row.names=FALSE)
 
 
 # The code below is for some diagnostics only
