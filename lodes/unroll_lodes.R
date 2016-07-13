@@ -33,14 +33,14 @@ cat("\n\nMissing: #blocks: ", length(unique(lodes.missing$block_id)), ", # jobs 
 
 # deal with negatives
 neg <- subset(lodes, number_of_jobs < 0)
-geo.hier <- list(block_group=14, tract=11, county=5, state=2)
+geo.hier <- list(block_group=14, tract=11, county=5, region=2)
 log.distr <- log.distr.counter <- rep(0, length(geo.hier))
 names(log.distr) <- names(log.distr.counter) <- names(geo.hier)
 
 for(i in 1:nrow(neg)) {
 	to.remove <- abs(neg$number_of_jobs[i])
 	lodes.neg.idx <- which(lodes$id == neg$id[i])
-	# iterate over geography
+	# iterate over geographies
 	for(geo in names(geo.hier)) {
 		subs <- subset(lodes, substr(block_id, 1, geo.hier[[geo]]) == substr(neg$block_id[i], 1, geo.hier[[geo]]) & sector_id == neg$sector_id[i] & number_of_jobs > 0)
 		if(nrow(subs) > 0) {
@@ -65,6 +65,7 @@ cat("\nNegatives redistributed as follows:\n")
 print(logres)
 
 # unroll into individual jobs
+cat("\n\nWriting jobs.csv ...")
 lodes.pos <- subset(lodes, number_of_jobs > 0)
 ublocks <- unique(lodes.pos$census_block_id) %>% na.omit
 append <- FALSE
@@ -81,6 +82,7 @@ for(bl in ublocks) {
 	append <- TRUE
 	jid <- jid+njobs
 }
+cat(" done.\n")
 
 # convert it from command line into Opus cache:
 # python -m opus_core.tools.convert_table csv flt -d . -o /path/to/opus/cache/2014 -t jobs
