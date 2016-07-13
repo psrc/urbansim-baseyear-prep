@@ -25,31 +25,52 @@ lodes$block_id <- trim(lodes$block_id)
 # replace census block id with an internal id from a lookup table
 blocks <- read.table("census_blocks.tab", sep="\t", header=TRUE, stringsAsFactors=FALSE)
 lodes <- merge(lodes, blocks[,c('census_block_id', 'census_2010_block_id', 'census_block_group_id')], by.x='block_id', by.y='census_2010_block_id', all.x=TRUE)
+lodes <- cbind(id=1:nrow(lodes), lodes)
 
 lodes.missing <- subset(lodes, is.na(census_block_id))
 cat("\n\nMissing: #blocks: ", length(unique(lodes.missing$block_id)), ", # jobs involved: ", sum(lodes.missing$number_of_jobs), "\n")
 #write.table(lodes.missing$block_id, file="missing_blocks20160412.txt", sep='\n', row.names=FALSE, col.names=FALSE, quote=FALSE)
 
-# distribute jobs from missing blocks in other blocks of the respective block group
-missing.bg <- substr(lodes.missing$block_id, 1, nchar(lodes.missing$block_id)-1)
-all.bg <- substr(lodes$block_id, 1, nchar(lodes$block_id)-1)
-umissing.bg <- unique(missing.bg)
-for (bg in umissing.bg) {
-	idx <- which(missing.bg == bg)
-	idx.all <- which(all.bg == bg)
-	for(sector in unique(lodes.missing[idx,sector_id])) {
-		
-	}
-	
-}
+# deal with negatives
+neg <- subset(lodes, number_of_jobs < 0)
+geo.hier <- list(block_group=14, tract=11, county=5, state=2)
+log.distr <- log.distr.counter <- rep(0, length(geo.hier))
+names(log.distr) <- names(log.distr.counter) <- names(geo.hier)
 
+for(i in 1:nrow(neg)) {
+	to.remove <- abs(neg$number_of_jobs[i])
+	lodes.neg.idx <- which(lodes$id == neg$id[i])
+	# iterate over geography
+	for(geo in names(geo.hier)) {
+		subs <- subset(lodes, substr(block_id, 1, geo.hier[[geo]]) == substr(neg$block_id[i], 1, geo.hier[[geo]]) & sector_id == neg$sector_id[i] & number_of_jobs > 0)
+		if(nrow(subs) > 0) {
+			ids.to.select <- rep(subs$id, subs$number_of_jobs)
+			selected <- sample(1:length(ids.to.select), min(to.remove, sum(subs$number_of_jobs)))
+			tab <- table(ids.to.select[selected])
+			tab <- tab[order(as.integer(names(tab)))]
+			lodes.idx <- which(lodes$id %in% names(tab))
+			lodes[lodes.idx,'number_of_jobs'] <- lodes[lodes.idx,'number_of_jobs'] - tab
+			stab <- sum(tab)		
+			lodes[lodes.neg.idx, 'number_of_jobs'] <- lodes[lodes.neg.idx, 'number_of_jobs'] + stab
+			to.remove <- to.remove - stab
+			log.distr[geo] <- log.distr[geo] + stab
+			log.distr.counter[geo] <- log.distr.counter[geo] + 1
+			if(to.remove <= 0) break
+		}
+	}
+}
+logres <- data.frame(number_of_jobs=log.distr, number_of_blocks=log.distr.counter)
+rownames(logres) <- names(log.distr)
+cat("\nNegatives redistributed as follows:\n")
+print(logres)
 
 # unroll into individual jobs
-ublocks <- unique(lodes$census_block_id) %>% na.omit
+lodes.pos <- subset(lodes, number_of_jobs > 0)
+ublocks <- unique(lodes.pos$census_block_id) %>% na.omit
 append <- FALSE
 jid <- 1
 for(bl in ublocks) {
-	recs <- subset(lodes, census_block_id==bl)
+	recs <- subset(lodes.pos, census_block_id==bl)
 	njobs <- sum(recs$number_of_jobs)
 	jobs <- data.frame(job_id=jid:(jid+njobs-1), 
 						sector_id=rep(recs$sector_id, recs$number_of_jobs), 
