@@ -23,11 +23,10 @@ pcl.block.group.id.name <- "census_2010_block_group_id"
 pcl.id <- if(data.year < 2014) 'psrcpin' else 'parcel_id'
 
 # load data
-bld.imp <- read.table(file.path(data.dir, "buildings.csv"), sep=',', header=TRUE)
+bld.imp <- fread(file.path(data.dir, "buildings.csv"), sep=',', header=TRUE)
 source(file.path(data.dir, "read_hh_totals.R")) # reads DU totals from the data directory (creates object hhtots)
 hhtots$HH <- as.integer(round(hhtots$HH))
-pcl <- read.table(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
-#pcl <- read.table(file.path(data.dir, "parcelslatlon.csv"), sep=',', header=TRUE)
+pcl <- fread(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
 
 # extract tract and block group attributes
 pcl %<>% cbind(tract= (extract2(., pcl.block.group.id.name) %>% substr(6,11) %>% as.integer))
