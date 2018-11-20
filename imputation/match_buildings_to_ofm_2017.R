@@ -19,31 +19,32 @@ library(magrittr)
 
 data.year <- 2017 # data files will be taken from "data{data.year}"
 data.dir <- paste0("data", data.year)
-pcl.block.group.id.name <- "census_2010_block_group_id"
-pcl.id <- if(data.year < 2014) 'psrcpin' else 'parcel_id'
+pcl.block.group.id.name <- "census_block_group_id"
+pcl.id <- 'parcel_id'
 
 # load data
 bld.imp <- fread(file.path(data.dir, "buildings.csv"), sep=',', header=TRUE)
 source(file.path(data.dir, "read_hh_totals.R")) # reads DU totals from the data directory (creates object hhtots)
 hhtots$HH <- as.integer(round(hhtots$HH))
 pcl <- fread(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
-
-# extract tract and block group attributes
-pcl %<>% cbind(tract= (extract2(., pcl.block.group.id.name) %>% substr(6,11) %>% as.integer))
-pcl %<>% cbind(block_group=(extract2(., pcl.block.group.id.name) %>% substr(12, 12) %>% as.integer)) %>% data.table
-#setkey(pcl, pcl.id)
+setkey(pcl, parcel_id)
 
 # set-up the buildings table and merge with parcels
 bld <- data.table(bld.imp)
-#setkey(bld, building_id, pcl.id)
+setkey(bld, building_id, parcel_id)
 bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
-bld[bld$imp_residential_units>0,'residential_units_orig'] <- 0
-bld %<>% merge(pcl[,c(pcl.id, pcl.block.group.id.name, "county_id", "tract", "block_group"), with=FALSE], by=c(pcl.id, "county_id"))
+bld %<>% merge(pcl[,c(pcl.id, "census_block_id", pcl.block.group.id.name, "county_id", "census_tract_id"), with=FALSE], by=pcl.id)
 
-match.by <- c('county_id', 'tract', 'block_group')
-#match.by <- c('county_id', 'tract')
-cond.block_group <- function(i) return(with(bld, county_id == s$county_id[i] & tract == s$tract[i] & block_group == s$block_group[i]))
-cond.tract <- function(i) return(with(bld, county_id == s$county_id[i] & tract == s$tract[i]))
+match.by <- c('county_id', 'tract', 'block_group', "block")
+
+cond.block <- function(i) return(with(bld, county_id == s$county_id[i] & 
+                                              census_tract_id == s$census_tract_id[i] & 
+                                              census_block_group_id == s$census_block_group_id[i] &
+                                              census_block_id == s$census_block_id[i]))
+cond.block_group <- function(i) return(with(bld, county_id == s$county_id[i] & 
+                                              census_tract_id == s$census_tract_id[i] & 
+                                              census_block_group_id == s$census_block_group_id[i]))
+cond.tract <- function(i) return(with(bld, county_id == s$county_id[i] & census_tract_id == s$census_tract_id[i]))
 cond.func.name <- paste0("cond.", match.by[length(match.by)])
 if(length(match.by) < 3) hhtots <- data.table(hhtots)[,list(HH=sum(HH)), by=match.by]
 
@@ -52,13 +53,13 @@ allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
 
 create.duhh.dt <- function() {
 	du <- as.data.frame(bld[, list(DU=sum(residential_units), number_of_buildings=.N, Nmf=sum(building_type_id %in% mftypes),
-					Nres=sum(building_type_id %in% allrestypes), Nimpmf=sum(building_type_id %in% mftypes & imp_residential_units > 0),
+					Nres=sum(building_type_id %in% allrestypes), 
 					DUimp=sum((residential_units - residential_units_orig) * (residential_units > residential_units_orig) * (building_type_id %in% allrestypes)),
 					DUred=sum((residential_units_orig - residential_units) * (residential_units < residential_units_orig) * (building_type_id %in% allrestypes))), by=match.by])
 	# merge with HH totals (created in read_hh_totals.R)
 	duhh <- merge(du, hhtots, by=match.by, all=TRUE)
 	duhh <- subset(duhh, !(is.na(DU) & HH==0)) # remove BGs with zero OFM and no buildings
-	duhh[is.na(duhh$DU), c("DU", "number_of_buildings", "Nmf", "Nres", "Nimpmf", "DUimp")] <- 0 # BGs with no buildings in our dataset
+	duhh[is.na(duhh$DU), c("DU", "number_of_buildings", "Nmf", "Nres", "DUimp")] <- 0 # BGs with no buildings in our dataset
 	duhh <- data.table(duhh) %$% cbind(., dif=DU-HH)
 }
 
@@ -174,7 +175,7 @@ cat('\n\nImputed ', imputed.du-last.imputed.du, ' units into ', imputed.bld-last
 	imputed.du.to.imp, ' DUs were imputed into ', imputed.bld.to.imp, ' buildings that already had imputed DUs.\n')
 }
 
-# 0 residentail buildings (only non-residential type)
+# 0 residential buildings (only non-residential type)
 last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
 imputed.du.to.imp <- 0
