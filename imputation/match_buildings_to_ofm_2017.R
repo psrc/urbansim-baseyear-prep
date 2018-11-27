@@ -21,7 +21,7 @@ library(magrittr)
 
 data.year <- 2017 # data files will be taken from "data{data.year}"
 data.dir <- paste0("data", data.year)
-output.file <- "buildings_matched_OFM2017_20181126.csv"
+output.file <- paste0("buildings_matched_OFM2017_", Sys.Date(), ".csv")
 
 pcl.id <- 'parcel_id'
 
@@ -51,11 +51,11 @@ cond.func.name <- paste0("cond.", match.by[length(match.by)])
 cond.pcl.func.name <- paste0("cond.pcl.", match.by[length(match.by)])
 
 # aggregate the hhtots dataset to the corresponding geography
-hhtots <- data.table(hhtots)[,list(HH=sum(HH)), by=c(match.by, "county_id")]
+hhtots <- data.table(hhtots)[,list(HH=sum(HH), GQ = sum(GQ)), by=c(match.by, "county_id")]
 
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
-reslutypes <- c(8, # GQ
+reslutypes <- c(#8, # GQ
                 13, # mobile home
                 14, # MF
                 15, # condo
@@ -64,9 +64,16 @@ reslutypes <- c(8, # GQ
                 26, # vacant developable
                 30 # mix use
                 )
+gqlutypes <- c(8,  # GQ
+               11  # military
+               )
+gqbtypes <- c(6 # group-quarters
+              )
 
 dev.blocks <- pcl[, .(Nrespcl = sum(land_use_type_id %in% reslutypes), 
-                      Ndevpcl = sum(plan_type_id != 1000)), 
+                      Ndevpcl = sum(plan_type_id != 1000),
+                      Ngqpcl = sum(land_use_type_id %in% gqlutypes),
+                      Npcl = .N), 
                   by = match.by]
 
 create.duhh.dt <- function() {
@@ -75,6 +82,7 @@ create.duhh.dt <- function() {
 	        number_of_buildings=.N, 
 	        Nmf=sum(building_type_id %in% mftypes),
 					Nres=sum(building_type_id %in% allrestypes),
+					Ngq=sum(building_type_id %in% gqbtypes),
 					DUimp=sum((residential_units - residential_units_orig) * (residential_units > residential_units_orig) * (building_type_id %in% allrestypes)),
 					DUred=sum((residential_units_orig - residential_units) * (residential_units < residential_units_orig) * (building_type_id %in% allrestypes))
 					), by=match.by])
@@ -86,6 +94,9 @@ create.duhh.dt <- function() {
 	duhh <- data.table(duhh) %$% cbind(., dif=DU-HH)
 	duhh[is.na(Nrespcl), Nrespcl := 0]
 	duhh[is.na(Ndevpcl), Ndevpcl := 0]
+	duhh[is.na(Ngq), Ngq := 0]
+	duhh[is.na(Ngqpcl), Ngqpcl := 0]
+	duhh[, gqdif := (Ngq > 0) - (GQ > 0)]
 	duhh
 }
 
@@ -247,7 +258,7 @@ if(nrow(s) > 0) {
 	  bld[row.idx, "imp_residential_units"] <- 1
 	  imputed.du <- imputed.du + s$HH[i] - s$DU[i]
 	  imputed.bld <- imputed.bld + length(row.idx)
-	  if(length(bidx.imp) > 0) {
+	  if(length(row.idx) > 0) {
 		  bld[row.idx, "building_type_id"] <- 12 # set to MF residential
 	  }
   }
@@ -303,47 +314,11 @@ building.schema <- c('building_id', 'residential_units', 'non_residential_sqft',
 					 'stories', 'building_type_id', 'job_capacity', 'sqft_per_unit', 'building_quality_id')
 building.schema.extended <- c(building.schema, 'building_type_id_orig', 'imp_residential_units', 'imp_non_residential_sqft', 'imp_improvement_value', 'residential_units_orig')					 
 fwrite(bld[, colnames(bld)%in% building.schema.extended, with=FALSE], file=file.path(data.dir, output.file), sep=',', row.names=FALSE)
+
 # for exportng to opus cache, remove the parcels attributes, since they are not needed
-bld.for.opus <- as.data.frame(bld[,colnames(bld)%in% building.schema, with=FALSE])
-colnames(bld.for.opus)[colnames(bld.for.opus) == pcl.id] <- 'parcel_id'
-colnames(bld.for.opus) <- paste0(colnames(bld.for.opus), ':i4')
-for(col in colnames(bld.for.opus)) bld.for.opus[,col] <- as.integer(bld.for.opus[,col])
+#bld.for.opus <- as.data.frame(bld[,colnames(bld)%in% building.schema, with=FALSE])
+#colnames(bld.for.opus)[colnames(bld.for.opus) == pcl.id] <- 'parcel_id'
+#colnames(bld.for.opus) <- paste0(colnames(bld.for.opus), ':i4')
+#for(col in colnames(bld.for.opus)) bld.for.opus[,col] <- as.integer(bld.for.opus[,col])
 #write.table(bld.for.opus, file=file.path(data.dir, "imputed_buildings_matched_for_opus.csv"), sep=',', row.names=FALSE)
 
-
-# The code below is for some diagnostics only
-##################################################
-## get parcels with latitude and longitude
-# pcllatlon.all <- data.table(read.table("~/workspace/data/psrc_parcel/gis/2010/parcels2010latlon.csv", sep=',', header=TRUE))
-# setkey(pcllatlon.all, psrcpin)
-# pcllatlon <- merge(pcllatlon.all[psrcpin > 0,.(psrcpin, latlon)], pcl[,.(psrcpin, county_id, tract, block_group)])
-# pcllatlonB <- pcllatlon[psrcpin %in% bld$psrcpin]
-
-# library(googleVis)
-# s <- subset(negdt, HH-DU > 650)
-# p <- subset(pcllatlonB, county_id %in% s$county_id & tract %in% s$tract & block_group %in% s$block_group)
-# data.to.plot <- merge(p, cbind(s, tipvar=paste('DU:', s$DU, '<br>HH:', s$HH)), by=c('county_id', 'tract', 'block_group'))
-# map <- gvisMap(data.to.plot, "latlon", tipvar='tipvar', options=list(showTip=TRUE, enableScrollWheel=TRUE, height="40cm"))
-# plot(map)
-
-# png("hist_diff_hh_du.png", width=800, height=400)
-# par(mfrow=c(1,2))
-# hist(with(duhh, DU-HH), breaks=20, main='DU - HH by block groups', xlab='DU - HH')
-# legend('topright', legend=c(paste("N =", nrow(duhh))))
-# hist(with(negdt, DU-HH), breaks=20, main='DU - HH by block groups (overflow only)', xlab='DU - HH')
-# legend('topleft', legend=c(paste("N =", nrow(negdt))))
-# dev.off()
-
-# png("hist_diff_hh_du_pos.png", width=600, height=400)
-# hist(with(posdt, DU-HH), breaks=20, main='DU - HH by block groups where DU > 1.2*HH & imputed DUs', xlab='DU - HH')
-# legend('topright', legend=c(paste("N =", nrow(posdt))))
-# dev.off()
-
-# # show corners of the area
-# lon <- range(subset(pcllatlon.all, x_coord_sp>0)$lon)
-# lat <- range(subset(pcllatlon.all, y_coord_sp>0)$lat)
-# lon <- rep(lon, 2)
-# lat <- rep(lat, each=2)
-# df <- data.frame(latlon=paste(lat,lon,sep=':'), const=rep(1, 4))
-# map <- gvisMap(df, "latlon", options=list(enableScrollWheel=TRUE, height="40cm"))
-# plot(map)
