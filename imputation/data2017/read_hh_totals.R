@@ -5,8 +5,8 @@ library(data.table)
 library(stringr)
 
 # data.dir <- "C:/Users/CLam/Desktop/urbansim-baseyear-prep/imputation/data2017" # remove when committing
-hhtots <- read.table(file.path(data.dir, "OFMPopHHblocks.csv"), sep=",", header=TRUE)[, c("COUNTYFP10", "GEOID10", "HU2017")]
-colnames(hhtots)[3] <- "HH"
+hhtots <- read.table(file.path(data.dir, "OFMPopHHblocks.csv"), sep=",", header=TRUE)[, c("COUNTYFP10", "GEOID10", "HU2017", "GQ2017")]
+colnames(hhtots)[3:4] <- c("HH", "GQ")
 hhtots <- data.table(hhtots)
 
 hhtots[, GEOID10 := as.character(GEOID10)
@@ -27,4 +27,5 @@ df[blu, on = c("GEOID10"), census_block_id2 := i.census_block_id2]
 df[is.na(census_block_id), census_block_id := census_block_id2][, census_block_id2 := NULL]
 
 hhtots <- df
+rm(df)
 
