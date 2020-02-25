@@ -11,11 +11,18 @@
 
 
 library(data.table)
-library(mclust)
+#library(mclust)
 data.year <- 2018 # data files will be taken from "data{data.year}"
+impute.net.sqft <- FALSE
+
 data.dir <- paste0("data", data.year)
 bld.raw <- fread(file.path(data.dir, 'buildings_for_imputation.csv'))
 pcl_id <- 'parcel_id'
+
+pcl2014.look <- fread(file.path(data.dir, "parcel_lookup_2018_2014.csv"))
+pcl2014 <- fread(file.path("data2014", "parcels.csv"))
+pcl2014[, parcel_id_2014 := parcel_id]
+pcl2014.look[pcl2014, land_use_type_id := i.land_use_type_id, on = "parcel_id_2014"]
 
 residential.bts <- c(19, 12, 4, 11)
 bld.raw[, is_mixuse := residential_units > 0 & non_residential_sqft > 0]
@@ -26,7 +33,7 @@ bld.raw[, .N, by = building_type_id][order(building_type_id)]
 bld.raw[, .N, by = land_use_type_id][order(land_use_type_id)]
 bld.raw[building_type_id == 0, .N, by = .(land_use_type_id, is_residential, is_mixuse)][order(land_use_type_id)]
 
-# impute building_type_id from land use types
+# translator from land use type into building type
 lut.bt.pairs <- list(
            '1' = 1, # agriculture 
 					 '2' = 2, # civic
@@ -58,9 +65,45 @@ lut.bt.pairs <- list(
 					 '29' = 15, # water into open space
 					 '30' = 10  # mixed use					 
 					 )
-bld <- bld.raw
+
+# # translator from building type into land use type
+# bt.lut.pairs <- list(
+#   '1' = 1, # agriculture 
+#   '2' = 2, # civic
+#   '3' = 3, # commercial
+#   '5' = 7, # government
+#   '6' = 8, # group quaters
+#   '7' = 9, # hospital
+#   '8' = 10, # industrial
+#   '10' = 30,  # mixed use
+#   '11' = 13, # mobile home park
+#   '12' = 14, # multi-family
+#   '13' = 18, # office
+#   '16' = 20, # parking
+#   '17' = 21, # recreation
+#   '18' = 23, # school
+#   '19' = 24, # single-family
+#   '20' = 25, # tcu
+#   '21' = 28, # warehousing
+#   '22' = 17, # no code
+#   '23' = 16 # other into no code
+# )
+
+bld <- copy(bld.raw)
 set.seed(1)
 
+# Impute missing land use type from 2014 parcels
+########################
+pcl <- unique(bld.raw[, .(parcel_id, land_use_type_id)])
+pcl[pcl2014.look, land_use_type_id_2014 := i.land_use_type_id, on = "parcel_id"]
+impute <- pcl$land_use_type_id == 0 & !pcl$land_use_type_id %in% c(16, 17, 26, 27)
+pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_id_2014)]
+pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
+bld[pcl, land_use_type_id_2014 := i.land_use_type_id_2014, on = "parcel_id"]
+bld[!is.na(land_use_type_id_2014), land_use_type_id := land_use_type_id_2014]
+
+# Impute building types
+########################
 # impute/change building type for missing BT or for "no code"
 bld <- bld[, building_type_id_orig := building_type_id]
 # first set SF homes
@@ -75,12 +118,16 @@ nounits <- bld$residential_units == 0 & bld$non_residential_sqft == 0
 is.nocode <- bld$building_type_id == 22
 for(lut in names(lut.bt.pairs)) {
 	is.lut <- bld$land_use_type_id==as.integer(lut)
-	to.change <- is.lut & ( bld$building_type_id==0 | (is.nocode & nounits)) # TODO: remove non-res buildings from residential LUTs
+	to.change <- is.lut & ( bld$building_type_id==0 | (is.nocode & nounits))
 	if(lut %in% c(13:15,24)) {# if residential LUT and ... 
 		# ... non-res-sqft is zero then convert "no code"
 	  to.change <- to.change | (is.lut & is.nocode & bld$non_residential_sqft == 0)
 		# ... non-res BT (excl. mixed use and group quarters) and residential units are non-zero and non_residential_sqft is zero, then change BT
 	  to.change <- to.change | (is.lut & !bld$building_type_id %in% c(10,6, residential.bts) & bld$is_residential)
+	} else { # if non-residential LUT and ... 
+	  if(! lut %in% c(16, 17, 26, 27)) # ... not no-code or vacant
+	    # ... BT is residential but contains only non-res sqft
+	    to.change <- to.change | (is.lut & bld$building_type_id %in% c(10, residential.bts) & bld$is_non_residential)
 	}
 	bld[to.change, building_type_id := lut.bt.pairs[[lut]]]
 }
@@ -89,48 +136,72 @@ for(lut in names(lut.bt.pairs)) {
 bld[land_use_type_id==30 & !building_type_id %in% c(10,6, residential.bts) & is_residential & residential_units <= 2, building_type_id := 19]
 bld[land_use_type_id==30 & !building_type_id %in% c(10,6, residential.bts) & is_residential & residential_units > 2, building_type_id := 12]
 
+# reclassify records with residential BT that only have non-residential sqft into commercial
+bld[building_type_id %in% c(10, residential.bts) & is_non_residential, building_type_id := 3]
+
 cat('\nImputed ', sum(bld$building_type_id != bld$building_type_id_orig), ' values of building_type_id.')
+
+bld[building_type_id_orig != building_type_id, .N, by = .(building_type_id_orig, building_type_id)][order(building_type_id_orig, building_type_id)]
+
 
 #impute DU into single family
 before.du <- sum(bld$residential_units)
 imputed <- rep(FALSE, nrow(bld))
-do.impute <- bld$building_type_id %in% c(19, 11) & bld$residential_units == 0
+do.impute <- bld$building_type_id %in% c(19, 11) & bld$residential_units == 0 & !bld$is_non_residential
 bld[do.impute, residential_units := 1]
 imputed[do.impute] <- TRUE
 bld <- bld[, imp_residential_units := imputed]
 cat('\nImputed ', sum(bld$residential_units)- before.du, ' single-family residential units.')
 
-# TODO: Everything below needs to be updated
-for(attr in c('building_type_id', 'gross_sqft', 'improvement_value', 'land_use_type_id', 'net_sqft', 'parcel_sqft', 'stories', 'year_built', 'land_value', 'sqft_per_unit')) {
+#bldout <- copy(bld)
+#bldout[, `:=`(is_mixuse = NULL, is_residential = NULL, is_non_residential = NULL, 
+#              imp_residential_units = as.integer(imp_residential_units))]
+#write.table(bldout, file=file.path(data.dir, "imputed_buildings_tmp.csv"), sep=',', row.names=FALSE)
+
+for(attr in c('building_type_id', 'gross_sqft', 'improvement_value', 'land_use_type_id', 'parcel_sqft', 'stories', 'year_built', 'land_value', 'sqft_per_unit')) {
 	if(attr %in% colnames(bld))
-		bld[bld[,attr]==0,attr] <- NA
+		bld[bld[[attr]]==0, attr] <- NA
 }
+
 is.res <- bld$building_type_id %in% residential.bts
+is.nonres <- !is.res & !bld$building_type_id %in% c(6)
 nounits <- bld$residential_units == 0 & bld$non_residential_sqft == 0
-bld[bld$residential_units == 0 &  is.res, 'residential_units'] <- NA
-bld[bld$non_residential_sqft == 0 &  !is.res,'non_residential_sqft'] <- NA
-bld[nounits &  !is.na(bld$building_type_id) & bld$building_type_id %in% c(10, 33), 'residential_units'] <- NA # mixed use
-bld[nounits &  is.na(bld$building_type_id), c('residential_units', 'non_residential_sqft')] <- NA
+bld[residential_units == 0 &  is.res, residential_units :=  NA]
+bld[non_residential_sqft == 0 &  is.nonres, non_residential_sqft := NA]
+bld[nounits &  !is.na(building_type_id) & building_type_id %in% c(10), residential_units := NA] # mixed use
+bld[nounits &  is.na(bld$building_type_id), `:=`(residential_units = NA, non_residential_sqft = NA)]
+
 # special cases:
 # King County: code 99 for missing values of stories
-bld[!is.na(bld$stories) & bld$stories == 99 & bld$county == 33, 'stories'] <- NA
+bld[!is.na(stories) & stories == 99 & county_id == 33, stories := NA]
 # King County: code 1000 for missing values of improvement value
-bld[!is.na(bld$improvement_value) & bld$improvement_value == 1000 & bld$county == 33, 'improvement_value'] <- NA
+bld[!is.na(improvement_value) & improvement_value == 1000 & county_id == 33, improvement_value := NA]
 # consider non_residential_sqft (and possibly net_sqft and gross_sqft) that equal to 1 as missing
-bld[!is.na(bld$non_residential_sqft) & !is.res & bld$non_residential_sqft == 1, 'non_residential_sqft'] <- NA
-bld[!is.na(bld$gross_sqft) & bld$gross_sqft == 1, 'gross_sqft'] <- NA
+bld[!is.na(non_residential_sqft) & is.nonres & non_residential_sqft == 1, non_residential_sqft := NA]
+bld[!is.na(gross_sqft) & gross_sqft == 1, gross_sqft := NA]
+# plot(improvement_value ~ non_residential_sqft, data = bld, log = "xy")
 # set missing sqft_per_unit for MF residential records to 1000
-bld[bld$building_type_id %in% c(12, 4) & is.na(bld$sqft_per_unit), 'sqft_per_unit'] <- 1000
+bld[building_type_id %in% c(12, 4) & is.na(sqft_per_unit), sqft_per_unit := 1000]
 
 # pdf('nonres_sqft_vs_imprvalue.pdf')
-# plot(improvement_value ~ non_residential_sqft, subset(bld, improvement_value>0 & non_residential_sqft > 0 & !is.res), log="xy")
+# plot(improvement_value ~ non_residential_sqft, subset(bld, improvement_value>0 & non_residential_sqft > 0 & is.nonres), log="xy")
 # dev.off()
 
 # add column number_of_buildings
-dt <- data.table(bld)
+dt <- copy(bld)
 tmp <- dt[, list(number_of_buildings=.N, number_of_mf_buildings=sum(building_type_id %in% c(12,14))), by=pcl_id]
 bld <- merge(bld, tmp, by=pcl_id)
 is.res <- bld$building_type_id %in% residential.bts
+
+# for residential buildings impute gross_sqft from improvement value
+for(bt in c(12, 19, 11)) {
+  lmfit <- lm(log(gross_sqft) ~ log(improvement_value), data = bld[building_type_id == bt])
+  slmfit <- summary(lmfit)
+  imp <- bld$building_type_id == bt & is.na(bld$gross_sqft) & !is.na(bld$improvement_value)
+  lmpred <- predict(lmfit, bld[imp,]) + rnorm(sum(imp), 0, slmfit$sigma)
+  bld[imp, gross_sqft := as.integer(round(exp(lmpred)))]
+  bld[imp, 'imp_gross_sqft'] <- TRUE
+}
 
 # impute net_sqft for multi-family residential using linear regression 
 if(impute.net.sqft) {
@@ -156,26 +227,30 @@ if(impute.net.sqft) {
 	bld[idx, 'imp_net_sqft'] <- TRUE
 	cat('\nImputed ', length(idx), ' records of net_sqft for multi-family residential buildings using gross_sqft.')
 } else { # set net_sqft to gross_sqft
-	bld <- cbind(bld, net_sqft=bld$gross_sqft)
+	bld[, net_sqft := gross_sqft]
 }
 
 # impute residential units if net_sqft and sqft_per_unit is not missing
-idx <- which(is.res & is.na(bld$residential_units) & ! is.na(bld$net_sqft) & bld$sqft_per_unit > 0)
-bld[idx, 'residential_units'] <- pmax(round(bld$net_sqft[idx]/bld$sqft_per_unit[idx]), 1)
-bld[idx, 'imp_residential_units'] <- TRUE
-cat('\nImputed ', sum(bld$residential_units[idx]), '(', length(idx), ' records) multi-family residential units as net_sqft/sqft_per_unit.')
+imp <- is.res & is.na(bld$residential_units) & ! is.na(bld$net_sqft) & bld$sqft_per_unit > 0
+bld[imp, residential_units := as.integer(pmax(round(net_sqft/sqft_per_unit), 1))]
+bld[imp, imp_residential_units := TRUE]
+cat('\nImputed ', sum(bld[imp, residential_units]), '(', sum(imp), ' records) multi-family residential units as net_sqft/sqft_per_unit.')
 
-# impute non_residential_sqft for non-residential using linear regression
-bldnres <- subset(bld, !(building_type_id %in% c(19, 12, 4, 11, 34, 10, 33)) & !is.na(non_residential_sqft) & !is.na(gross_sqft) & non_residential_sqft > 0)
-lmfit <- lm(log(non_residential_sqft) ~ log(gross_sqft), bldnres)
-slmfit <- summary(lmfit)
-idx <- which(!(bld$building_type_id %in% c(19, 12, 4, 11, 34, 10, 33)) & !is.na(bld$gross_sqft) & is.na(bld$non_residential_sqft))
-lmpred <- predict(lmfit, bld[idx,]) + rnorm(length(idx), 0, slmfit$sigma)
-bld[idx,'non_residential_sqft'] <- exp(lmpred)
+# impute non_residential_sqft for non-residential buildings using linear regression
+# bldnres <- subset(bld, !(building_type_id %in% c(19, 12, 4, 11, 6, 10)) & !is.na(non_residential_sqft) & !is.na(gross_sqft) & non_residential_sqft > 0)
+# bldnres[, sqft_dif := gross_sqft - non_residential_sqft]
+# lmfit <- lm(log(non_residential_sqft) ~ log(gross_sqft), bldnres)
+# lmfit2 <- lm(log(non_residential_sqft) ~ log(gross_sqft), bldnres[sqft_dif > 0])
+# slmfit <- summary(lmfit)
+# here we just set nonres sqft to gross_sqft
+imp <- !(bld$building_type_id %in% c(19, 12, 4, 11, 6, 10)) & !is.na(bld$gross_sqft) & is.na(bld$non_residential_sqft)
+#lmpred <- predict(lmfit, bld[imp,]) + rnorm(sum(imp), 0, slmfit$sigma)
+#bld[imp, non_residential_sqft := as.integer(round(exp(lmpred)))]
+bld[imp, non_residential_sqft := gross_sqft]
 imputed <- rep(FALSE, nrow(bld))
-imputed[idx] <- TRUE
-bld <- cbind(bld, imp_non_residential_sqft=imputed)
-cat('\nImputed ', length(idx), ' records of non_residential_sqft for non-residential buildings.')
+imputed[which(imp)] <- TRUE
+bld <- bld[, imp_non_residential_sqft := imputed]
+cat('\nImputed ', sum(imp), ' records of non_residential_sqft for non-residential buildings.')
 # use the same fit to impute net_sqft for mixed use buildings
 if(impute.net.sqft) {
 	idx <- which(bld$building_type_id %in% c(10, 33) & !is.na(bld$gross_sqft) & is.na(bld$net_sqft))
@@ -193,117 +268,118 @@ if(impute.net.sqft) {
 	cat('\nImputed ', length(idx), ' records of net_sqft for non-res buildings where non_residential_sqft were not missing.')
 }
 
-# change building_type_id to 11 for mobile homes, i.e. where land use type is 13 and set # DU to 1 for all mobile homes
-idx <- which(bld$building_type_id %in% c(34, 13) & is.na(bld$residential_units))
-bld[idx, 'residential_units'] <- 1
-bld[idx, 'imp_residential_units'] <- TRUE
-cat('\nImputed ', sum(bld[idx, 'residential_units']), ' residential units for mobile homes.')
-idx.lu <- which(!(bld$building_type_id[idx] %in% c(11,34)))
-bld[idx[idx.lu], 'building_type_id'] <- 11
-cat('\n', length(idx.lu), ' values of building_type_id changed to mobile home.')
-
 # change building_type_id to 19 for buildings on single-family land use type and set # DU to 1
-idx <- which(bld$land_use_type_id==24 & is.na(bld$residential_units))
-bld[idx, 'residential_units'] <- 1
-bld[idx, 'imp_residential_units'] <- TRUE
-bld[idx, 'building_type_id'] <- 19
-cat('\nImputed ', sum(bld[idx, 'residential_units']), ' residential units for building on single-family land. building_type_id changed to 19.')
+imp <- bld$land_use_type_id==24 & is.na(bld$residential_units)
+bld[imp, residential_units := 1]
+bld[imp, imp_residential_units := TRUE]
+bld[imp, building_type_id := 19]
+cat('\nImputed ', sum(bld[imp, residential_units]), ' residential units for building on single-family land. building_type_id changed to 19.')
 
 # recompute is.res
 is.res <- bld$building_type_id %in% residential.bts
 
+
 # impute residential units for remaining multi-family
 # 1. records that have improvement value
-idx <- which(bld$building_type_id %in% c(12, 4) & !is.na(bld$net_sqft) & bld$net_sqft > 0 & !is.na(bld$improvement_value) & bld$improvement_value > 0 & is.na(bld$residential_units))
+imp <- bld$building_type_id %in% c(12, 4) & !is.na(bld$net_sqft) & bld$net_sqft > 0 & !is.na(bld$improvement_value) & bld$improvement_value > 0 & is.na(bld$residential_units)
 ind <- with(bld, building_type_id %in% c(12, 4) & !is.na(net_sqft) & !is.na(residential_units) & residential_units > 0 & net_sqft > 1)
-if(length(idx) > 0) {	
+if(sum(imp) > 0) { 
 	resest1 <- subset(bld, ind  & !is.na(improvement_value))
 	lmfit1 <- lm(log(residential_units) ~ log(net_sqft) + log(improvement_value), resest1)
 	slmfit1 <- summary(lmfit1)
-	lmpred <- predict(lmfit1, bld[idx,])  + rnorm(length(idx), 0, slmfit1$sigma)
-	bld[idx, 'residential_units'] <- pmax(1, round(exp(lmpred)))
-	bld[idx, 'imp_residential_units'] <- TRUE
-	cat('\nImputed ', sum(bld[idx, 'residential_units']), '(', length(idx), ' records) residential units for multi-family buildings using net_sqft and improvement value.')
+	lmpred <- predict(lmfit1, bld[imp,])  + rnorm(sum(imp), 0, slmfit1$sigma)
+	bld[imp, residential_units := as.integer(pmax(1, round(exp(lmpred))))]
+	bld[imp, imp_residential_units := TRUE]
+	cat('\nImputed ', sum(bld[imp, residential_units]), '(', sum(imp), ' records) residential units for multi-family buildings using net_sqft and improvement value.')
 }
 
 # 2. records that have missing improvement value
-idx <- which(bld$building_type_id %in% c(12, 4) & !is.na(bld$net_sqft) & bld$net_sqft > 0 & is.na(bld$residential_units))
-if(length(idx) > 0) {
+imp <- bld$building_type_id %in% c(12, 4) & !is.na(bld$net_sqft) & bld$net_sqft > 0 & is.na(bld$residential_units)
+if(sum(imp) > 0) {
 	resest2 <- subset(bld, ind)
 	lmfit2 <- lm(log(residential_units) ~ log(net_sqft), resest2)
 	slmfit2 <- summary(lmfit2)
-	lmpred <- predict(lmfit2, bld[idx,])  + rnorm(length(idx), 0, slmfit2$sigma)
-	bld[idx, 'residential_units'] <- pmax(1, round(exp(lmpred)))
-	bld[idx, 'imp_residential_units'] <- TRUE
-	cat('\nImputed ', sum(bld[idx, 'residential_units']), '(', length(idx), ' records) residential units for multi-family buildings using net_sqft only.')
+	lmpred <- predict(lmfit2, bld[imp,])  + rnorm(sum(imp), 0, slmfit2$sigma)
+	bld[imp, residential_units := pmax(1, round(exp(lmpred)))]
+	bld[imp, imp_residential_units := TRUE]
+	cat('\nImputed ', sum(bld[imp, residential_units]), '(', sum(imp), ' records) residential units for multi-family buildings using net_sqft only.')
 }
 
-# impute non-res sqft to remaining non-residential
-nresest <- subset(bld, !is.res & !is.na(non_residential_sqft) & !(building_type_id %in% c(10,33)) & !is.na(improvement_value) & !imp_non_residential_sqft & improvement_value > 1 & non_residential_sqft > 1)
-# remove lower cluster from King county data
-nresest.King <- subset(nresest, county_id==33)
-clust.data <- log(nresest.King[,c('non_residential_sqft', 'improvement_value')])
-clust.sample.idx <- sample(1:nrow(clust.data), 5000)
-#icl <- mclustICL(clust.data[clust.sample.idx,])
-#summary(icl)
-clustmod <- Mclust(clust.data, G=2, modelNames="EVV", initialization=list(subset=clust.sample.idx))
-remove.bld.id <- nresest.King$building_id[clustmod$classification==2]
-nresest <- subset(nresest, !building_id %in% remove.bld.id)
-lmfit.imprv <- list()
-for(county in c(33,35,53,61)) {
-	lmfit <- lm(log(non_residential_sqft) ~ log(improvement_value), subset(nresest, county_id==county))
-	idx <- which(with(bld,  !is.res & is.na(non_residential_sqft) & !(building_type_id %in% c(10,33)) & !is.na(improvement_value) & county_id==county))
-	lmpred <- predict(lmfit, bld[idx,]) + rnorm(length(idx), 0, summary(lmfit)$sigma)
-	bld[idx,'non_residential_sqft'] <- exp(lmpred)
-	bld[idx, 'imp_non_residential_sqft'] <- TRUE
-	lmfit.imprv[[as.character(county)]] <- lmfit
-	cat('\nImputed ', length(idx), ' records of non_residential_sqft for non-residential buildings in county ', county, ' where improvement value is not missing.')
-}
+# TODO: Everything below needs to be updated
+# # impute non-res sqft to remaining non-residential
+# nresest <- subset(bld, is.nonres & !is.na(non_residential_sqft) & !(building_type_id %in% c(10)) & !is.na(improvement_value) & !imp_non_residential_sqft & improvement_value > 1 & non_residential_sqft > 1)
+# # remove lower cluster from King county data
+# nresest.King <- subset(nresest, county_id==33)
+# clust.data <- log(nresest.King[,c('non_residential_sqft', 'improvement_value')])
+# clust.sample.idx <- sample(1:nrow(clust.data), 5000)
+# #icl <- mclustICL(clust.data[clust.sample.idx,])
+# #summary(icl)
+# clustmod <- Mclust(clust.data, G=2, modelNames="EVV", initialization=list(subset=clust.sample.idx))
+# remove.bld.id <- nresest.King$building_id[clustmod$classification==2]
+# nresest <- subset(nresest, !building_id %in% remove.bld.id)
+# lmfit.imprv <- list()
+# for(county in c(33,35,53,61)) {
+# 	lmfit <- lm(log(non_residential_sqft) ~ log(improvement_value), subset(nresest, county_id==county))
+# 	idx <- which(with(bld,  !is.res & is.na(non_residential_sqft) & !(building_type_id %in% c(10,33)) & !is.na(improvement_value) & county_id==county))
+# 	lmpred <- predict(lmfit, bld[idx,]) + rnorm(length(idx), 0, summary(lmfit)$sigma)
+# 	bld[idx,'non_residential_sqft'] <- exp(lmpred)
+# 	bld[idx, 'imp_non_residential_sqft'] <- TRUE
+# 	lmfit.imprv[[as.character(county)]] <- lmfit
+# 	cat('\nImputed ', length(idx), ' records of non_residential_sqft for non-residential buildings in county ', county, ' where improvement value is not missing.')
+# }
+# 
+# #library(mice)
+# #nresbld <- subset(bld, !is.res)
+# #nresbld <- nresbld[,c('building_type_id', 'non_residential_sqft', 'improvement_value', 'net_sqft', 'parcel_sqft', 'stories', 'year_built')]
+# #mice.nres <- mice(nresbld, maxit=3, m=1, seed=1)
+# 
+# # impute improvement value for non-res buildings 
+# nresbld <- subset(bld, !is.res & !is.na(land_value) & !is.na(improvement_value) &  !(building_type_id %in% c(10,33)) & !building_id %in% remove.bld.id)
+# lmfit <- lm(log(improvement_value) ~ log(land_value) +  log(number_of_buildings) + (is_inside_urban_growth_boundary > 0), data=nresbld)
+# ind.idx <- with(bld,  !is.res & !is.na(land_value) & is.na(non_residential_sqft)  & !(building_type_id %in% c(10,33)))
+# idx <- which(ind.idx)
+# lmpred <- predict(lmfit, bld[idx,]) + rnorm(length(idx), 0, summary(lmfit)$sigma)
+# bld[idx,'improvement_value'] <- exp(lmpred)
+# imputed <- rep(FALSE, nrow(bld))
+# imputed[idx] <- TRUE
+# bld <- cbind(bld, imp_improvement_value=imputed)
+# cat('\nImputed ', length(idx), ' records of improvement value for non-residential buildings.')
+# for(county in c(33,35,53,61)) {
+# 	idxc <- which(ind.idx & bld$county_id==county)
+# 	lmpred <- predict(lmfit.imprv[[as.character(county)]], bld[idxc,])  + rnorm(length(idxc), 0, summary(lmfit.imprv[[as.character(county)]])$sigma)
+# 	bld[idxc,'non_residential_sqft'] <- exp(lmpred)
+# 	bld[idxc, 'imp_non_residential_sqft'] <- TRUE
+# 	cat('\nImputed ', length(idxc), ' records of non_residential_sqft for non-residential buildings in county ', county, ' where improvement value was imputed.')
+# }
 
-#library(mice)
-#nresbld <- subset(bld, !is.res)
-#nresbld <- nresbld[,c('building_type_id', 'non_residential_sqft', 'improvement_value', 'net_sqft', 'parcel_sqft', 'stories', 'year_built')]
-#mice.nres <- mice(nresbld, maxit=3, m=1, seed=1)
-
-# impute improvement value for non-res buildings 
-nresbld <- subset(bld, !is.res & !is.na(land_value) & !is.na(improvement_value) &  !(building_type_id %in% c(10,33)) & !building_id %in% remove.bld.id)
-lmfit <- lm(log(improvement_value) ~ log(land_value) +  log(number_of_buildings) + (is_inside_urban_growth_boundary > 0), data=nresbld)
-ind.idx <- with(bld,  !is.res & !is.na(land_value) & is.na(non_residential_sqft)  & !(building_type_id %in% c(10,33)))
-idx <- which(ind.idx)
-lmpred <- predict(lmfit, bld[idx,]) + rnorm(length(idx), 0, summary(lmfit)$sigma)
-bld[idx,'improvement_value'] <- exp(lmpred)
-imputed <- rep(FALSE, nrow(bld))
-imputed[idx] <- TRUE
-bld <- cbind(bld, imp_improvement_value=imputed)
-cat('\nImputed ', length(idx), ' records of improvement value for non-residential buildings.')
-for(county in c(33,35,53,61)) {
-	idxc <- which(ind.idx & bld$county_id==county)
-	lmpred <- predict(lmfit.imprv[[as.character(county)]], bld[idxc,])  + rnorm(length(idxc), 0, summary(lmfit.imprv[[as.character(county)]])$sigma)
-	bld[idxc,'non_residential_sqft'] <- exp(lmpred)
-	bld[idxc, 'imp_non_residential_sqft'] <- TRUE
-	cat('\nImputed ', length(idxc), ' records of non_residential_sqft for non-residential buildings in county ', county, ' where improvement value was imputed.')
-}
+# set group-quaters DUs to 0
+imp <- with(bld,  building_type_id == 6 & residential_units > 0)
+bld[imp, residential_units := 0]
+bld[imp, imp_residential_units := TRUE]
 
 # set the remainder of missing residential units to 1 
-idx <- which(with(bld,  is.res & is.na(residential_units)))
-bld[idx, 'residential_units'] <- 1
-bld[idx, 'imp_residential_units'] <- TRUE
-cat('\nImputed ', sum(bld[idx, 'residential_units']), ' residential units for the remainder of residential records.')
+imp <- with(bld,  is.res & is.na(residential_units))
+bld[imp, residential_units := 1]
+bld[imp, imp_residential_units := TRUE]
+cat('\nImputed ', sum(bld[imp, residential_units]), ' residential units for the remainder of residential records.')
 
-library(mice)
-bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value', 'year_built', 'stories')]
-bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value', 'net_sqft')]
-bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value')]
-bldpat <- bld[,c('residential_units', 'non_residential_sqft', 'improvement_value', 'gross_sqft')]
-pat <- md.pattern(bldpat)
-rowvals <- as.integer(rownames(pat))
-o <- order(rowvals, decreasing=TRUE)
-pat[o,]
+
+
+
+# library(mice)
+# bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value', 'year_built', 'stories')]
+# bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value', 'net_sqft')]
+# bldpat <- bld[,c('building_type_id', 'residential_units', 'non_residential_sqft', 'improvement_value')]
+# bldpat <- bld[,c('residential_units', 'non_residential_sqft', 'improvement_value', 'gross_sqft')]
+# pat <- md.pattern(bldpat)
+# rowvals <- as.integer(rownames(pat))
+# o <- order(rowvals, decreasing=TRUE)
+# pat[o,]
 
 # convert logical to integer
 logical.cols <- colnames(bld)[sapply(bld, is.logical)]
-for(attr in logical.cols) bld[,attr] <- as.integer(bld[,attr])
-for(attr in colnames(bld)) bld[which(is.na(bld[,attr])), attr] <- 0
+for(attr in logical.cols) bld[[attr]] <- as.integer(bld[[attr]])
+for(attr in colnames(bld)) bld[is.na(bld[[attr]]), attr] <- 0
 # write out resulting buildings	
 write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
 cat('\nResults written into imputed_buildings.csv\n')

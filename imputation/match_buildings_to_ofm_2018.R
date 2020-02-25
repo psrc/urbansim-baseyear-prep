@@ -26,14 +26,14 @@ output.file <- paste0("buildings_matched_OFM", data.year, "_", Sys.Date(), ".csv
 pcl.id <- 'parcel_id'
 
 # load data
-bld.imp <- fread(file.path(data.dir, "buildings.csv"), sep=',', header=TRUE)
+bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
 source(file.path(data.dir, "read_hh_totals.R")) # reads DU totals from the data directory (creates object hhtots)
 hhtots$HH <- as.integer(round(hhtots$HH))
-pcl <- fread(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
+pcl <- fread(file.path(data.dir, "parcels_blocks.csv"), sep=',', header=TRUE)
 setkey(pcl, parcel_id)
 
 # set-up the buildings table and merge with parcels
-bld <- data.table(bld.imp)
+bld <- copy(bld.imp)
 setkey(bld, building_id, parcel_id)
 bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
 bld %<>% merge(pcl[,c(pcl.id, "census_block_id", "census_block_group_id", "county_id", "census_tract_id"), with=FALSE], by=pcl.id)
@@ -41,6 +41,7 @@ bld %<>% merge(pcl[,c(pcl.id, "census_block_id", "census_block_group_id", "count
 
 #match.by <- c('county_id', 'tract', 'block_group', "census_block_id")
 match.by <- c("census_block_id")
+
 cond.census_block_id <- function(i) return(with(bld, census_block_id == s$census_block_id[i]))
 cond.pcl.census_block_id <- function(i) return(with(pcl, census_block_id == s$census_block_id[i]))
 cond.block_group <- function(i) return(with(bld, county_id == s$county_id[i] & 
@@ -51,10 +52,11 @@ cond.func.name <- paste0("cond.", match.by[length(match.by)])
 cond.pcl.func.name <- paste0("cond.pcl.", match.by[length(match.by)])
 
 # aggregate the hhtots dataset to the corresponding geography
-hhtots <- data.table(hhtots)[,list(HH=sum(HH), GQ = sum(GQ)), by=c(match.by, "county_id")]
+
+hhtots <- hhtots[,list(HH=sum(HH), GQ = sum(GQ)), by=c(match.by, "county_id")]
 
 mftypes <- c(12, 4)
-allrestypes <- c(12, 4, 19, 11, 34, 10, 33)
+allrestypes <- c(12, 4, 19, 11, 10)
 reslutypes <- c(#8, # GQ
                 13, # mobile home
                 14, # MF
