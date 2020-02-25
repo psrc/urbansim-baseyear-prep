@@ -10,6 +10,7 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
 lodes$sector_id <- as.integer(lodes$sector_id)
 lodes$census_2010_block_id <- trim(lodes$census_2010_block_id)
+lodes <- cbind(id=1:nrow(lodes), lodes)
 
 # deal with negatives
 neg <- subset(lodes, number_of_jobs < 0)
