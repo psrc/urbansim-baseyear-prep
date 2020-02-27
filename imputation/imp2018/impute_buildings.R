@@ -87,6 +87,7 @@ pcl[pcl2014.look, land_use_type_id_2014 := i.land_use_type_id, on = "parcel_id"]
 impute <- pcl$land_use_type_id == 0 & !pcl$land_use_type_id_2014 %in% c(16, 17, 26, 27) & !is.na(pcl$land_use_type_id_2014)
 pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_id_2014)]
 pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
+orig.lut <- copy(bld$land_use_type_id)
 bld[pcl, `:=`(land_use_type_id_2014 = i.land_use_type_id_2014, land_use_type_id = i.land_use_type_id), on = "parcel_id"]
 
 # Impute building types
@@ -101,11 +102,12 @@ bld[building_type_id %in% to.impute.bts & is_residential, building_type_id := 12
 #bld[building_type_id == 0, .N, by = .(land_use_type_id, is_residential, is_mixuse)][order(land_use_type_id)]
 
 # iterate over land use types
+bt.before <- copy(bld$building_type_id)
 nounits <- bld$residential_units == 0 & bld$non_residential_sqft == 0
 is.nocode <- bld$building_type_id == 22
 for(lut in names(lut.bt.pairs)) {
 	is.lut <- bld$land_use_type_id==as.integer(lut)
-	to.change <- is.lut & ( bld$building_type_id==0 | (is.nocode & nounits))
+	to.change <- is.lut & ( bld$building_type_id %in% to.impute.bts | (is.nocode & nounits))
 	if(lut %in% c(13:15,24)) {# if residential LUT and ... 
 		# ... non-res-sqft is zero then convert "no code"
 	  to.change <- to.change | (is.lut & is.nocode & bld$non_residential_sqft == 0)
@@ -256,7 +258,7 @@ if(impute.net.sqft) {
 }
 
 # change building_type_id to 19 for buildings on single-family land use type and set # DU to 1
-imp <- bld$land_use_type_id==24 & is.na(bld$residential_units)
+imp <- !is.na(bld$land_use_type_id) & bld$land_use_type_id==24 & is.na(bld$residential_units)
 bld[imp, residential_units := 1]
 bld[imp, imp_residential_units := TRUE]
 bld[imp, building_type_id := 19]
@@ -340,7 +342,7 @@ if(sum(imp) > 0) {
 # }
 
 # set group-quaters DUs to 0
-imp <- with(bld,  building_type_id == 6 & residential_units > 0)
+imp <- with(bld,  !is.na(building_type_id) & building_type_id == 6 & residential_units > 0)
 bld[imp, residential_units := 0]
 bld[imp, imp_residential_units := TRUE]
 

@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-do.plot <- TRUE
+do.plot <- FALSE
 ```
 
 ### Setup
@@ -389,7 +389,7 @@ if(sum(imp) > 0) {
  
  ```{r echo = FALSE}
  # set group-quaters DUs to 0
-imp <- with(bld,  building_type_id == 6 & residential_units > 0)
+imp <- with(bld,  !is.na(building_type_id) & building_type_id == 6 & residential_units > 0)
 bld[imp, residential_units := 0]
 bld[imp, imp_residential_units := TRUE]
 ```
@@ -446,7 +446,7 @@ ms[,list(DUorig = sum(residential_units.x), DUimp = sum(residential_units.y), di
 ```
 
 
-In total, building_type_id was modified in `r sum(bld$building_type_id != bld$building_type_id_orig)` records.
+In total, building_type_id was modified in `r sum(!is.na(bld$building_type_id) & bld$building_type_id != bld$building_type_id_orig)` records.
 Here is the breakdown of the counts by the original and the resulting building type:
 
 ```{r, echo=FALSE}
