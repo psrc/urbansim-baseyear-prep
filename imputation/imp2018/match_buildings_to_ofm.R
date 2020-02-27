@@ -17,7 +17,7 @@
 #		python -m opus_core.tools.convert_table csv flt -o ~/opus_cache/2010 -d . -t imputed_buildings_matched_for_opus			
 
 library(data.table)
-library(magrittr)
+#library(magrittr)
 
 data.year <- 2018 # data files will be taken from "data{data.year}"
 data.dir <- paste0("data", data.year)
@@ -29,36 +29,44 @@ pcl.id <- 'parcel_id'
 bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
 source(file.path(data.dir, "read_hh_totals.R")) # reads DU totals from the data directory (creates object hhtots)
 hhtots$HH <- as.integer(round(hhtots$HH))
-pcl <- fread(file.path(data.dir, "parcels_blocks.csv"), sep=',', header=TRUE)
+
+pcl <- fread(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
 setkey(pcl, parcel_id)
+#blocks <- unique(pcl[, .(census_block_id, census_block_group_id, county_id, census_tract_id)])
+#hhtots <- merge(hhtots, blocks, by = c("census_block_id", "county_id"), all.x = TRUE)
 
 # set-up the buildings table and merge with parcels
 bld <- copy(bld.imp)
 setkey(bld, building_id, parcel_id)
-bld %<>% cbind(residential_units_orig=extract2(., "residential_units"))
-bld %<>% merge(pcl[,c(pcl.id, "census_block_id", "census_block_group_id", "county_id", "census_tract_id"), with=FALSE], by=pcl.id)
+#bld[, residential_units_init := residential_units_orig]
+bld[, county_id := NULL]
+bld <- merge(bld, pcl[,c(pcl.id, "census_block_id", "census_block_group_id", "county_id", "census_tract_id"), with=FALSE], by=pcl.id)
 
 
 #match.by <- c('county_id', 'tract', 'block_group', "census_block_id")
-match.by <- c("census_block_id")
+match.by <- "census_block_id"
+match.by <- c("county_id", "census_tract_id", "census_block_group_id", "census_block_id")
 
 cond.census_block_id <- function(i) return(with(bld, census_block_id == s$census_block_id[i]))
 cond.pcl.census_block_id <- function(i) return(with(pcl, census_block_id == s$census_block_id[i]))
-cond.block_group <- function(i) return(with(bld, county_id == s$county_id[i] & 
+cond.census_block_group_id <- function(i) return(with(bld, county_id == s$county_id[i] & 
                                               census_tract_id == s$census_tract_id[i] & 
                                               census_block_group_id == s$census_block_group_id[i]))
+cond.pcl.census_block_group_id <- function(i) return(with(pcl, county_id == s$county_id[i] & 
+                                                        census_tract_id == s$census_tract_id[i] & 
+                                                        census_block_group_id == s$census_block_group_id[i]))
 cond.tract <- function(i) return(with(bld, county_id == s$county_id[i] & census_tract_id == s$census_tract_id[i]))
 cond.func.name <- paste0("cond.", match.by[length(match.by)])
 cond.pcl.func.name <- paste0("cond.pcl.", match.by[length(match.by)])
 
 # aggregate the hhtots dataset to the corresponding geography
+hhtots.ini <- copy(hhtots)
 
-hhtots <- hhtots[,list(HH=sum(HH), GQ = sum(GQ)), by=c(match.by, "county_id")]
+hhtots <- hhtots.ini[,list(HH=sum(HH), GQ = sum(GQ)), by=match.by]
 
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 10)
-reslutypes <- c(#8, # GQ
-                13, # mobile home
+reslutypes <- c(13, # mobile home
                 14, # MF
                 15, # condo
                 21, # recreation
@@ -106,7 +114,10 @@ duhh <- create.duhh.dt()
 negdt <- subset(duhh, dif < 0) 
 # print(sum(with(negdt, HH-DU)))
 # head(negdt[order(negdt$dif),], 50)
-print(duhh[,list(DU=sum(DU), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
+print(duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
+
+#fwrite(duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), 
+#            by=census_block_group_id], file = "ofmdif_bg.csv")
 
 # for parcels with no res buildings build new buildings where possible 
 new.bldgs <- NULL

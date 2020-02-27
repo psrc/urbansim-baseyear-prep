@@ -1,37 +1,36 @@
 # Hana Sevcikova, PSRC
 # 02/10/2020
 # The script imputes building_type_id, residential_units and non_residential_sqft (partly also improvement_value) using a set of regression models.
+# building_type_id is imputed or updated mainly using land use type. For missing land use types a parcels table from 2014 
+# is used to inform the current type. 
 # All I/O files are in the directory "data{data.year}" where data.year should be set to correspond to the datasets.
-# Input: file buildings_raw.csv
+# Inputs: 
+#   file buildings_for_imputation.csv
 # 		In mysql create a table buildings_for_imputation which is a selection of specific buildings attributes joint with some parcels attributes. Use this query:
 # 		create table buildings_for_imputation select a.parcel_id, building_id, year_built, a.gross_sqft, non_residential_sqft, residential_units, sqft_per_unit, stories, building_type_id, improvement_value, a.county_id, land_use_type_id, parcel_sqft, tax_exempt, land_value, is_inside_urban_growth_boundary from buildings as a left join parcels as b on a.parcel_id=b.parcel_id;
 # 		Then export the result into a csv file.
+#   file data2014/parcels.csv: parcels table from 2014 base year
+#   file parcel_lookup_2018_2014.csv: correspondence between 2018 and 2014 parcels. It has columns parcel_id, parcel_id_2014.
+#     It can be created using the data2018/clean_pcl_correspondence.R script which postprocesses the table parcel_points_2018.
 # Output: file imputed_buildings.csv
 #		It has the missing values filled in as well as new columns indicating which records were imputed.
 
 
 library(data.table)
-#library(mclust)
-data.year <- 2018 # data files will be taken from "data{data.year}"
+data.year <- 2018 # data files will be taken from "../data{data.year}"
+data.dir <- file.path("..", paste0("data", data.year))
 impute.net.sqft <- FALSE
 
-data.dir <- paste0("data", data.year)
+# read buildings table
 bld.raw <- fread(file.path(data.dir, 'buildings_for_imputation.csv'))
 pcl_id <- 'parcel_id'
 
+# read 2014 parcels table and 2018->2014 correspondence table 
 pcl2014.look <- fread(file.path(data.dir, "parcel_lookup_2018_2014.csv"))
-pcl2014 <- fread(file.path("data2014", "parcels.csv"))
+pcl2014 <- fread(file.path("../data2014", "parcels.csv"))
 pcl2014[, parcel_id_2014 := parcel_id]
+# keep only land_use_type_id
 pcl2014.look[pcl2014, land_use_type_id := i.land_use_type_id, on = "parcel_id_2014"]
-
-residential.bts <- c(19, 12, 4, 11)
-bld.raw[, is_mixuse := residential_units > 0 & non_residential_sqft > 0]
-bld.raw[, is_residential := residential_units > 0 & !is_mixuse]
-bld.raw[, is_non_residential := non_residential_sqft > 0 & !is_mixuse]
-
-bld.raw[, .N, by = building_type_id][order(building_type_id)]
-bld.raw[, .N, by = land_use_type_id][order(land_use_type_id)]
-bld.raw[building_type_id == 0, .N, by = .(land_use_type_id, is_residential, is_mixuse)][order(land_use_type_id)]
 
 # translator from land use type into building type
 lut.bt.pairs <- list(
@@ -66,51 +65,39 @@ lut.bt.pairs <- list(
 					 '30' = 10  # mixed use					 
 					 )
 
-# # translator from building type into land use type
-# bt.lut.pairs <- list(
-#   '1' = 1, # agriculture 
-#   '2' = 2, # civic
-#   '3' = 3, # commercial
-#   '5' = 7, # government
-#   '6' = 8, # group quaters
-#   '7' = 9, # hospital
-#   '8' = 10, # industrial
-#   '10' = 30,  # mixed use
-#   '11' = 13, # mobile home park
-#   '12' = 14, # multi-family
-#   '13' = 18, # office
-#   '16' = 20, # parking
-#   '17' = 21, # recreation
-#   '18' = 23, # school
-#   '19' = 24, # single-family
-#   '20' = 25, # tcu
-#   '21' = 28, # warehousing
-#   '22' = 17, # no code
-#   '23' = 16 # other into no code
-# )
+# set some helpful dummies and keep the original residential_units colum
+residential.bts <- c(19, 12, 4, 11)
+bld.raw[, is_mixuse := residential_units > 0 & non_residential_sqft > 0]
+bld.raw[, is_residential := residential_units > 0 & !is_mixuse]
+bld.raw[, is_non_residential := non_residential_sqft > 0 & !is_mixuse]
+bld.raw[, residential_units_orig := residential_units]
+#bld.raw[, .N, by = building_type_id][order(building_type_id)]
+#bld.raw[, .N, by = land_use_type_id][order(land_use_type_id)]
+#bld.raw[building_type_id == 0, .N, by = .(land_use_type_id, is_residential, is_mixuse)][order(land_use_type_id)]
+
+to.impute.bts <- c(0, 22)
 
 bld <- copy(bld.raw)
 set.seed(1)
 
-# Impute missing land use type from 2014 parcels
+# Impute missing land use type from 2014 parcels (exclude no code and vacant)
 ########################
 pcl <- unique(bld.raw[, .(parcel_id, land_use_type_id)])
 pcl[pcl2014.look, land_use_type_id_2014 := i.land_use_type_id, on = "parcel_id"]
-impute <- pcl$land_use_type_id == 0 & !pcl$land_use_type_id %in% c(16, 17, 26, 27)
+impute <- pcl$land_use_type_id == 0 & !pcl$land_use_type_id_2014 %in% c(16, 17, 26, 27) & !is.na(pcl$land_use_type_id_2014)
 pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_id_2014)]
 pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
-bld[pcl, land_use_type_id_2014 := i.land_use_type_id_2014, on = "parcel_id"]
-bld[!is.na(land_use_type_id_2014), land_use_type_id := land_use_type_id_2014]
+bld[pcl, `:=`(land_use_type_id_2014 = i.land_use_type_id_2014, land_use_type_id = i.land_use_type_id), on = "parcel_id"]
 
 # Impute building types
 ########################
 # impute/change building type for missing BT or for "no code"
 bld <- bld[, building_type_id_orig := building_type_id]
 # first set SF homes
-bld[building_type_id == 0 & is_residential & residential_units <= 2, building_type_id := 19] # homes with 1 or 2 DUs
-bld[building_type_id == 0 & is_residential & residential_units <= 4 & stories <=3 & stories > 0, building_type_id := 19]
+bld[building_type_id %in% to.impute.bts & is_residential & residential_units <= 2, building_type_id := 19] # homes with 1 or 2 DUs
+bld[building_type_id %in% to.impute.bts & is_residential & residential_units <= 4 & stories <=3 & stories > 0, building_type_id := 19]
 # set the rest of residential buildings to MF
-bld[building_type_id == 0 & is_residential, building_type_id := 12]
+bld[building_type_id %in% to.impute.bts & is_residential, building_type_id := 12]
 #bld[building_type_id == 0, .N, by = .(land_use_type_id, is_residential, is_mixuse)][order(land_use_type_id)]
 
 # iterate over land use types
@@ -305,7 +292,7 @@ if(sum(imp) > 0) {
 	cat('\nImputed ', sum(bld[imp, residential_units]), '(', sum(imp), ' records) residential units for multi-family buildings using net_sqft only.')
 }
 
-# TODO: Everything below needs to be updated
+# library(mclust)
 # # impute non-res sqft to remaining non-residential
 # nresest <- subset(bld, is.nonres & !is.na(non_residential_sqft) & !(building_type_id %in% c(10)) & !is.na(improvement_value) & !imp_non_residential_sqft & improvement_value > 1 & non_residential_sqft > 1)
 # # remove lower cluster from King county data
@@ -381,7 +368,7 @@ logical.cols <- colnames(bld)[sapply(bld, is.logical)]
 for(attr in logical.cols) bld[[attr]] <- as.integer(bld[[attr]])
 for(attr in colnames(bld)) bld[is.na(bld[[attr]]), attr] <- 0
 # write out resulting buildings	
-write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
+#write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
 cat('\nResults written into imputed_buildings.csv\n')
 
 

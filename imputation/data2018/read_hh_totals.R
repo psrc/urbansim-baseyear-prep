@@ -16,15 +16,10 @@ hhtots[, GEOID10 := as.character(GEOID10)
                 block = str_sub(GEOID10, start = 12, end = 15))
          ][, COUNTYFP10 := NULL]
 block.lu <- fread(file.path(data.dir, "census_blocks.csv")) %>% as.data.table()
-block.lu <- block.lu[, GEOID10 := as.character(census_2010_block_id)][, .(GEOID10, census_block_id)]
+block.lu <- block.lu[, GEOID10 := as.character(census_2010_block_id)][, 
+                                      .(GEOID10, census_block_id, census_block_group_id, census_tract_id)]
 
 df <- merge(hhtots, block.lu, by = "GEOID10", all.x = TRUE)
-
-blu <- fread(file.path(data.dir, "all_blocks_usim_id.csv"), quote = "") %>% as.data.table()
-blu <- blu[, GEOID10 := str_extract(geoid, "\\d+")][, geoid := NULL][, .(GEOID10, census_block_id2 = census_block_id)]
-
-df[blu, on = c("GEOID10"), census_block_id2 := i.census_block_id2]
-df[is.na(census_block_id), census_block_id := census_block_id2][, census_block_id2 := NULL]
 
 hhtots <- df
 rm(df)
