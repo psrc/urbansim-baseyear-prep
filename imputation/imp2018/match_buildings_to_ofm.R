@@ -60,9 +60,8 @@ cond.func.name <- paste0("cond.", match.by[length(match.by)])
 cond.pcl.func.name <- paste0("cond.pcl.", match.by[length(match.by)])
 
 # aggregate the hhtots dataset to the corresponding geography
-hhtots.ini <- copy(ofm)
-
-hhtots <- hhtots.ini[,list(HH=sum(HH), GQ = sum(GQ)), by=match.by]
+#hhtots.ini <- copy(ofm)
+#hhtots <- hhtots.ini[,list(HH=sum(HH), GQ = sum(GQ)), by=match.by]
 
 mftypes <- c(12, 4)
 allrestypes <- c(12, 4, 19, 11, 10)
@@ -89,49 +88,69 @@ dev.blocks <- pcl[, .(Nrespcl = sum(land_use_type_id %in% reslutypes),
 # reduce ofm to only needed attributes
 ofm <- ofm[, c(match.by, "HU", "GQ"), with = FALSE]
 
-create.duhh.dt <- function() {
-	du <- as.data.frame(bld[, list(
-	        DU=sum(residential_units), 
-	        number_of_buildings=.N, 
-	        Nmf=sum(building_type_id %in% mftypes),
-					Nres=sum(building_type_id %in% allrestypes),
-					Ngq=sum(building_type_id %in% gqbtypes),
-					DUimp=sum((residential_units - residential_units_orig) * (residential_units > residential_units_orig) * (building_type_id %in% allrestypes)),
-					DUred=sum((residential_units_orig - residential_units) * (residential_units < residential_units_orig) * (building_type_id %in% allrestypes))
-					), by=match.by])
-	# merge with HH totals (created in read_hh_totals.R)
-	duhh <- merge(du, hhtots, by=match.by, all=TRUE)
-	duhh <- merge(duhh, dev.blocks, by=match.by, all=TRUE)
-	duhh <- subset(duhh, !(is.na(DU) & HH==0)) # remove blocks with zero OFM and no buildings
-	duhh[is.na(duhh$DU), c("DU", "number_of_buildings", "Nmf", "Nres", "DUimp", "DUred")] <- 0 # blocks with no buildings in our dataset
-	duhh <- data.table(duhh) %$% cbind(., dif=DU-HH)
-	duhh[is.na(Nrespcl), Nrespcl := 0]
-	duhh[is.na(Ndevpcl), Ndevpcl := 0]
-	duhh[is.na(Ngq), Ngq := 0]
-	duhh[is.na(Ngqpcl), Ngqpcl := 0]
-	duhh[, gqdif := (Ngq > 0) - (GQ > 0)]
-	duhh
+# Function for merging blds and OFM 
+merge.du.ofm <- function() {
+  du <- bld[, list(
+    DU=sum(residential_units), 
+    number_of_buildings=.N, 
+    Nmf=sum(building_type_id %in% mftypes),
+    Nres=sum(building_type_id %in% allrestypes),
+    Ngq=sum(building_type_id %in% gqbtypes),
+    DUimp=sum((residential_units - residential_units_orig) * 
+                (residential_units > residential_units_orig) * 
+                (building_type_id %in% allrestypes)),
+    DUred=sum((residential_units_orig - residential_units) * 
+                (residential_units < residential_units_orig) * 
+                (building_type_id %in% allrestypes))
+  ), by=match.by]
+  aggofm <- ofm[, .(HU = sum(HU), GQ = sum(GQ)), by = match.by]
+  # merge with OFM totals (created in load_ofm.R)
+  duofm <- merge(du, aggofm, by=match.by, all = TRUE)
+  duofm <- merge(duofm, dev.blocks, by=match.by, all = TRUE)
+  # remove blocks with zero OFM and no buildings
+  duofm <- duofm[!(is.na(DU) & HU == 0)] 
+  # groups with no buildings in our dataset - set attributes to 0
+  duofm[is.na(DU), no_buildings := TRUE]
+  duofm[is.na(no_buildings), no_buildings := FALSE]
+  duofm[no_buildings == TRUE, 
+        c("DU", "number_of_buildings", "Nmf", "Nres", "DUimp", "DUred")] <- 0
+  # groups with no OFM records
+  duofm[is.na(HU), no_ofm := TRUE]
+  duofm[is.na(no_ofm), no_ofm := FALSE]
+  duofm[no_ofm == TRUE, c("HU", "GQ")] <- 0
+  # compute difference between us and OFM
+  duofm[, dif := DU - HU]
+  # set various attributes to 0
+  for(attr in c("Nrespcl", "Ndevpcl", "Ngq", "Ngqpcl", "Npcl"))
+    duofm[is.na(duofm[[attr]]), attr] <- 0
+  # GQ difference as boolean
+  duofm[, gqdif := (Ngq > 0) - (GQ > 0)]
+  duofm
 }
 
-duhh <- create.duhh.dt()
-negdt <- subset(duhh, dif < 0) 
-# print(sum(with(negdt, HH-DU)))
-# head(negdt[order(negdt$dif),], 50)
-print(duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
+duofm <- merge.du.ofm()
+negdt <- subset(duofm, dif < 0) 
 
-tmp <- duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), 
-                       by=census_block_group_id]
+aggregate.duofm <- function(dt, by = NULL) {
+  dt[, .(DU=sum(DU), DUimp=sum(DUimp), DUofm=round(sum(HU)), dif=round(sum(dif))), by=by]
+}
+
+print(aggregate.duofm(duofm)) # region total
+
+print(aggregate.duofm(duofm, by = "county_id")) # by county
+
+aggdt <- aggregate.duofm(duofm, by = "census_block_group_id")
 
 # identify BGs where DUs could be copied for the same parcel
-bgs <- tmp[dif > 1000, census_block_group_id]
+bgs <- aggdt[dif > 1000, census_block_group_id]
 bn <- bld[census_block_group_id %in% bgs & residential_units > 0, .N, by = .(parcel_id, residential_units, year_built)]
 bn <- bld[residential_units > 5, .N, by = .(parcel_id, year_built, residential_units)][N > 1]
-fwrite(bn, file = "DU_year_parcel_groups.csv")
+#fwrite(bn, file = "DU_year_parcel_groups.csv")
 
 
-#fwrite(duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), 
-#            by=census_block_group_id], file = "ofmdif_bg.csv")
+#fwrite(aggdt, file = "ofmdif_bg.csv")
 
+# TODO: everything below needs to be updated. Not everything will be needed
 # for parcels with no res buildings build new buildings where possible 
 new.bldgs <- NULL
 s <- subset(negdt, Nres == 0)
