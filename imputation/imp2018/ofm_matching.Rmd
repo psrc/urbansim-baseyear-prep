@@ -1,0 +1,226 @@
+---
+title: "Matching Buildings to OFM"
+author: "Hana Sevcikova"
+date: "3/2/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Setup
+
+#### Code and Data
+
+This R markdown file is located in the [2018 imputation GitHub repo]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/ofm_matching.Rmd).
+
+Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. These are:
+
+* imputed_buildings.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/buildings_imputation.Rmd))
+* parcels.csv
+* OFMPopHHblocks.csv (containing the OFM data)
+* census_blocks.csv
+
+#### Loading Inputs
+
+In this processing, input files are taken from the directory
+```{r, echo=FALSE}
+library(data.table)
+data.year <- 2018 # data files will be taken from "../data{data.year}"
+data.dir <- file.path("..", paste0("data", data.year))
+normalizePath(data.dir)
+```
+
+
+```{r, echo=FALSE}
+# read buildings and parcels table
+bld.file.name <- 'imputed_buildings.csv'
+bld.imp <- fread(file.path(data.dir, bld.file.name))
+pcl <- fread(file.path(data.dir, "parcels.csv"))
+setkey(pcl, parcel_id)
+
+# reads OFM DU totals from the data directory (creates object ofm)
+source(file.path(data.dir, "load_ofm.R"))
+```
+
+```{r, echo=FALSE}
+# join buildings and parcels
+bld <- copy(bld.imp)
+setkey(bld, building_id, parcel_id)
+bld[, county_id := NULL] # will be taken from parcels dataset
+bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_block_group_id, 
+                          county_id, census_tract_id)], by = "parcel_id")
+```
+
+The buildings table `r bld.file.name` has been merged with parcels and has `r nrow(bld)` rows. The OFM dataset has `r nrow(ofm)` records. 
+
+#### Settings
+
+Geographies by which we want to match the datasets:
+
+```{r, echo=TRUE}
+match.by <- c("county_id", "census_tract_id", "census_block_group_id"
+              #, "census_block_id"
+              )
+```
+
+Set building types to be considered as residential and if the block group dataset should be written into a file.
+```{r, echo=TRUE}
+allrestypes <- c(12, 4, 19, 11, 10)
+save.block.groups <- TRUE
+```
+
+
+```{r, echo=FALSE}
+if(save.block.groups && ! "census_block_group_id" %in% match.by)
+  stop("Either census_block_group_id should be included in match.by or save.block.groups should be set to FALSE")
+```
+
+
+```{r, echo=FALSE}
+mftypes <- c(12, 4) # MF building type 
+
+allrestypes <- c(12, 4, 19, 11, 10) # All residential building types
+
+gqbtypes <- 6 # group-quarters building types
+            
+# Residential land use types
+reslutypes <- c(13, # mobile home
+                14, # MF
+                15, # condo
+                21, # recreation
+                24, # SF
+                26, # vacant developable
+                30 # mix use
+                )
+
+# Group-quaters land use types
+gqlutypes <- c(8,  # GQ
+               11  # military
+               )
+```
+
+### Processing
+
+```{r, echo=FALSE}
+# aggregate developable blocks
+dev.blocks <- pcl[, .(Nrespcl = sum(land_use_type_id %in% reslutypes), 
+                      Ndevpcl = sum(plan_type_id != 1000),
+                      Ngqpcl = sum(land_use_type_id %in% gqlutypes),
+                      Npcl = .N), 
+                  by = match.by]
+
+# reduce ofm to only needed attributes
+ofm <- ofm[, c(match.by, "HU", "GQ"), with = FALSE]
+
+# Function for merging blds and OFM 
+merge.du.ofm <- function() {
+	du <- bld[, list(
+	        DU=sum(residential_units), 
+	        number_of_buildings=.N, 
+	        Nmf=sum(building_type_id %in% mftypes),
+					Nres=sum(building_type_id %in% allrestypes),
+					Ngq=sum(building_type_id %in% gqbtypes),
+					DUimp=sum((residential_units - residential_units_orig) * 
+					            (residential_units > residential_units_orig) * 
+					            (building_type_id %in% allrestypes)),
+					DUred=sum((residential_units_orig - residential_units) * 
+					            (residential_units < residential_units_orig) * 
+					            (building_type_id %in% allrestypes))
+					), by=match.by]
+	aggofm <- ofm[, .(HU = sum(HU), GQ = sum(GQ)), by = match.by]
+	# merge with OFM totals (created in load_ofm.R)
+	duofm <- merge(du, aggofm, by=match.by, all = TRUE)
+	duofm <- merge(duofm, dev.blocks, by=match.by, all = TRUE)
+	# remove blocks with zero OFM and no buildings
+	duofm <- duofm[!(is.na(DU) & HU == 0)] 
+	# groups with no buildings in our dataset - set attributes to 0
+	duofm[is.na(DU), no_buildings := TRUE]
+	duofm[is.na(no_buildings), no_buildings := FALSE]
+	duofm[no_buildings == TRUE, 
+	      c("DU", "number_of_buildings", "Nmf", "Nres", "DUimp", "DUred")] <- 0
+	# groups with no OFM records
+	duofm[is.na(HU), no_ofm := TRUE]
+	duofm[is.na(no_ofm), no_ofm := FALSE]
+	duofm[no_ofm == TRUE, c("HU", "GQ")] <- 0
+	# compute difference between us and OFM
+	duofm[, dif := DU - HU]
+	# set various attributes to 0
+	for(attr in c("Nrespcl", "Ndevpcl", "Ngq", "Ngqpcl", "Npcl"))
+		duofm[is.na(duofm[[attr]]), attr] <- 0
+  # GQ difference as boolean
+	duofm[, gqdif := (Ngq > 0) - (GQ > 0)]
+	duofm
+}
+
+```
+
+```{r, echo=FALSE}
+duofm <- merge.du.ofm()
+```
+
+When merging buildings and OFM, the following was found:
+
+* `r sum(duofm$no_ofm)` groups contain buildings (with `r sum(duofm[no_ofm == TRUE, DU])` residential units in total) but no OFM records. 
+    * These are: `r paste(match.by[length(match.by)], paste(sort(unique(duofm[no_ofm == TRUE,][[match.by[length(match.by)]]])), collapse = ", "), sep = ":")`
+* `r sum(duofm$no_buildings)` groups that have OFM records (with `r as.integer(sum(duofm[no_buildings == TRUE, HU]))` DUs in total) but no buildings.
+* `r nrow(duofm[HU == 0 & DU > 0])` groups for which there are zero OFM units and we have `r duofm[HU == 0 & DU > 0, sum(DU)]` residential units.
+* `r nrow(duofm[DU == 0 & HU > 0])` groups for which we have zero residential units and there are `r as.integer(sum(duofm[DU == 0 & HU > 0, HU]))` OFM units.
+
+
+### Results
+
+In the following tables, the DU column represent residential units that include imputation (column DUimp). Thus the original value for residential units can be derived as DU - DUimp. Column DUofm represent the OFM counts.
+
+#### Total
+
+```{r, echo=FALSE}
+aggregate.duofm <- function(dt, by = NULL) {
+  dt[, .(DU=sum(DU), DUimp=sum(DUimp), DUofm=round(sum(HU)), dif=round(sum(dif))), by=by]
+}
+```
+
+```{r, echo=FALSE}
+aggregate.duofm(duofm)
+```
+
+#### By county
+
+```{r, echo=FALSE}
+aggregate.duofm(duofm, by = "county_id")
+```
+
+#### By block group
+
+Here are block groups with the 15 largest positive differences:
+
+```{r, echo=FALSE}
+aggdt <- aggregate.duofm(duofm, by = "census_block_group_id")
+head(aggdt[order(dif, decreasing = TRUE)], 15)
+```
+
+Here are block groups with the 15 largest negative differences:
+
+```{r, echo=FALSE}
+head(aggdt[order(dif)], 15)
+```
+
+Here is a scatter plot of DU ~ DUofm for all block groups:
+
+```{r, echo=FALSE}
+plot(DU ~ DUofm, data = aggdt)
+abline(0,1)
+sdat <- aggdt[dif > 5000]
+text(DU ~ DUofm, data = sdat, labels = sdat$census_block_group_id, cex = 0.6, pos = 2)
+```
+
+
+```{r, echo=FALSE}
+file.bg <- "ofmdif_bg.csv"
+if(save.block.groups) {
+  fwrite(aggdt, file = file.bg)
+}
+```
+
+If `save.block.groups` is `TRUE`, the resulting file is written into `r  file.bg`. Currently, `save.block.groups` is `r save.block.groups`.

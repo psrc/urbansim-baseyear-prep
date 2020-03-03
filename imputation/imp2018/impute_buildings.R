@@ -155,6 +155,7 @@ for(attr in c('building_type_id', 'gross_sqft', 'improvement_value', 'land_use_t
 is.res <- bld$building_type_id %in% residential.bts
 is.nonres <- !is.res & !bld$building_type_id %in% c(6)
 nounits <- bld$residential_units == 0 & bld$non_residential_sqft == 0
+bld[is.res & sqft_per_unit == 1, sqft_per_unit := NA]
 bld[residential_units == 0 &  is.res, residential_units :=  NA]
 bld[non_residential_sqft == 0 &  is.nonres, non_residential_sqft := NA]
 bld[nounits &  !is.na(building_type_id) & building_type_id %in% c(10), residential_units := NA] # mixed use
@@ -177,9 +178,9 @@ bld[building_type_id %in% c(12, 4) & is.na(sqft_per_unit), sqft_per_unit := 1000
 # dev.off()
 
 # add column number_of_buildings
-dt <- copy(bld)
-tmp <- dt[, list(number_of_buildings=.N, number_of_mf_buildings=sum(building_type_id %in% c(12,14))), by=pcl_id]
-bld <- merge(bld, tmp, by=pcl_id)
+#dt <- copy(bld)
+#tmp <- dt[, list(number_of_buildings=.N, number_of_mf_buildings=sum(building_type_id %in% c(12,14))), by=pcl_id]
+#bld <- merge(bld, tmp, by=pcl_id)
 is.res <- bld$building_type_id %in% residential.bts
 
 # for residential buildings impute gross_sqft from improvement value

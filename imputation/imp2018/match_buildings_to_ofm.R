@@ -20,17 +20,17 @@ library(data.table)
 #library(magrittr)
 
 data.year <- 2018 # data files will be taken from "data{data.year}"
-data.dir <- paste0("data", data.year)
+data.dir <- file.path("..", paste0("data", data.year))
 output.file <- paste0("buildings_matched_OFM", data.year, "_", Sys.Date(), ".csv")
 
 pcl.id <- 'parcel_id'
 
 # load data
-bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"), sep=',', header=TRUE)
-source(file.path(data.dir, "read_hh_totals.R")) # reads DU totals from the data directory (creates object hhtots)
-hhtots$HH <- as.integer(round(hhtots$HH))
+bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"))
+# reads OFM DU totals from the data directory (creates object ofm)
+source(file.path(data.dir, "load_ofm.R")) 
 
-pcl <- fread(file.path(data.dir, "parcels.csv"), sep=',', header=TRUE)
+pcl <- fread(file.path(data.dir, "parcels.csv"))
 setkey(pcl, parcel_id)
 #blocks <- unique(pcl[, .(census_block_id, census_block_group_id, county_id, census_tract_id)])
 #hhtots <- merge(hhtots, blocks, by = c("census_block_id", "county_id"), all.x = TRUE)
@@ -40,8 +40,8 @@ bld <- copy(bld.imp)
 setkey(bld, building_id, parcel_id)
 #bld[, residential_units_init := residential_units_orig]
 bld[, county_id := NULL]
-bld <- merge(bld, pcl[,c(pcl.id, "census_block_id", "census_block_group_id", "county_id", "census_tract_id"), with=FALSE], by=pcl.id)
-
+bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_block_group_id, 
+                          county_id, census_tract_id)], by = "parcel_id")
 
 #match.by <- c('county_id', 'tract', 'block_group', "census_block_id")
 match.by <- "census_block_id"
@@ -60,7 +60,7 @@ cond.func.name <- paste0("cond.", match.by[length(match.by)])
 cond.pcl.func.name <- paste0("cond.pcl.", match.by[length(match.by)])
 
 # aggregate the hhtots dataset to the corresponding geography
-hhtots.ini <- copy(hhtots)
+hhtots.ini <- copy(ofm)
 
 hhtots <- hhtots.ini[,list(HH=sum(HH), GQ = sum(GQ)), by=match.by]
 
@@ -85,6 +85,9 @@ dev.blocks <- pcl[, .(Nrespcl = sum(land_use_type_id %in% reslutypes),
                       Ngqpcl = sum(land_use_type_id %in% gqlutypes),
                       Npcl = .N), 
                   by = match.by]
+
+# reduce ofm to only needed attributes
+ofm <- ofm[, c(match.by, "HU", "GQ"), with = FALSE]
 
 create.duhh.dt <- function() {
 	du <- as.data.frame(bld[, list(
@@ -115,6 +118,16 @@ negdt <- subset(duhh, dif < 0)
 # print(sum(with(negdt, HH-DU)))
 # head(negdt[order(negdt$dif),], 50)
 print(duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), by=county_id])
+
+tmp <- duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), 
+                       by=census_block_group_id]
+
+# identify BGs where DUs could be copied for the same parcel
+bgs <- tmp[dif > 1000, census_block_group_id]
+bn <- bld[census_block_group_id %in% bgs & residential_units > 0, .N, by = .(parcel_id, residential_units, year_built)]
+bn <- bld[residential_units > 5, .N, by = .(parcel_id, year_built, residential_units)][N > 1]
+fwrite(bn, file = "DU_year_parcel_groups.csv")
+
 
 #fwrite(duhh[,list(DU=sum(DU), DUimp=sum(DUimp), DUofm=sum(HH, na.rm=TRUE), dif=sum(dif, na.rm=TRUE)), 
 #            by=census_block_group_id], file = "ofmdif_bg.csv")
