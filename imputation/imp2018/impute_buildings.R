@@ -64,16 +64,15 @@ lut.bt.pairs <- list(
 					 '29' = 15, # water into open space
 					 '30' = 10  # mixed use					 
 					 )
-
-# set some helpful dummies and keep the original residential_units colum
+# building types that are not suppose to have residential units (they will be deleted)
+no.unit.types <- c(17, # recreation
+                   7   # hospital
+                  )
+# keep the original residential_units colum
 residential.bts <- c(19, 12, 4, 11)
-bld.raw[, is_mixuse := residential_units > 0 & non_residential_sqft > 0]
-bld.raw[, is_residential := residential_units > 0 & !is_mixuse]
-bld.raw[, is_non_residential := non_residential_sqft > 0 & !is_mixuse]
 bld.raw[, residential_units_orig := residential_units]
 #bld.raw[, .N, by = building_type_id][order(building_type_id)]
 #bld.raw[, .N, by = land_use_type_id][order(land_use_type_id)]
-#bld.raw[building_type_id == 0, .N, by = .(land_use_type_id, is_residential, is_mixuse)][order(land_use_type_id)]
 
 to.impute.bts <- c(0, 22)
 
@@ -89,6 +88,61 @@ pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_i
 pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
 orig.lut <- copy(bld$land_use_type_id)
 bld[pcl, `:=`(land_use_type_id_2014 = i.land_use_type_id_2014, land_use_type_id = i.land_use_type_id), on = "parcel_id"]
+
+# Zero out units for specific building types
+#############
+du.before <- sum(bld$residential_units)
+for(bt in no.unit.types)
+  bld[building_type_id == bt & residential_units > 0, residential_units := 0]
+du.after <- sum(bld$residential_units)
+
+cat('\n', du.before - du.after, 'DUs removed from unwanted building types')
+
+# set res/non-res flags 
+bld[, is_mixuse := residential_units > 0 & non_residential_sqft > 0]
+bld[, is_residential := residential_units > 0 & !is_mixuse]
+bld[, is_non_residential := non_residential_sqft > 0 & !is_mixuse]
+
+# Consolidate MF buildings
+########################
+consider <- with(bld, is_residential & building_type_id %in% c(12, 4) & !is.na(sqft_per_unit) & sqft_per_unit > 1)
+bld[consider, max_du := max(residential_units), by = parcel_id]
+bld[consider, is_max_du := residential_units == max_du]
+bld[consider, Nmf := .N, by = parcel_id]
+bld[consider, Nmf_max := sum(is_max_du), by = parcel_id]
+bld[consider, Perc_mf_max := Nmf_max/Nmf * 100]
+bld[consider & is_max_du, has_small_spu := any(sqft_per_unit < 300), by = parcel_id][is.na(has_small_spu), has_small_spu := FALSE]
+consolidate <- consider & with(bld, Perc_mf_max > 49 & Nmf_max > 1 & has_small_spu == TRUE)
+bld[consolidate, max_year := max(year_built), by = parcel_id]
+bld[, `:=`(max_du = NULL, is_max_du = NULL, Nmf = NULL, Nmf_max = NULL, Perc_mf_max = NULL,
+           max_year = NULL, has_small_spu = NULL)]
+du.before <- sum(bld[, residential_units])
+du.before.county <- bld[, .(DU=sum(residential_units)), by = county_id]
+# select one building per parcel which will represent the consolidated buildings
+selected <- bld[consolidate, .SD[which.max(residential_units)], by = parcel_id]
+# sum attributes for new buildings
+new_bld <- bld[consolidate, .(gross_sqft = sum(gross_sqft), 
+                              non_residential_sqft = sum(non_residential_sqft),
+                              improvement_value = sum(improvement_value)), 
+               by = parcel_id]
+# delete the original attributes
+for(attr in colnames(new_bld))
+  if(attr != "parcel_id") selected[[attr]] <- NULL
+# merge selected buildings with the summed attributes
+new_bld <- merge(selected, new_bld)
+# compute new sqft_per_unit
+new_bld[, sqft_per_unit := as.integer(round(gross_sqft/residential_units))]
+# remove consolidated buildings from the original dataset and add new buildings
+bld <- bld[!consolidate]
+bld <- rbind(bld, new_bld)
+bld[building_id %in% selected$building_id, consolidated := TRUE]
+du.after <- sum(bld[, residential_units])
+du.after.county <- bld[, .(DU=sum(residential_units)), by = county_id]
+du.dif <- du.before.county[du.after.county, .(county_id, DUremoved = DU - i.DU), on = "county_id"]
+cat('\n', du.before - du.after, 'DUs removed due to buildings consolidation.\n')
+print(du.dif)
+
+
 
 # Impute building types
 ########################
@@ -371,8 +425,8 @@ logical.cols <- colnames(bld)[sapply(bld, is.logical)]
 for(attr in logical.cols) bld[[attr]] <- as.integer(bld[[attr]])
 for(attr in colnames(bld)) bld[is.na(bld[[attr]]), attr] <- 0
 # write out resulting buildings	
-#write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
-cat('\nResults written into imputed_buildings.csv\n')
+write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
+cat('\nResults written into imputed_consolidated_buildings.csv\n')
 
 
 # The code below is for some diagnostics only

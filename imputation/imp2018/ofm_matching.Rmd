@@ -1,7 +1,7 @@
 ---
 title: "Matching Buildings to OFM"
 author: "Hana Sevcikova"
-date: "3/2/2020"
+date: "3/4/2020"
 output: pdf_document
 ---
 
@@ -171,7 +171,7 @@ When merging buildings and OFM, the following was found:
 
 ### Results
 
-In the following tables, the DU column represent residential units that include imputation (column DUimp). Thus the original value for residential units can be derived as DU - DUimp. Column DUofm represent the OFM counts.
+In the following tables, the DU column represents residential units including imputation. Imputed units are shown in the column DUimp. Thus, the original value for residential units can be derived as DU - DUimp. Column DUofm represent the OFM counts.
 
 #### Total
 
@@ -193,28 +193,34 @@ aggregate.duofm(duofm, by = "county_id")
 
 #### By block group
 
-Here are block groups with the 15 largest positive differences:
+`r if("census_block_group_id" %in% match.by) "Here are block groups with the 15 largest positive differences:"`
 
 ```{r, echo=FALSE}
-aggdt <- aggregate.duofm(duofm, by = "census_block_group_id")
-head(aggdt[order(dif, decreasing = TRUE)], 15)
+if("census_block_group_id" %in% match.by) {
+  aggdt <- aggregate.duofm(duofm, by = c("county_id", "census_block_group_id"))
+  head(aggdt[order(dif, decreasing = TRUE)], 15)
+}
 ```
 
-Here are block groups with the 15 largest negative differences:
+`r if("census_block_group_id" %in% match.by) "Here are block groups with the 15 largest negative differences:"`
 
 ```{r, echo=FALSE}
-head(aggdt[order(dif)], 15)
+if("census_block_group_id" %in% match.by) 
+  head(aggdt[order(dif)], 15)
 ```
 
-Here is a scatter plot of DU ~ DUofm for all block groups:
+`r if("census_block_group_id" %in% match.by) "Here is a scatter plot of DU ~ DUofm for all block groups:"`
 
 ```{r, echo=FALSE}
-plot(DU ~ DUofm, data = aggdt)
-abline(0,1)
-sdat <- aggdt[dif > 5000]
-text(DU ~ DUofm, data = sdat, labels = sdat$census_block_group_id, cex = 0.6, pos = 2)
+if("census_block_group_id" %in% match.by) {
+  plot(DU ~ DUofm, data = aggdt)
+  abline(0,1)
+  sdat <- head(aggdt[order(abs(dif), decreasing = TRUE)], 10)
+  text(DU ~ DUofm, data = sdat, labels = sdat$census_block_group_id, cex = 0.6, pos = 2)
+}
 ```
 
+`r if(!"census_block_group_id" %in% match.by) "No aggregation by block groups available. Include census_block_group_id into match.by."` 
 
 ```{r, echo=FALSE}
 file.bg <- "ofmdif_bg.csv"
