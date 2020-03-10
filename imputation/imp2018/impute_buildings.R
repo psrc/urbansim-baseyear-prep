@@ -21,8 +21,13 @@ data.year <- 2018 # data files will be taken from "../data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 impute.net.sqft <- FALSE
 
-# read buildings table
-bld.raw <- fread(file.path(data.dir, 'buildings_for_imputation.csv'))
+# read buildings and parcels tables
+bld.file.name <- 'buildings_20200219_hs_mhs.csv'
+bld.raw <- fread(file.path(data.dir, bld.file.name))
+
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
+bld.raw[pcl, `:=`(land_use_type_id = i.land_use_type_id, parcel_sqft = i.parcel_sqft, 
+                  land_value = i.land_value), on = "parcel_id"]
 pcl_id <- 'parcel_id'
 
 # read 2014 parcels table and 2018->2014 correspondence table 
@@ -81,7 +86,7 @@ set.seed(1)
 
 # Impute missing land use type from 2014 parcels (exclude no code and vacant)
 ########################
-pcl <- unique(bld.raw[, .(parcel_id, land_use_type_id)])
+#pcl <- unique(bld.raw[, .(parcel_id, land_use_type_id)])
 pcl[pcl2014.look, land_use_type_id_2014 := i.land_use_type_id, on = "parcel_id"]
 impute <- pcl$land_use_type_id == 0 & !pcl$land_use_type_id_2014 %in% c(16, 17, 26, 27) & !is.na(pcl$land_use_type_id_2014)
 pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_id_2014)]
@@ -425,7 +430,7 @@ logical.cols <- colnames(bld)[sapply(bld, is.logical)]
 for(attr in logical.cols) bld[[attr]] <- as.integer(bld[[attr]])
 for(attr in colnames(bld)) bld[is.na(bld[[attr]]), attr] <- 0
 # write out resulting buildings	
-write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
+#write.table(bld, file=file.path(data.dir, "imputed_buildings.csv"), sep=',', row.names=FALSE)
 cat('\nResults written into imputed_consolidated_buildings.csv\n')
 
 
