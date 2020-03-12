@@ -141,7 +141,7 @@ print(aggregate.duofm(duofm, by = "county_id")) # by county
 
 aggdt <- aggregate.duofm(duofm, by = "census_block_group_id")
 
-# identify BGs where DUs could be copied for the same parcel
+# identify BGs where DUs could be a copy of buildings on the same parcel
 bgs <- aggdt[dif > 1000, census_block_group_id]
 bn <- bld[census_block_group_id %in% bgs & residential_units > 0, .N, by = .(parcel_id, residential_units, year_built)]
 bn <- bld[residential_units > 5, .N, by = .(parcel_id, year_built, residential_units)][N > 1]

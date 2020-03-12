@@ -1,7 +1,7 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "3/9/2020"
+date: "3/11/2020"
 output: pdf_document
 ---
 
@@ -41,7 +41,7 @@ normalizePath(data.dir)
 ```{r, echo=FALSE}
 # read buildings table
 #bld.file.name <- 'buildings_for_imputation.csv'
-bld.file.name <- 'buildings_20200219_hs_mhs.csv'
+bld.file.name <- 'buildings_20200311_mhs.csv'
 bld.raw <- fread(file.path(data.dir, bld.file.name))
 
 # read parcels table and join required attributes with buildings
@@ -82,7 +82,7 @@ lut.bt.pairs <- list(
 					 '12' = 8, # mining into industrial
 					 '13' = 11, # mobile home park
 					 '14' = 12, # multi-family
-					 '15' = 12,  # condo into MF
+					 '15' = 4,  # condo into MF
 					 '17' = 23, # no code to Other
 					 '18' = 13, # office
 					 '19' = 15, # park 
@@ -329,11 +329,11 @@ Remaining changes:
      * MF if they have more 2 units (`r sum(impute2)` records). 
 
 ```{r, echo=FALSE}
-impute <- with(bld, building_type_id %in% c(10, residential.bts) & is_non_residential)
+impute <- with(bld, building_type_id %in% c(residential.bts) & is_non_residential)
 bld[impute, building_type_id := 3]
 ```
 
-* Reclassify buildings with residential or mix-use building type that only have non-residential sqft into commercial (type 3).  `r sum(impute)` records changed.
+* Reclassify buildings of residential building type that only have non-residential sqft into commercial (type 3).  `r sum(impute)` records changed.
 
 ##### Results
 
@@ -528,7 +528,7 @@ bld[imp, imp_residential_units := TRUE]
 11. Set the remainder of missing residential units to 1 (`r sum(imp)` records updated).
 
  ```{r echo = FALSE}
-file.out <- file.path(data.dir, "imputed_buildings.csv")
+file.out <- file.path(data.dir, "imputed_buildings_20200311.csv")
 if(save.as.csv) {
   # convert logical to integer
   logical.cols <- colnames(bld)[sapply(bld, is.logical)]

@@ -1,7 +1,7 @@
 ---
 title: "Matching Buildings to OFM"
 author: "Hana Sevcikova"
-date: "3/4/2020"
+date: "3/11/2020"
 output: pdf_document
 ---
 
@@ -49,8 +49,10 @@ source(file.path(data.dir, "load_ofm.R"))
 bld <- copy(bld.imp)
 setkey(bld, building_id, parcel_id)
 bld[, county_id := NULL] # will be taken from parcels dataset
-bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_block_group_id, 
-                          county_id, census_tract_id)], by = "parcel_id")
+bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_tract_id)], by = "parcel_id")
+# assign county_id from census_blocks (since the parcel.county_id might have issues)
+cb <- fread(file.path(data.dir, "census_blocks.csv"))
+bld <- merge(bld, cb[, .(census_block_id, county_id)], by = "census_block_id")
 ```
 
 The buildings table `r bld.file.name` has been merged with parcels and has `r nrow(bld)` rows. The OFM dataset has `r nrow(ofm)` records. 
@@ -68,7 +70,7 @@ match.by <- c("county_id", "census_tract_id", "census_block_group_id"
 Set building types to be considered as residential and if the block group dataset should be written into a file.
 ```{r, echo=TRUE}
 allrestypes <- c(12, 4, 19, 11, 10)
-save.block.groups <- TRUE
+save.block.groups <- FALSE
 ```
 
 

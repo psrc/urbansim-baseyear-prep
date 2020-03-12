@@ -22,7 +22,7 @@ data.dir <- file.path("..", paste0("data", data.year))
 impute.net.sqft <- FALSE
 
 # read buildings and parcels tables
-bld.file.name <- 'buildings_20200219_hs_mhs.csv'
+bld.file.name <- 'buildings_20200311_mhs.csv'
 bld.raw <- fread(file.path(data.dir, bld.file.name))
 
 pcl <- fread(file.path(data.dir, 'parcels.csv'))
@@ -185,7 +185,7 @@ bld[land_use_type_id==30 & !building_type_id %in% c(10,6, residential.bts) & is_
 bld[land_use_type_id==30 & !building_type_id %in% c(10,6, residential.bts) & is_residential & residential_units > 2, building_type_id := 12]
 
 # reclassify records with residential BT that only have non-residential sqft into commercial
-bld[building_type_id %in% c(10, residential.bts) & is_non_residential, building_type_id := 3]
+bld[building_type_id %in% residential.bts & is_non_residential, building_type_id := 3]
 
 cat('\nImputed ', sum(bld$building_type_id != bld$building_type_id_orig), ' values of building_type_id.')
 
