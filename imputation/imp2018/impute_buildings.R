@@ -94,6 +94,7 @@ pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
 orig.lut <- copy(bld$land_use_type_id)
 bld[pcl, `:=`(land_use_type_id_2014 = i.land_use_type_id_2014, land_use_type_id = i.land_use_type_id), on = "parcel_id"]
 
+
 # Zero out units for specific building types
 #############
 du.before <- sum(bld$residential_units)
@@ -107,6 +108,11 @@ cat('\n', du.before - du.after, 'DUs removed from unwanted building types')
 bld[, is_mixuse := residential_units > 0 & non_residential_sqft > 0]
 bld[, is_residential := residential_units > 0 & !is_mixuse]
 bld[, is_non_residential := non_residential_sqft > 0 & !is_mixuse]
+
+# special cases (Mark's query)
+#bld[is_residential == TRUE & building_type_id %in% residential.bts & gross_sqft > 0 & improvement_value > 1000 & improvement_value/gross_sqft < 30 & residential_units > 9 & sqft_per_unit > 1 & sqft_per_unit < 400]
+#bld[parcel_id := 507079]
+
 
 # Consolidate MF buildings
 ########################

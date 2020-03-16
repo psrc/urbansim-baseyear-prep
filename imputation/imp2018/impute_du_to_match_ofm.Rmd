@@ -1,0 +1,70 @@
+---
+title: "Impute DU to match OFM"
+author: "Hana Sevcikova"
+date: "3/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Description
+
+The script imputes residential units to match OFM totals by census block group. The OFM targets are taken from the output of the population synthesizer, which assigned households to block groups inline with the OFM totals. 
+
+### Setup
+
+#### Code and Data
+This R markdown file is located in the [2018 imputation GitHub repo]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/impute_du_to_match_ofm.Rmd). 
+
+Input data are csv files exported from the database 2018_parcel_baseyear_working. 
+
+Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. The input datasets are:
+
+* imputed_buildings.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/buildings_imputation.Rmd))
+* parcels.csv
+* summary_adjusted_urbansim_bg_id.csv (output of population synthesizer from R:\e2projects_two\2018_base_year\synthetic_population)
+
+The output is written into imputation/data2018/imputed_buildings_ofm_match.csv.
+
+
+#### Loading Inputs
+
+In this processing, input files are taken from the directory
+```{r, echo=FALSE}
+library(data.table)
+data.year <- 2018 # data files will be taken from "../data{data.year}"
+data.dir <- file.path("..", paste0("data", data.year))
+normalizePath(data.dir)
+```
+
+```{r, echo=FALSE}
+# load buildings, parcels and OFM
+bld.file.name <- "imputed_buildings.csv"
+bld.imp <- fread(file.path(data.dir, bld.file.name))
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
+synthh <- fread(file.path(data.dir, "summary_adjusted_urbansim_bg_id.csv"))
+# rename synthesizer columns
+setnames(synthh, "unique_id_for_base_year", "census_block_group_id")
+setnames(synthh, "num_hh_adjusted", "HH")
+```
+
+The buildings table `r bld.file.name` has `r nrow(bld.imp)` rows. 
+
+#### Settings
+
+Specify which are the single-use residential building types (`allrestypes`), which are residential and mix-use land use types (`reslutypes`) and which are the multi-family and mix-use building types (`mftypes`). 
+
+```{r, echo=TRUE}
+allrestypes <- c(12, 4, 19, 11, 10)
+reslutypes <- c(13, # mobile home
+                14, # MF
+                15, # condo
+                21, # recreation
+                24, # SF
+                26, # vacant developable
+                30 # mix use
+                )
+mftypes <- c(12, 4, 30)
+```

@@ -4,7 +4,7 @@ data.year <- 2018 # data files will be taken from "data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
 bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"))
-#pcl <- fread(file.path(data.dir, 'parcels.csv'))
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
 #bld.imp <- merge(bld.imp, pcl[, .(parcel_id, census_block_id)], by = "parcel_id")
 
 synthh <- fread(file.path(data.dir, "summary_adjusted_urbansim_bg_id.csv"))
