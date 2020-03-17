@@ -2,7 +2,7 @@
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
 date: "3/16/2020"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Description
 
-The script imputes residential units to match OFM totals by census block group. The OFM targets are taken from the output of the population synthesizer, which assigned households to block groups inline with the OFM totals. 
+The script imputes residential units to match OFM totals by census block group. The OFM targets are taken from the output of the population synthesizer, which assigned households to block groups in line with the OFM totals. 
 
 ### Setup
 
@@ -22,37 +22,29 @@ Input data are csv files exported from the database 2018_parcel_baseyear_working
 
 Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. The input datasets are:
 
-* imputed_buildings.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/buildings_imputation.Rmd))
+* imputed_buildings.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/buildings_imputation.Rmd); name configurable)
 * parcels.csv
-* summary_adjusted_urbansim_bg_id.csv (output of population synthesizer from R:\e2projects_two\2018_base_year\synthetic_population)
+* summary_adjusted_urbansim_bg_id.csv (output of population synthesizer from R:/e2projects_two/2018_base_year/synthetic_population; name configurable)
+* census_blocks.csv
 
 The output is written into imputation/data2018/imputed_buildings_ofm_match.csv.
 
-
-#### Loading Inputs
-
-In this processing, input files are taken from the directory
-```{r, echo=FALSE}
-library(data.table)
-data.year <- 2018 # data files will be taken from "../data{data.year}"
-data.dir <- file.path("..", paste0("data", data.year))
-normalizePath(data.dir)
-```
-
-```{r, echo=FALSE}
-# load buildings, parcels and OFM
-bld.file.name <- "imputed_buildings.csv"
-bld.imp <- fread(file.path(data.dir, bld.file.name))
-pcl <- fread(file.path(data.dir, 'parcels.csv'))
-synthh <- fread(file.path(data.dir, "summary_adjusted_urbansim_bg_id.csv"))
-# rename synthesizer columns
-setnames(synthh, "unique_id_for_base_year", "census_block_group_id")
-setnames(synthh, "num_hh_adjusted", "HH")
-```
-
-The buildings table `r bld.file.name` has `r nrow(bld.imp)` rows. 
-
 #### Settings
+
+Set the name of the buildings file and the household synthesizer file:
+
+```{r, echo=TRUE}
+bld.file.name <- "imputed_buildings_20200316.csv"
+synth.file.name <- "summary_adjusted_urbansim_bg_id.csv"
+```
+
+Set a flag if results should be stored and the names of output files:
+
+```{r, echo=TRUE}
+save.as.csv <- TRUE
+out.file.name <- "imputed_buildings_ofm_match_20200316.csv"
+```
+
 
 Specify which are the single-use residential building types (`allrestypes`), which are residential and mix-use land use types (`reslutypes`) and which are the multi-family and mix-use building types (`mftypes`). 
 
@@ -68,3 +60,318 @@ reslutypes <- c(13, # mobile home
                 )
 mftypes <- c(12, 4, 30)
 ```
+
+#### Loading Inputs
+
+In this processing, input files are taken from the directory
+```{r, echo=FALSE}
+library(data.table)
+data.year <- 2018 # data files will be taken from "../data{data.year}"
+data.dir <- file.path("..", paste0("data", data.year))
+normalizePath(data.dir)
+```
+
+```{r, echo=FALSE}
+# load buildings, parcels and OFM
+bld.imp <- fread(file.path(data.dir, bld.file.name))
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
+synthh <- fread(file.path(data.dir, synth.file.name))
+# rename synthesizer columns
+setnames(synthh, "unique_id_for_base_year", "census_block_group_id")
+setnames(synthh, "num_hh_adjusted", "HH")
+# loac census blocks and create a block group dataset to get the right county_id
+cb <- fread(file.path(data.dir, "census_blocks.csv"))
+cbg <- unique(cb[, .(census_block_group_id, county_id)]) 
+```
+
+The buildings table `r bld.file.name` has `r nrow(bld.imp)` rows. The household synthesizer file `r synth.file.name` has `r nrow(synthh)` rows.
+
+
+### Processing
+
+```{r, echo=FALSE}
+# aggregation function
+compute.bydu <- function(dt) {
+    # aggregate
+    bydu <- dt[, .(DU = sum(residential_units), 
+                   DUimp1 = sum(residential_units1), 
+                   DUorig = sum(residential_units_orig),
+                    N = .N,
+                    Nres = sum(building_type_id %in% allrestypes),
+                    Nmf = sum(building_type_id %in% mftypes)
+                    ), by = census_block_group_id]
+    # join with OFM
+    bydu <- merge(bydu, synthh[, .(census_block_group_id, HH)], by = "census_block_group_id", all = TRUE)
+    # add county_id
+    bydu[cbg, county_id := i.county_id, on = "census_block_group_id"]
+    # remove NAs
+    for(attr in c("DU", "DUorig", "DUimp1", "HH", "Nres", "N", "Nmf"))
+        bydu[is.na(bydu[[attr]]), attr] <- 0
+    # add difference column
+    bydu[, difHH := DU - HH]
+    bydu
+}
+```
+
+#### Assessing differences
+
+
+```{r, echo=FALSE}
+bld.imp[, imp1_residential_units := imp_residential_units]
+bld.imp[, residential_units1 := residential_units]
+bydu <- compute.bydu(bld.imp)
+negdt <- bydu[difHH < 0]
+bld <- copy(bld.imp)
+```
+
+The total number of units to be imputed is `r -sum(negdt$difHH)`. Here is the breakdown by county:
+
+```{r, echo=FALSE}
+negdt[, .(impute = -sum(difHH)), by = county_id]
+```
+
+#### Imputing buildings
+
+
+```{r, echo=FALSE}
+set.seed(1234)
+new.bldgs <- NULL
+s <- subset(negdt, Nres == 0)
+if(nrow(s) > 0) {
+    for (i in 1:nrow(s)){
+        id <- s$census_block_group_id[i]
+        is_pcl <- with(pcl, census_block_group_id == id)
+        pidx <- which(is_pcl & pcl$land_use_type_id %in% reslutypes)
+        if(length(pidx) == 0) { # no residential or vacant LUT
+            if(s$N[i] > 0) next # if there is a building don't do anything
+            pidx <- which(is_pcl & pcl$plan_type_id != 1000) # take all developable parcels
+            if(length(pidx) == 0)
+                pidx <- which(is_pcl)  # take all parcels if there are no developable parcels
+        }
+        new <- pcl[pidx, .(parcel_id, census_block_group_id, county_id, land_use_type_id, parcel_sqft, land_value)]
+        new[, `:=`(residential_units = 1, # seed the buildings with 1 DU
+                   residential_units_orig = 0, 
+                   non_residential_sqft = 0,
+                   building_type_id = 12, # new buildings will all be MF
+                   imp_residential_units = 1,
+                   is_residential = 1,
+                   building_type_id_orig = -1,
+                   residential_units1 = 0
+                   )]
+        new.bldgs <- rbind(new.bldgs, new)
+    }
+    # new building ids
+    start.id <- max(bld$building_id) + 1
+    new.bldgs <- new.bldgs[, building_id := seq(start.id, start.id + nrow(new.bldgs) - 1)]
+    # combine original buildings with the new ones
+    bld <- rbind(bld, new.bldgs, fill = TRUE)
+    for (attr in colnames(bld))
+        bld[is.na(bld[[attr]]), attr] <- if(is.character(bld[[attr]])) "" else 0
+    # recompute bydu
+    bydu <- compute.bydu(bld)
+    negdt <- bydu[difHH < 0]
+}
+```
+
+For `r nrow(s)` block groups which should accommodate households but do not have any residential building, we will insert new MF buildings. This is done using the folowing rules for each block group:
+
+* Select parcels with residential land use type.
+* If there are none, do nothing if there is at least one building on the parcel. Otherwise select developable parcels instead. If there are none, select all parcels.
+* For each selected parcel create one MF residential building with one DU.
+
+**Result:** `r nrow(new.bldgs)` MF buildings were imputed into `r length(unique(new.bldgs$census_block_group_id))` block groups. The breakdown by block groups is as follows:
+
+```{r, echo=FALSE}
+new.bldgs[, .N, by = census_block_group_id]
+```
+
+#### Imputing residential units
+
+```{r, echo=FALSE}
+
+imputed.du <- nrow(new.bldgs)
+last.imputed.du <- imputed.du
+imputed.bld <- 0
+
+# 1 building: place DUs independently of type of building
+s <- subset(negdt, N == 1)
+if(nrow(s) > 0) {
+    for (i in 1:nrow(s)){
+        id <- s$census_block_group_id[i]
+        is_id <- with(bld, census_block_group_id == id)
+        bld[is_id, residential_units := residential_units + s[i, -difHH]]
+        bld[is_id, imp_residential_units := imp_residential_units + 1]
+        imputed.du <- imputed.du + s[i, -difHH]
+        imputed.bld <- imputed.bld + 1
+    }
+}
+
+```
+
+1. For `r nrow(s)` block groups which have **exactly one building** (independent of the building type), place the required DUs into that building. 
+    * **Result:** `r imputed.du - last.imputed.du` units imputed into `r imputed.bld` buildings.
+
+```{r, echo=FALSE}
+# > 1 buildings & 1 multi-family building: place DUs into that MF building
+last.imputed.du <- imputed.du
+last.imputed.bld <- imputed.bld
+s <- subset(negdt, N > 1 & Nmf == 1)
+if(nrow(s) > 0) {
+    for (i in 1:nrow(s)) {
+        id <- s$census_block_group_id[i]
+        is_id <- with(bld, census_block_group_id == id & building_type_id %in% mftypes)
+        bld[is_id, residential_units := residential_units + s[i, -difHH]]
+        bld[is_id, imp_residential_units := imp_residential_units + 1]
+        imputed.du <- imputed.du + s[i, -difHH]
+        imputed.bld <- imputed.bld + 1
+    }
+}
+
+```
+
+2. For `r nrow(s)` block groups which have more than one building and **exactly one MF building**, place the required DUs into the MF building. 
+    * **Result:** `r imputed.du - last.imputed.du` units imputed into `r imputed.bld-last.imputed.bld` buildings.
+
+```{r, echo=FALSE}
+# > 1 multi-family buildings
+last.imputed.du <- imputed.du
+last.imputed.bld <- imputed.bld
+s <- subset(negdt, N > 1 & Nmf > 1)
+if(nrow(s) > 0) {
+    for (i in 1:nrow(s)){
+        id <- s$census_block_group_id[i]
+        is_id <- with(bld, census_block_group_id == id & building_type_id %in% mftypes)
+        # distribute units across MF buildings
+        imp.idx <- which(is_id)
+        nimp <- length(imp.idx)
+        sDUimp <- sum(bld[is_id, residential_units])
+        probs <- if(sDUimp == 0) rep(1, length=nimp)/nimp else bld[is_id, residential_units]/sDUimp
+        if(nimp == 1) {
+            imp.idx <- rep(imp.idx,2) # sample interprets things differently if the first number is just one integer
+            probs <- rep(probs,2)
+        }
+        sampled.idx <- sample(imp.idx, s[i, -difHH], replace=TRUE, prob = probs)
+        tab <- table(sampled.idx)
+        row.idx <- as.integer(names(tab))
+        bld[row.idx, residential_units:= residential_units + tab]
+        bld[row.idx, imp_residential_units := imp_residential_units + 1]
+        imputed.du <- imputed.du + s[i, -difHH]
+        imputed.bld <- imputed.bld + length(row.idx)
+    }
+}
+
+```
+
+3. For `r nrow(s)` block groups which have **more than one MF building**, distribute the required DUs across the MF buildings with probabilities proportional to residential units. 
+    * **Result:** `r as.integer(imputed.du - last.imputed.du)` units imputed into `r imputed.bld-last.imputed.bld` buildings.
+
+```{r, echo=FALSE}
+# 0 multi-family buildings & > 0 residential (other residential type than MF)
+last.imputed.du <- imputed.du
+last.imputed.bld <- imputed.bld
+s <- subset(negdt, N > 1 & Nmf == 0 & Nres > 0)
+if(nrow(s) > 0) {
+    for (i in 1:nrow(s)){
+        id <- s$census_block_group_id[i]
+        is_id <- with(bld, census_block_group_id == id & building_type_id %in% allrestypes)
+        # distribute units across res buildings
+        imp.idx <- which(is_id)
+        nimp <- length(imp.idx)
+        sDUimp <- sum(bld[is_id, residential_units])
+        probs <- if(sDUimp == 0) rep(1, length=nimp)/nimp else bld[is_id, residential_units]/sDUimp
+        if(nimp == 1) {
+            imp.idx <- rep(imp.idx,2) # sample interprets things differently if the first number is just one integer
+            probs <- rep(probs,2)
+        }
+        sampled.idx <- sample(imp.idx, s[i, -difHH], replace=TRUE, prob=probs)
+        tab <- table(sampled.idx)
+        row.idx <- as.integer(names(tab))
+        bld[row.idx, residential_units:= residential_units + tab]
+        bld[row.idx, imp_residential_units := imp_residential_units + 1]
+        imputed.du <- imputed.du + s[i, -difHH]
+        imputed.bld <- imputed.bld + length(row.idx)
+    }
+}
+```
+
+4. For `r nrow(s)` block groups which have multiple buildings and **no MF building and at least one residential building**, distribute the required DUs across the residential buildings with probabilities proportional to residential units. 
+    * **Result:** `r imputed.du - last.imputed.du` units imputed into `r imputed.bld-last.imputed.bld` buildings.
+    
+```{r, echo=FALSE}
+# 0 residential buildings (only non-residential type)
+last.imputed.du <- imputed.du
+last.imputed.bld <- imputed.bld
+s <- subset(negdt, N > 1 & Nres == 0)
+if(nrow(s) > 0) {
+    for (i in 1:nrow(s)){
+        id <- s$census_block_group_id[i]
+        is_id <- with(bld, census_block_group_id == id)
+        # distribute units across buildings proportional to non-res sqft
+        imp.idx <- which(is_id)
+        nimp <- length(imp.idx)
+        sSQimp <- sum(bld[is_id, non_residential_sqft])
+        probs <- if(sSQimp == 0) rep(1, length=nimp)/nimp else bld[is_id, non_residential_sqft]/sSQimp # take non-res sqft as  a proxy for the size
+        if(nimp == 1) {
+            imp.idx <- rep(imp.idx,2) # sample interprets things differently if the first number is just one integer
+            probs <- rep(probs,2)
+        }
+        sampled.idx <- sample(imp.idx, s[i, -difHH], replace=TRUE, prob=probs)
+        tab <- table(sampled.idx)
+        row.idx <- as.integer(names(tab))
+        bld[row.idx, residential_units:= residential_units + tab]
+        bld[row.idx, imp_residential_units := imp_residential_units + 1]
+        imputed.du <- imputed.du + s[i, -difHH]
+        imputed.bld <- imputed.bld + length(row.idx)
+        if(length(row.idx) > 0) {
+            bld[row.idx, "building_type_id"] <- 12 # set to MF residential
+        }
+    }
+}
+```
+
+5. For `r nrow(s)` block groups which have **no residential buildings**, distribute the required DUs across all buildings with probabilities proportional to non-residential sqft. 
+    * **Result:** `r imputed.du - last.imputed.du` units imputed into `r imputed.bld-last.imputed.bld` buildings.
+    
+    
+### Final Results
+
+In total, `r as.integer(imputed.du)` units were imputed into `r as.integer(imputed.bld)` buildings.
+
+```{r, echo=FALSE}
+fbydu <- compute.bydu(bld)
+fnegdt <- fbydu[difHH < 0]
+```
+
+The remaining discrepancies are due to the fact that there are no corresponding parcels for the following block groups:
+```{r, echo=FALSE}
+fnegdt[, .(census_block_group_id, county_id, DU, DUorig, HH, difHH)]
+```
+
+Here are the county totals. Column `DU` contains the final residential units. The columnn `DUimp1` are the imputed DUs after the first round of imputation. Thus, the amount imputed in this script is `DU - DUimp1`.
+
+```{r, echo=FALSE}
+fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), HH = sum(HH)), by = county_id]
+```
+
+The regional total is:
+
+```{r, echo=FALSE}
+fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), HH = sum(HH))]
+```
+
+```{r echo = FALSE}
+file.out <- file.path(data.dir, out.file.name)
+if(save.as.csv) {
+  # convert logical to integer
+  logical.cols <- colnames(bld)[sapply(bld, is.logical)]
+  for(attr in logical.cols) bld[[attr]] <- as.integer(bld[[attr]])
+  for(attr in colnames(bld)) bld[is.na(bld[[attr]]), attr] <- 0
+  # write out resulting buildings
+  fwrite(bld, file=file.out)
+}
+```
+
+If `save.as.csv` is `TRUE`, the resulting file is written into `r  file.out`. Currently, `save.as.csv` is `r save.as.csv`.
+
+In the resulting buildings dataset, column `imp1_residential_units` and `residential_units1` contain values of the columns `imp_residential_units` and `residential_units`, respectively, after the first imputation, i.e. values contained in the input file of this script. The column `imp_residential_units` in this dataset was derived additively, i.e. `imp1_residential_units` plus a logical if residential units were imputed here. Thus, values of 2 mean that DUs were imputed in both imputation processes. 
+

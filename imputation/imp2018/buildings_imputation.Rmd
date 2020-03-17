@@ -1,7 +1,7 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "3/11/2020"
+date: "3/16/2020"
 output: pdf_document
 ---
 
@@ -19,51 +19,22 @@ Input data are csv files exported from the database 2018_parcel_baseyear_working
 
 Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. In addition, the 2014 parcels dataset is used. The input datasets are:
 
-* buildings.csv
+* buildings.csv (name configurable)
 * parcels.csv
 * parcel_lookup_2018_2014.csv
 * imputation/data2014/parcels.csv
 
-The output is written into imputation/data2018/imputed_buildings.csv.
-
-
-#### Loading Inputs
-
-In this processing, input files are taken from the directory
-```{r, echo=FALSE}
-library(data.table)
-data.year <- 2018 # data files will be taken from "../data{data.year}"
-data.dir <- file.path("..", paste0("data", data.year))
-normalizePath(data.dir)
-```
-
-
-```{r, echo=FALSE}
-# read buildings table
-#bld.file.name <- 'buildings_for_imputation.csv'
-bld.file.name <- 'buildings_20200311_mhs.csv'
-bld.raw <- fread(file.path(data.dir, bld.file.name))
-
-# read parcels table and join required attributes with buildings
-pcl <- fread(file.path(data.dir, 'parcels.csv'))
-bld.raw[pcl, `:=`(land_use_type_id = i.land_use_type_id, parcel_sqft = i.parcel_sqft, 
-        land_value = i.land_value), on = "parcel_id"]
-
-# read 2014 parcels table and 2018->2014 correspondence table 
-pcl14look.file.name <- "parcel_lookup_2018_2014.csv"
-pcl2014.look <- fread(file.path(data.dir, pcl14look.file.name))
-pcl14.file.name <- file.path("..", "data2014", "parcels.csv")
-pcl2014 <- fread(pcl14.file.name)
-pcl2014[, parcel_id_2014 := parcel_id]
-# keep only land_use_type_id
-pcl2014.look[pcl2014, land_use_type_id := i.land_use_type_id, on = "parcel_id_2014"]
-```
-
-The buildings table `r bld.file.name` has `r nrow(bld.raw)` rows. 
-
-2014 parcels lookup table (file `r pcl14look.file.name`) has been joint with `r pcl14.file.name` and has `r nrow(pcl2014.look)` rows. 
+The output is written into imputation/data2018/imputed_buildings.csv. The name of the file can be configured in the Settings section.
 
 #### Settings
+
+Set the name of the buildings file (`bld.file.name`), if the resulting dataset should be written into a file (`save.as.csv`) and the name of the resulting file (`out.file.name`):
+
+```{r, echo=TRUE}
+bld.file.name <- 'buildings_20200316_mhs.csv'
+save.as.csv <- TRUE
+out.file.name <- "imputed_buildings_20200316.csv"
+```
 
 Here is a list for a translation between land use type (left) into building type (right):
 ```{r, echo=TRUE}
@@ -100,19 +71,61 @@ lut.bt.pairs <- list(
 					 )
 ```
 
-Other settings include specifying which are the residential building types, which types should be imputed and if the resulting dataset should be written into a file:
+Other settings include specifying which are the residential building types (`residential.bts`), which types should be imputed (`to.impute.bts`) and what is the threshold of sqft per unit for building consolidation(`spu_threshold_for_consolidation`):
 ```{r, echo=TRUE}
 residential.bts <- c(19, 12, 4, 11)
 to.impute.bts <- c(0, 22)
-save.as.csv <- TRUE
+spu_threshold_for_consolidation <- 400
 ```
 
-In addition, we will remove residential units that are in buildings of the following types:
+Furthermore, we will remove residential units that are in buildings of types given by `no.unit.types`. If there are units in other buildings on the same parcel, we will also remove units from building types given by `no.unit.types.if.parcel.allows`.
+
 ```{r, echo=TRUE}
 no.unit.types <- c(17, # recreation
-                   7   # hospital
-                  )
+                   7,  # hospital
+                   14, # outbuilding
+                   16  # parking
+                   )
+no.unit.types.if.parcel.allows <- c(23 # Other
+                                    )
 ```
+
+
+#### Loading Inputs
+
+In this processing, input files are taken from the directory
+```{r, echo=FALSE}
+library(data.table)
+data.year <- 2018 # data files will be taken from "../data{data.year}"
+data.dir <- file.path("..", paste0("data", data.year))
+normalizePath(data.dir)
+```
+
+
+```{r, echo=FALSE}
+# read buildings table
+bld.raw <- fread(file.path(data.dir, bld.file.name))
+
+# read parcels table and join required attributes with buildings
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
+bld.raw[pcl, `:=`(land_use_type_id = i.land_use_type_id, parcel_sqft = i.parcel_sqft, 
+        land_value = i.land_value), on = "parcel_id"]
+
+# read 2014 parcels table and 2018->2014 correspondence table 
+pcl14look.file.name <- "parcel_lookup_2018_2014.csv"
+pcl2014.look <- fread(file.path(data.dir, pcl14look.file.name))
+pcl14.file.name <- file.path("..", "data2014", "parcels.csv")
+pcl2014 <- fread(pcl14.file.name)
+pcl2014[, parcel_id_2014 := parcel_id]
+# keep only land_use_type_id
+pcl2014.look[pcl2014, land_use_type_id := i.land_use_type_id, on = "parcel_id_2014"]
+```
+
+The buildings table `r bld.file.name` has `r nrow(bld.raw)` rows. 
+
+2014 parcels lookup table (file `r pcl14look.file.name`) has been joint with `r pcl14.file.name` and has `r nrow(pcl2014.look)` rows. 
+
+
 
 
 ```{r, echo=FALSE}
@@ -151,17 +164,36 @@ if(sum(impute) > 0) {
 
 #### Remove units if not wanted
 
-For some building types we want to remove residential units:
+For some building types we want to remove residential units.
 
 ```{r, echo=FALSE}
 tmp <- bld[building_type_id %in% no.unit.types, .(removed = sum(residential_units)), by = building_type_id]
 tmp.cnty <- bld[building_type_id %in% no.unit.types, .(removed = sum(residential_units)), by = county_id]
-for(bt in no.unit.types)
-  bld[building_type_id == bt & residential_units > 0, residential_units := 0]
+bld[building_type_id %in% no.unit.types & residential_units > 0, residential_units := 0]
+```
+
+* `r sum(tmp$removed)` residential units removed from types `r paste(no.unit.types, collapse = ", ")`. Here is the split by building type and by county:
+```{r, echo=FALSE}
 tmp
 tmp.cnty
 ```
-In total `r sum(tmp$removed)` residential units removed.
+
+```{r, echo=FALSE}
+bld[, DUpcl := sum(residential_units), by = parcel_id]
+bld[building_type_id %in% no.unit.types.if.parcel.allows, DUpcl_notypes := sum(residential_units), 
+    by = parcel_id][is.na(DUpcl_notypes), DUpcl_notypes := 0]
+tmp <- bld[building_type_id %in% no.unit.types.if.parcel.allows & DUpcl > DUpcl_notypes, .(removed = sum(residential_units)), by = building_type_id]
+tmp.cnty <- bld[building_type_id %in% no.unit.types.if.parcel.allows & DUpcl > DUpcl_notypes, .(removed = sum(residential_units)), by = county_id]
+bld[building_type_id %in% no.unit.types.if.parcel.allows & residential_units > 0 & DUpcl > DUpcl_notypes, residential_units := 0]
+bld[, `:=`(DUpcl = NULL, DUpcl_notypes = NULL)]
+```
+
+* `r sum(tmp$removed)` residential units removed from types `r paste(no.unit.types.if.parcel.allows, collapse = ", ")`. These are buildings placed on parcels that have residential units in buildings of other type. Here is the split by building type and by county:
+
+```{r, echo=FALSE}
+tmp
+tmp.cnty
+```
 
 ```{r, echo=FALSE}
 # set some helpful dummies
@@ -183,7 +215,8 @@ bld[consider, is_max_du := residential_units == max_du]
 bld[consider, Nmf := .N, by = parcel_id]
 bld[consider, Nmf_max := sum(is_max_du), by = parcel_id]
 bld[consider, Perc_mf_max := Nmf_max/Nmf * 100]
-bld[consider & is_max_du, has_small_spu := any(sqft_per_unit < 300), by = parcel_id][is.na(has_small_spu), has_small_spu := FALSE]
+bld[consider & is_max_du, has_small_spu := any(sqft_per_unit < spu_threshold_for_consolidation), 
+    by = parcel_id][is.na(has_small_spu), has_small_spu := FALSE]
 consolidate <- consider & with(bld, Perc_mf_max > 49 & Nmf_max > 1 & has_small_spu == TRUE & residential_units >= Nmf_max)
 ```
 
@@ -192,7 +225,7 @@ The candidates will be:
 * all residential MF buildings with more than 1 unit with not-missing `sqft_per_unit` (`r sum(consider)`) that
 * have more than one buildings which have the max DUs per parcel (`r sum(consider & with(bld, Nmf_max > 1))`) AND
 * have more or equal residential units than the max DUs per parcel (`r sum(consider & with(bld, Nmf_max > 1 & residential_units >= Nmf_max))`) AND
-* any of the buildings on a parcel have sqft per unit smaller than 300 (`r sum(consider & with(bld, Nmf_max > 1 & has_small_spu == TRUE  & residential_units >= Nmf_max))`) AND
+* any of the buildings on a parcel have sqft per unit smaller than `r spu_threshold_for_consolidation` (`r sum(consider & with(bld, Nmf_max > 1 & has_small_spu == TRUE  & residential_units >= Nmf_max))`) AND
 * the frequency of buildings where the number of residential units equals max(residential units) per parcel is larger than 49%   (`r sum(consolidate)`).
 
 ```{r, echo=FALSE}
@@ -243,7 +276,7 @@ du.dif
 
 #### Impute building types
 
-There are `r nrow(bld[building_type_id %in% to.impute.bts])` buildings with missing building type. Groupping them depending if they have residential units, non-residential sqft or both, we get the follwing table:
+There are `r nrow(bld[building_type_id %in% to.impute.bts])` buildings with missing building type (`r paste(to.impute.bts, collapse = ", ")`). Groupping them depending if they have residential units, non-residential sqft or both, we get the follwing table:
 ```{r, echo=FALSE}
 bld[building_type_id %in% to.impute.bts, .(Nres = sum(is_residential), Nnonres = sum(is_non_residential),
                               Nmix = sum(is_mixuse))]
@@ -339,6 +372,7 @@ bld[impute, building_type_id := 3]
 
 In total, building_type_id was modified in `r sum(bld$building_type_id != bld$building_type_id_orig)` records. See the breakdown of the counts by the original and the resulting building type at the end of this document. A few records might change its building type in the next section.
 
+Note that the three steps above are not mutually exclusive. Buildings changed in one step can be changed again in the following steps. Thus, the total number of changed buildings is not the sum of the number of buildings changed in the three steps. For example, a building of a no-code type on a single-family parcel would be changed in Step 1 into the single-family type. However, if the building has non-residential sqft and no DUs, it would be changed in Step 3 again into the commercial type. 
 
 #### Impute other attributes
 
@@ -516,7 +550,7 @@ bld[imp, residential_units := 0]
 bld[imp, imp_residential_units := TRUE]
 ```
 
- 10. Set group-quaters DUs to 0 (`r sum(imp)` records updated, resulting in removing `r sum(gq.units)`).
+ 10. Set group-quaters DUs to 0 (`r sum(imp)` records updated, resulting in removing `r sum(gq.units)` units).
  
  ```{r echo = FALSE}
 # set the remainder of missing residential units to 1 
@@ -528,7 +562,7 @@ bld[imp, imp_residential_units := TRUE]
 11. Set the remainder of missing residential units to 1 (`r sum(imp)` records updated).
 
  ```{r echo = FALSE}
-file.out <- file.path(data.dir, "imputed_buildings_20200311.csv")
+file.out <- file.path(data.dir, out.file.name)
 if(save.as.csv) {
   # convert logical to integer
   logical.cols <- colnames(bld)[sapply(bld, is.logical)]

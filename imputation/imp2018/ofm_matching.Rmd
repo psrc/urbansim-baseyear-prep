@@ -1,7 +1,7 @@
 ---
 title: "Matching Buildings to OFM"
 author: "Hana Sevcikova"
-date: "3/11/2020"
+date: "3/16/2020"
 output: pdf_document
 ---
 
@@ -17,53 +17,23 @@ This R markdown file is located in the [2018 imputation GitHub repo]( https://gi
 
 Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. These are:
 
-* imputed_buildings.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/buildings_imputation.Rmd))
+* imputed_buildings.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2018/buildings_imputation.Rmd); name configurable)
 * parcels.csv
 * OFMPopHHblocks.csv (containing the OFM data)
 * census_blocks.csv
 
-#### Loading Inputs
-
-In this processing, input files are taken from the directory
-```{r, echo=FALSE}
-library(data.table)
-data.year <- 2018 # data files will be taken from "../data{data.year}"
-data.dir <- file.path("..", paste0("data", data.year))
-normalizePath(data.dir)
-```
-
-
-```{r, echo=FALSE}
-# read buildings and parcels table
-bld.file.name <- 'imputed_buildings.csv'
-bld.imp <- fread(file.path(data.dir, bld.file.name))
-pcl <- fread(file.path(data.dir, "parcels.csv"))
-setkey(pcl, parcel_id)
-
-# reads OFM DU totals from the data directory (creates object ofm)
-source(file.path(data.dir, "load_ofm.R"))
-```
-
-```{r, echo=FALSE}
-# join buildings and parcels
-bld <- copy(bld.imp)
-setkey(bld, building_id, parcel_id)
-bld[, county_id := NULL] # will be taken from parcels dataset
-bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_tract_id)], by = "parcel_id")
-# assign county_id from census_blocks (since the parcel.county_id might have issues)
-cb <- fread(file.path(data.dir, "census_blocks.csv"))
-bld <- merge(bld, cb[, .(census_block_id, county_id)], by = "census_block_id")
-```
-
-The buildings table `r bld.file.name` has been merged with parcels and has `r nrow(bld)` rows. The OFM dataset has `r nrow(ofm)` records. 
-
 #### Settings
+
+Set the name of the buildings file:
+
+```{r, echo=TRUE}
+bld.file.name <- 'imputed_buildings_20200316.csv'
+```
 
 Geographies by which we want to match the datasets:
 
 ```{r, echo=TRUE}
 match.by <- c("county_id", "census_tract_id", "census_block_group_id"
-              #, "census_block_id"
               )
 ```
 
@@ -102,6 +72,42 @@ gqlutypes <- c(8,  # GQ
                11  # military
                )
 ```
+
+
+#### Loading Inputs
+
+In this processing, input files are taken from the directory
+```{r, echo=FALSE}
+library(data.table)
+data.year <- 2018 # data files will be taken from "../data{data.year}"
+data.dir <- file.path("..", paste0("data", data.year))
+normalizePath(data.dir)
+```
+
+
+```{r, echo=FALSE}
+# read buildings and parcels table
+bld.imp <- fread(file.path(data.dir, bld.file.name))
+pcl <- fread(file.path(data.dir, "parcels.csv"))
+setkey(pcl, parcel_id)
+
+# reads OFM DU totals from the data directory (creates object ofm)
+source(file.path(data.dir, "load_ofm.R"))
+```
+
+```{r, echo=FALSE}
+# join buildings and parcels
+bld <- copy(bld.imp)
+setkey(bld, building_id, parcel_id)
+bld[, county_id := NULL] # will be taken from census_blocks dataset
+bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_tract_id)], by = "parcel_id")
+# assign county_id from census_blocks (since the parcel.county_id might have issues)
+cb <- fread(file.path(data.dir, "census_blocks.csv"))
+bld <- merge(bld, cb[, .(census_block_id, county_id)], by = "census_block_id")
+```
+
+The buildings table `r bld.file.name` has been merged with parcels and has `r nrow(bld)` rows. The OFM dataset has `r nrow(ofm)` records. 
+
 
 ### Processing
 

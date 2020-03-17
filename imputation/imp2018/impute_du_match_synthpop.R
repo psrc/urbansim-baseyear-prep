@@ -3,11 +3,12 @@ library(data.table)
 data.year <- 2018 # data files will be taken from "data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
+# load buildings, parcels and OFM
 bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"))
 pcl <- fread(file.path(data.dir, 'parcels.csv'))
 #bld.imp <- merge(bld.imp, pcl[, .(parcel_id, census_block_id)], by = "parcel_id")
-
 synthh <- fread(file.path(data.dir, "summary_adjusted_urbansim_bg_id.csv"))
+# rename synthesizer columns
 setnames(synthh, "unique_id_for_base_year", "census_block_group_id")
 setnames(synthh, "num_hh_adjusted", "HH")
 
@@ -22,6 +23,8 @@ reslutypes <- c(13, # mobile home
 )
 mftypes <- c(12, 4, 30)
 
+# processing
+# aggregating function
 compute.bydu <- function(dt) {
     bydu <- dt[, .(DU = sum(residential_units), DUorig = sum(residential_units_orig),
                     N = .N,
@@ -45,6 +48,7 @@ bld[, imp1_residential_units := imp_residential_units]
 bld[, residential_units1 := residential_units]
 
 # for parcels with no res buildings build new buildings where possible 
+set.seed(1234)
 new.bldgs <- NULL
 s <- subset(negdt, Nres == 0)
 if(nrow(s) > 0) {
@@ -124,7 +128,6 @@ if(nrow(s) > 0) {
 }
 
 # > 1 multi-family buildings
-set.seed(1234)
 last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
 s <- subset(negdt, N > 1 & Nmf > 1)
