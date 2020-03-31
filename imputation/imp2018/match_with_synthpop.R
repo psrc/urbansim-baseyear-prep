@@ -3,7 +3,7 @@ library(data.table)
 data.year <- 2018 # data files will be taken from "data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
-bld.imp <- fread(file.path(data.dir, "imputed_buildings.csv"))
+bld.imp <- fread(file.path(data.dir, "imputed_buildings_ofm_match_20200316.csv"))
 #pcl <- fread(file.path(data.dir, 'parcels.csv'))
 #bld.imp <- merge(bld.imp, pcl[, .(parcel_id, census_block_id)], by = "parcel_id")
 
@@ -40,4 +40,4 @@ bydu[HH > DU, sum(difHH)]
 
 head(bydu[HH > DU, ][order(difHH)], 15)
 
-fwrite(bydu, file = "DU_vs_HH_vs_OFM.csv")
+fwrite(bydu, file = "DU_vs_HH_vs_OFM_20200316_matched.csv")
