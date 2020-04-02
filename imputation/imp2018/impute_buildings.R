@@ -81,6 +81,7 @@ no.unit.types.if.parcel.allows <- c(23 # Other
 # keep the original residential_units colum
 residential.bts <- c(19, 12, 4, 11)
 bld.raw[, residential_units_orig := residential_units]
+bld.raw[, non_residential_sqft_orig := non_residential_sqft]
 #bld.raw[, .N, by = building_type_id][order(building_type_id)]
 #bld.raw[, .N, by = land_use_type_id][order(land_use_type_id)]
 
@@ -141,9 +142,10 @@ bld[consider, Nmf_max := sum(is_max_du), by = parcel_id]
 bld[consider, Perc_mf_max := Nmf_max/Nmf * 100]
 bld[consider & is_max_du, has_small_spu := any(sqft_per_unit < 300), by = parcel_id][is.na(has_small_spu), has_small_spu := FALSE]
 consolidate <- consider & with(bld, Perc_mf_max > 49 & Nmf_max > 1 & has_small_spu == TRUE)
-bld[consolidate, max_year := max(year_built), by = parcel_id]
+#bld[consolidate, max_year := max(year_built), by = parcel_id]
 bld[, `:=`(max_du = NULL, is_max_du = NULL, Nmf = NULL, Nmf_max = NULL, Perc_mf_max = NULL,
-           max_year = NULL, has_small_spu = NULL)]
+           #max_year = NULL, 
+           has_small_spu = NULL)]
 du.before <- sum(bld[, residential_units])
 du.before.county <- bld[, .(DU=sum(residential_units)), by = county_id]
 # select one building per parcel which will represent the consolidated buildings
@@ -170,6 +172,33 @@ du.dif <- du.before.county[du.after.county, .(county_id, DUremoved = DU - i.DU),
 cat('\n', du.before - du.after, 'DUs removed due to buildings consolidation.\n')
 print(du.dif)
 
+
+# Consolidate non-res buildings in Pierce
+########################
+bld[is_non_residential & county_id == 53, Nbt := .N, by = .(parcel_id, building_type_id)]
+consolidate <- with(bld, is_non_residential & !is.na(Nbt) & Nbt > 1)
+bld[,Nbt := NULL]
+# select one building per parcel and building type which will represent the consolidated buildings
+selected <- bld[consolidate, .SD[which.max(non_residential_sqft )], by = .(parcel_id, building_type_id)]
+# sum attributes for new buildings
+new_bld <- bld[consolidate, .(gross_sqft = sum(gross_sqft), 
+                              non_residential_sqft = sum(non_residential_sqft),
+                              improvement_value = sum(improvement_value),
+                              residential_units = sum(residential_units),
+                              residential_units_orig = sum(residential_units_orig)), 
+               by = .(parcel_id, building_type_id)]
+# delete the original attributes
+for(attr in colnames(new_bld))
+    if(!attr %in% c("parcel_id", "building_type_id")) selected[[attr]] <- NULL
+# merge selected buildings with the summed attributes
+new_bld <- merge(selected, new_bld, by = c("parcel_id", "building_type_id"))
+# remove consolidated buildings from the original dataset and add new buildings
+nbld.before <- nrow(bld)
+bld <- bld[!consolidate]
+bld <- rbind(bld, new_bld)
+bld[building_id %in% selected$building_id, consolidated := TRUE]
+nbld.after <- nrow(bld)
+cat('\n', nbld.before - nbld.after, 'non-res buildings removed in Pierce due to buildings consolidation.\n')
 
 
 # Impute building types
@@ -263,6 +292,11 @@ bld[!is.na(gross_sqft) & gross_sqft == 1, gross_sqft := NA]
 #bld <- merge(bld, tmp, by=pcl_id)
 is.res <- bld$building_type_id %in% residential.bts
 
+# for residential buildings impute gross_sqft if sqft_per_unit is known
+impute <- with(bld, is.res & is.na(gross_sqft) & !is.na(sqft_per_unit) & !is.na(residential_units))
+bld[impute, gross_sqft := as.integer(sqft_per_unit * residential_units)]
+bld[impute, imp_gross_sqft := TRUE]
+
 # for residential buildings impute gross_sqft from improvement value
 for(bt in c(12, 19, 11)) {
   lmfit <- lm(log(gross_sqft) ~ log(improvement_value), data = bld[building_type_id == bt])
@@ -270,7 +304,7 @@ for(bt in c(12, 19, 11)) {
   imp <- bld$building_type_id == bt & is.na(bld$gross_sqft) & !is.na(bld$improvement_value)
   lmpred <- predict(lmfit, bld[imp,]) + rnorm(sum(imp), 0, slmfit$sigma)
   bld[imp, gross_sqft := as.integer(round(exp(lmpred)))]
-  bld[imp, 'imp_gross_sqft'] <- TRUE
+  bld[imp, imp_gross_sqft := TRUE]
 }
 
 # impute net_sqft for multi-family residential using linear regression 
