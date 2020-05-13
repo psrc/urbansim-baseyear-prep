@@ -26,7 +26,7 @@ pers[clone == 1, person_id := (max_pid + 1):(max_pid + nrow(pers[clone == 1]))]
 
 
 # select the relevant variables for households
-households <- hhs[, .(household_id, puma, census_block_group_id, ten, income=as.integer(hincp), building_id=-1)] 
+households <- hhs[, .(household_id, puma, census_block_group_id, tenure=ten, income=as.integer(hincp), building_id=-1)] 
 
 # get some aggregates from persons table needed in the households table
 households %<>% merge(pers[,list(persons=.N, 
