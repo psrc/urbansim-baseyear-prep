@@ -1,8 +1,8 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "4/1/2020"
-output: pdf_document
+date: "4/8/2020"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -32,7 +32,7 @@ Set the name of the buildings file (`bld.file.name`), if the resulting dataset s
 
 ```{r, echo=TRUE}
 bld.file.name <- 'buildings_20200316_mhs.csv'
-save.as.csv <- TRUE
+save.as.csv <- FALSE
 out.file.name <- "imputed_buildings_20200401.csv"
 ```
 

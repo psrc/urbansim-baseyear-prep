@@ -1,7 +1,8 @@
 library(magrittr)
+library(data.table)
 
 # load data
-lodes.file <- 'AdjLodes_BY14_lum2.txt'
+lodes.file <- 'AdjLodes_BY17a.csv'
 
 lodes <- read.table(lodes.file, sep=",", header=TRUE, stringsAsFactors=FALSE, colClasses=c("character", "numeric", "numeric", "numeric"))
 
@@ -14,7 +15,7 @@ lodes <- cbind(id=1:nrow(lodes), lodes)
 
 # deal with negatives
 neg <- subset(lodes, number_of_jobs < 0)
-geo.hier <- list(block_group=14, tract=11, county=5, region=2)
+geo.hier <- list(block_group=12, tract=11, county=5, region=2)
 log.distr <- log.distr.counter <- rep(0, length(geo.hier))
 names(log.distr) <- names(log.distr.counter) <- names(geo.hier)
 
@@ -59,11 +60,11 @@ for(bl in ublocks) {
                      home_based_status=0, building_id=-1,
                      census_block_id=bl)
   if(!append) colnames(jobs) <- c('job_id:i4', 'sector_id:i1', 'home_based_status:b1', 'building_id:i4', 'census_block_id:i4')
-  write.table(jobs, "jobs.csv", sep=",", row.names=FALSE, quote=FALSE, append=append, col.names=!append)
+  write.table(jobs, "jobs.csv", sep=",", row.names=FALSE, quote=FALSE, append=append, col.names=!append) #should convert to data.table and use fwrite instead
   append <- TRUE
   jid <- jid+njobs
 }
 cat(" done.\n")
 
 # convert it from command line into Opus cache:
-# python -m opus_core.tools.convert_table csv flt -d . -o /path/to/opus/cache/2014 -t jobs
+# python -m opus_core.tools.convert_table csv flt -d . -o /path/to/opus/cache/2017 -t jobs
