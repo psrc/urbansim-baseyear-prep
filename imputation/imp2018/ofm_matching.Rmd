@@ -1,7 +1,7 @@
 ---
 title: "Matching Buildings to OFM"
 author: "Hana Sevcikova"
-date: "3/16/2020"
+date: "5/26/2020"
 output: pdf_document
 ---
 
@@ -27,7 +27,7 @@ Input files should be placed in the [imputation/data2018]( https://github.com/ps
 Set the name of the buildings file:
 
 ```{r, echo=TRUE}
-bld.file.name <- 'imputed_buildings_20200316.csv'
+bld.file.name <- 'imputed_buildings_20200526.csv'
 ```
 
 Geographies by which we want to match the datasets:
@@ -101,6 +101,8 @@ bld <- copy(bld.imp)
 setkey(bld, building_id, parcel_id)
 bld[, county_id := NULL] # will be taken from census_blocks dataset
 bld <- merge(bld, pcl[, .(parcel_id, census_block_id, census_tract_id)], by = "parcel_id")
+if(!"census_block_group_id" %in% colnames(bld))
+    bld <- merge(bld, pcl[, .(parcel_id, census_block_group_id)], by = "parcel_id")
 # assign county_id from census_blocks (since the parcel.county_id might have issues)
 cb <- fread(file.path(data.dir, "census_blocks.csv"))
 bld <- merge(bld, cb[, .(census_block_id, county_id)], by = "census_block_id")

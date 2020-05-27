@@ -1,8 +1,8 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "4/8/2020"
-output: html_document
+date: "5/26/2020"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -17,23 +17,24 @@ This R markdown file is located in the [2018 imputation GitHub repo]( https://gi
 
 Input data are csv files exported from the database 2018_parcel_baseyear_working. 
 
-Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. In addition, the 2014 parcels dataset is used. The input datasets are:
+Input files should be placed in the [imputation/data2018]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2018) directory. Optionally, the 2014 parcels dataset can be used. The input datasets are:
 
 * buildings.csv (name configurable)
-* parcels.csv
-* parcel_lookup_2018_2014.csv
-* imputation/data2014/parcels.csv
+* parcels.csv (name configurable)
+* parcel_lookup_2018_2014.csv (optionally)
+* imputation/data2014/parcels.csv (optionally)
 
 The output is written into imputation/data2018/imputed_buildings.csv. The name of the file can be configured in the Settings section.
 
 #### Settings
 
-Set the name of the buildings file (`bld.file.name`), if the resulting dataset should be written into a file (`save.as.csv`) and the name of the resulting file (`out.file.name`):
+Set the name of the buildings file (`bld.file.name`), if the resulting dataset should be written into a file (`save.as.csv`), the name of the resulting file (`out.file.name`) and if parcels should be joined with 2014 parcels to impute missing land use type (`join.with.2014parcels`):
 
 ```{r, echo=TRUE}
-bld.file.name <- 'buildings_20200316_mhs.csv'
-save.as.csv <- FALSE
-out.file.name <- "imputed_buildings_20200401.csv"
+bld.file.name <- 'buildings.csv'
+save.as.csv <- TRUE
+out.file.name <- "imputed_buildings_20200526.csv"
+join.with.2014parcels <- FALSE
 ```
 
 Here is a list for a translation between land use type (left) into building type (right):
@@ -112,20 +113,21 @@ pcl <- fread(file.path(data.dir, 'parcels.csv'))
 bld.raw[pcl, `:=`(land_use_type_id = i.land_use_type_id, parcel_sqft = i.parcel_sqft, 
         land_value = i.land_value), on = "parcel_id"]
 
-# read 2014 parcels table and 2018->2014 correspondence table 
-pcl14look.file.name <- "parcel_lookup_2018_2014.csv"
-pcl2014.look <- fread(file.path(data.dir, pcl14look.file.name))
-pcl14.file.name <- file.path("..", "data2014", "parcels.csv")
-pcl2014 <- fread(pcl14.file.name)
-pcl2014[, parcel_id_2014 := parcel_id]
-# keep only land_use_type_id
-pcl2014.look[pcl2014, land_use_type_id := i.land_use_type_id, on = "parcel_id_2014"]
+if(join.with.2014parcels) {
+    # read 2014 parcels table and 2018->2014 correspondence table 
+    pcl14look.file.name <- "parcel_lookup_2018_2014.csv"
+    pcl2014.look <- fread(file.path(data.dir, pcl14look.file.name))
+    pcl14.file.name <- file.path("..", "data2014", "parcels.csv")
+    pcl2014 <- fread(pcl14.file.name)
+    pcl2014[, parcel_id_2014 := parcel_id]
+    # keep only land_use_type_id
+    pcl2014.look[pcl2014, land_use_type_id := i.land_use_type_id, on = "parcel_id_2014"]
+}
 ```
 
 The buildings table `r bld.file.name` has `r nrow(bld.raw)` rows. 
 
-2014 parcels lookup table (file `r pcl14look.file.name`) has been joint with `r pcl14.file.name` and has `r nrow(pcl2014.look)` rows. 
-
+`r if(join.with.2014parcels){paste("2014 parcels lookup table (file ", pcl14look.file.name, ") has been joint with ", pcl14.file.name, " and has ", nrow(pcl2014.look), " rows.")}`
 
 
 
@@ -143,7 +145,7 @@ set.seed(1)
 #### Impute land use types using 2014 data
 
 
-```{r, echo=FALSE}
+```{r, eval=join.with.2014parcels, echo=FALSE}
 # Impute missing land use type from 2014 parcels (exclude no code and vacant)
 ########################
 #pcl <- unique(bld.raw[, .(parcel_id, land_use_type_id)])
@@ -151,9 +153,10 @@ pcl[pcl2014.look, land_use_type_id_2014 := i.land_use_type_id, on = "parcel_id"]
 impute <- pcl$land_use_type_id == 0 & !is.na(pcl$land_use_type_id_2014) & !pcl$land_use_type_id_2014 %in% c(16, 17, 26, 27)
 ```
 
-There are `r sum(pcl$land_use_type_id == 0)` parcels with land use type 0. After excluding 2014 parcels with no-code and vacant land use code, `r sum(impute)` parcels can be imputed. 
+`r if(join.with.2014parcels){paste("There are", sum(pcl$land_use_type_id == 0), "parcels with land use type 0. After excluding 2014 parcels with no-code and vacant land use code,", sum(impute), "parcels can be imputed.")}`
 
-```{r, echo=FALSE}
+
+```{r, eval=join.with.2014parcels, echo=FALSE}
 if(sum(impute) > 0) {
   pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_id_2014)]
   pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
@@ -161,7 +164,9 @@ if(sum(impute) > 0) {
   bld[pcl, `:=`(land_use_type_id_2014 = i.land_use_type_id_2014, land_use_type_id = i.land_use_type_id), on = "parcel_id"]
 }
 ```
-`r sum(orig.lut != bld$land_use_type_id)` buildings got their land use type changed. 
+
+`r if(join.with.2014parcels){paste(sum(orig.lut != bld$land_use_type_id), "buildings got their parcel's land use type changed.")} else {"No 2014-based imputation performed."}`
+
 
 
 #### Remove units if not wanted
@@ -693,7 +698,7 @@ There are still `r  nrow(bld[is.nonres & is.na(non_residential_sqft)])` missing 
 
 #### Save results
 
- ```{r echo = FALSE}
+```{r echo = FALSE}
 file.out <- file.path(data.dir, out.file.name)
 if(save.as.csv) {
   # convert logical to integer
@@ -713,7 +718,7 @@ If `save.as.csv` is `TRUE`, the resulting file is written into `r  file.out`. Cu
 
 
 
- ```{r echo = FALSE}
+```{r echo = FALSE}
 dt <- copy(bld)
 s <- dt[, list(non_residential_sqft=round(sum(non_residential_sqft, na.rm=TRUE)/43560), residential_units=sum(residential_units, na.rm=TRUE)), by=county_id]
 dtr <- data.table(bld.raw)

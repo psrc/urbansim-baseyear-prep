@@ -1,17 +1,16 @@
 # Hana Sevcikova, PSRC
-# 02/10/2020
+# Created: 02/10/2020
+# Updated: 05/20/2020
 # The script imputes building_type_id, residential_units and non_residential_sqft (partly also improvement_value) using a set of regression models.
 # building_type_id is imputed or updated mainly using land use type. For missing land use types a parcels table from 2014 
 # is used to inform the current type. 
 # All I/O files are in the directory "data{data.year}" where data.year should be set to correspond to the datasets.
 # Inputs: 
-#   file buildings_for_imputation.csv
-# 		In mysql create a table buildings_for_imputation which is a selection of specific buildings attributes joint with some parcels attributes. Use this query:
-# 		create table buildings_for_imputation select a.parcel_id, building_id, year_built, a.gross_sqft, non_residential_sqft, residential_units, sqft_per_unit, stories, building_type_id, improvement_value, a.county_id, land_use_type_id, parcel_sqft, tax_exempt, land_value, is_inside_urban_growth_boundary from buildings as a left join parcels as b on a.parcel_id=b.parcel_id;
-# 		Then export the result into a csv file.
+#   file buildings.csv: buildings table directly exported from mysql
+#   file parcels.csv: parcels table directly exported from mysql
 #   file data2014/parcels.csv: parcels table from 2014 base year
 #   file parcel_lookup_2018_2014.csv: correspondence between 2018 and 2014 parcels. It has columns parcel_id, parcel_id_2014.
-#     It can be created using the data2018/clean_pcl_correspondence.R script which postprocesses the table parcel_points_2018.
+#       It can be created using the data2018/clean_pcl_correspondence.R script which postprocesses the table parcel_points_2018.
 # Output: file imputed_buildings.csv
 #		It has the missing values filled in as well as new columns indicating which records were imputed.
 
@@ -22,7 +21,7 @@ data.dir <- file.path("..", paste0("data", data.year))
 impute.net.sqft <- FALSE
 
 # read buildings and parcels tables
-bld.file.name <- 'buildings_20200316_mhs.csv'
+bld.file.name <- 'buildings.csv'
 bld.raw <- fread(file.path(data.dir, bld.file.name))
 
 pcl <- fread(file.path(data.dir, 'parcels.csv'))

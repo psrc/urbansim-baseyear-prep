@@ -1,7 +1,7 @@
 ---
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
-date: "3/16/2020"
+date: "5/26/2020"
 output: pdf_document
 ---
 
@@ -34,7 +34,7 @@ The output is written into imputation/data2018/imputed_buildings_ofm_match.csv.
 Set the name of the buildings file and the household synthesizer file:
 
 ```{r, echo=TRUE}
-bld.file.name <- "imputed_buildings_20200316.csv"
+bld.file.name <- "imputed_buildings_20200526.csv"
 synth.file.name <- "summary_adjusted_urbansim_bg_id.csv"
 ```
 
@@ -42,7 +42,7 @@ Set a flag if results should be stored and the names of output files:
 
 ```{r, echo=TRUE}
 save.as.csv <- TRUE
-out.file.name <- "imputed_buildings_ofm_match_20200316.csv"
+out.file.name <- "imputed_buildings_ofm_match_20200526.csv"
 ```
 
 
@@ -76,10 +76,13 @@ normalizePath(data.dir)
 bld.imp <- fread(file.path(data.dir, bld.file.name))
 pcl <- fread(file.path(data.dir, 'parcels.csv'))
 synthh <- fread(file.path(data.dir, synth.file.name))
+# add census_block_group_id to buildings
+if(!"census_block_group_id" %in% colnames(bld.imp))
+  bld.imp[pcl, census_block_group_id := i.census_block_group_id, on = "parcel_id"]
 # rename synthesizer columns
 setnames(synthh, "unique_id_for_base_year", "census_block_group_id")
 setnames(synthh, "num_hh_adjusted", "HH")
-# loac census blocks and create a block group dataset to get the right county_id
+# load census blocks and create a block group dataset to get the right county_id
 cb <- fread(file.path(data.dir, "census_blocks.csv"))
 cbg <- unique(cb[, .(census_block_group_id, county_id)]) 
 ```
@@ -347,16 +350,16 @@ The remaining discrepancies are due to the fact that there are no corresponding 
 fnegdt[, .(census_block_group_id, county_id, DU, DUorig, HH, difHH)]
 ```
 
-Here are the county totals. Column `DU` contains the final residential units. The columnn `DUimp1` are the imputed DUs after the first round of imputation. Thus, the amount imputed in this script is `DU - DUimp1`.
+Here are the county totals. Column `DU` contains the final residential units. The columnn `DUimp1` are the imputed DUs after the first round of imputation. Thus, the amount imputed in this script is `DUdif = DU - DUimp1`.
 
 ```{r, echo=FALSE}
-fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), HH = sum(HH)), by = county_id]
+fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), DUdif =  sum(DU) - sum(DUimp1), HH = sum(HH)), by = county_id][order(county_id)]
 ```
 
 The regional total is:
 
 ```{r, echo=FALSE}
-fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), HH = sum(HH))]
+fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), DUdif =  sum(DU) - sum(DUimp1), HH = sum(HH))]
 ```
 
 ```{r echo = FALSE}
