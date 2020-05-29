@@ -33,13 +33,13 @@ households %<>% merge(pers[,list(persons=.N,
                                 children=sum(agep < 18), 
                                 workers=sum(esr %in% c(1,2,4,5))), by="household_id"], 
                       by="household_id")
-households %<>% merge(subset(pers, sporder==1)[, .(household_id, agep)], by="household_id")
+households %<>% merge(subset(pers, new_per_num==1)[, .(household_id, agep)], by="household_id")
 setnames(households, "agep", "age_of_head")
 
 # create persons dataset
 pers[is.na(esr), esr := -1]
 persons <- pers[, .(person_id, household_id, sex, person_id_orig,
-                        member_id = sporder,
+                        member_id = new_per_num,
                         age = agep,
                         earnings = as.integer(pincp),
                         edu = as.integer(schl),
