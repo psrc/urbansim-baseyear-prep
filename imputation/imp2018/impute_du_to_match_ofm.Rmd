@@ -1,7 +1,7 @@
 ---
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
-date: "5/26/2020"
+date: "6/16/2020"
 output: pdf_document
 ---
 
@@ -34,7 +34,7 @@ The output is written into imputation/data2018/imputed_buildings_ofm_match.csv.
 Set the name of the buildings file and the household synthesizer file:
 
 ```{r, echo=TRUE}
-bld.file.name <- "imputed_buildings_20200526.csv"
+bld.file.name <- "imputed_buildings_20200616.csv"
 synth.file.name <- "summary_adjusted_urbansim_bg_id.csv"
 ```
 
@@ -42,7 +42,7 @@ Set a flag if results should be stored and the names of output files:
 
 ```{r, echo=TRUE}
 save.as.csv <- TRUE
-out.file.name <- "imputed_buildings_ofm_match_20200526.csv"
+out.file.name <- "imputed_buildings_ofm_match_20200616.csv"
 ```
 
 
@@ -325,9 +325,10 @@ if(nrow(s) > 0) {
         bld[row.idx, imp_residential_units := imp_residential_units + 1]
         imputed.du <- imputed.du + s[i, -difHH]
         imputed.bld <- imputed.bld + length(row.idx)
-        if(length(row.idx) > 0) {
-            bld[row.idx, "building_type_id"] <- 12 # set to MF residential
-        }
+        # commented out because it could be a governmental building which needs gov jobs
+        #if(length(row.idx) > 0) {
+        #    bld[row.idx, "building_type_id"] <- 12 # set to MF residential
+        #}
     }
 }
 ```

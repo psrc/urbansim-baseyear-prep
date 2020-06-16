@@ -1,7 +1,7 @@
 ---
 title: "Matching Buildings to OFM"
 author: "Hana Sevcikova"
-date: "5/26/2020"
+date: "6/03/2020"
 output: pdf_document
 ---
 
@@ -27,7 +27,7 @@ Input files should be placed in the [imputation/data2018]( https://github.com/ps
 Set the name of the buildings file:
 
 ```{r, echo=TRUE}
-bld.file.name <- 'imputed_buildings_20200526.csv'
+bld.file.name <- 'imputed_buildings_20200603.csv'
 ```
 
 Geographies by which we want to match the datasets:

@@ -1,7 +1,7 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "5/26/2020"
+date: "6/16/2020"
 output: pdf_document
 ---
 
@@ -33,7 +33,7 @@ Set the name of the buildings file (`bld.file.name`), if the resulting dataset s
 ```{r, echo=TRUE}
 bld.file.name <- 'buildings.csv'
 save.as.csv <- TRUE
-out.file.name <- "imputed_buildings_20200526.csv"
+out.file.name <- "imputed_buildings_20200616.csv"
 join.with.2014parcels <- FALSE
 ```
 
@@ -692,6 +692,14 @@ bld[impute, imp_non_residential_sqft := TRUE]
 plot(non_residential_sqft ~ improvement_value, data = nresest, log="xy", cex = 0.5, col = '#00000020')
 points(non_residential_sqft ~ improvement_value, data = bld[impute,], cex = 0.5, col = "red")
 ```
+
+
+```{r echo = FALSE}
+reset <- with(bld, is.nonres & is.na(non_residential_sqft) & non_residential_sqft_orig > 0)
+bld[reset, non_residential_sqft := non_residential_sqft_orig]
+```
+
+`r sum(reset)` of (non-imputed) buildings were reset to their original values of `r sum(bld[reset, non_residential_sqft])` non-residential sqft.
 
 There are still `r  nrow(bld[is.nonres & is.na(non_residential_sqft)])` missing values of non-residential sqft. These are buildings that have missing improvement value. TODO: impute those from other attributes.
 
