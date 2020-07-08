@@ -1,7 +1,7 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "6/16/2020"
+date: "7/7/2020"
 output: pdf_document
 ---
 
@@ -33,7 +33,7 @@ Set the name of the buildings file (`bld.file.name`), if the resulting dataset s
 ```{r, echo=TRUE}
 bld.file.name <- 'buildings.csv'
 save.as.csv <- TRUE
-out.file.name <- "imputed_buildings_20200616.csv"
+out.file.name <- "imputed_buildings_20200707.csv"
 join.with.2014parcels <- FALSE
 ```
 
@@ -446,7 +446,7 @@ for(attr in c('building_type_id', 'gross_sqft', 'improvement_value', 'land_use_t
 }
 
 is.res <- bld$building_type_id %in% residential.bts
-is.nonres <- !is.res & !bld$building_type_id %in% c(6)
+is.nonres <- !is.res & !bld$building_type_id %in% c(2, 5, 6, 7, 9, 18) # exclude group quaters and government
 nounits <- bld$residential_units == 0 & bld$non_residential_sqft == 0
 bld[is.res & sqft_per_unit == 1, sqft_per_unit := NA]
 bld[residential_units == 0 &  is.res, residential_units :=  NA]
@@ -457,7 +457,7 @@ bld[nounits &  is.na(bld$building_type_id), `:=`(residential_units = NA, non_res
 
 2. Set as missing values of:
     * residential_units in records in residential and mix-use buildings with zero residential_units (`r sum(is.na(bld$residential_units))`)
-    * non_residential_sqft in records in non-residential and mix-use buildings with zero non_residential_sqft (`r sum(is.na(bld$non_residential_sqft))`)
+    * non_residential_sqft in records in non-residential and mix-use buildings (excluding group quarters and governmental buildings) with zero non_residential_sqft (`r sum(is.na(bld$non_residential_sqft))`)
     * attributes 'building_type_id', 'gross_sqft', 'improvement_value', 'land_use_type_id', 'parcel_sqft', 'stories', 'year_built', 'land_value', 'sqft_per_unit' that equal to 0.
     * attribute sqft_per_unit in residential records where sqft_per_unit is 1.
 
@@ -728,14 +728,14 @@ If `save.as.csv` is `TRUE`, the resulting file is written into `r  file.out`. Cu
 
 ```{r echo = FALSE}
 dt <- copy(bld)
-s <- dt[, list(non_residential_sqft=round(sum(non_residential_sqft, na.rm=TRUE)/43560), residential_units=sum(residential_units, na.rm=TRUE)), by=county_id]
+s <- dt[, list(non_residential_sqft=round(sum(non_residential_sqft, na.rm=TRUE)/1000), residential_units=sum(residential_units, na.rm=TRUE)), by=county_id]
 dtr <- data.table(bld.raw)
-sr <- dtr[, list(non_residential_sqft=round(sum(non_residential_sqft, na.rm=TRUE)/43560), residential_units=sum(residential_units, na.rm=TRUE)), by=county_id]
+sr <- dtr[, list(non_residential_sqft=round(sum(non_residential_sqft, na.rm=TRUE)/1000), residential_units=sum(residential_units, na.rm=TRUE)), by=county_id]
 ms <- merge(sr, s, by='county_id')
 ms <- cbind(ms, dif_non_res_sqft=ms$non_residential_sqft.y-ms$non_residential_sqft.x, dif_du=ms$residential_units.y-ms$residential_units.x)
 ```
 
-Here are results by counties (non-residential units are in acres):
+Here are results by counties (non-residential units are in thousands):
 
 ```{r echo = FALSE}
 ms[,list(DUorig = sum(residential_units.x), DUimp = sum(residential_units.y), difDU = sum(dif_du),
