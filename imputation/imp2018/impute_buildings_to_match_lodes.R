@@ -2,7 +2,7 @@ library(data.table)
 
 setwd("~/psrc/urbansim-baseyear-prep/imputation/imp2018")
 save.as.csv <- TRUE
-out.file.name <- "imputed_buildings_lodes_match_20200616.csv"
+out.file.name <- "imputed_buildings_lodes_match_20200707.csv"
 
 gov.bts <- c(2, 5, 7, 9, 18)
 sch.bts <- 18
@@ -16,7 +16,7 @@ publutypes <- c(2, 7, 9, 11, 23)
 schlutypes <- 23
 
 # load buildings
-bld.file.name <- "imputed_buildings_ofm_match_20200616.csv"
+bld.file.name <- "imputed_buildings_ofm_match_20200707.csv"
 data.year <- 2018 # data files will be taken from "../data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
@@ -45,7 +45,10 @@ bgjobs[, Npriv := number_of_jobs - Npub]
 # load Lodes data
 #ljobs <- fread("../../lodes/AdjLodes_BY18prelim.csv")
 #ljobs <- fread("../../lodes/AdjLodes_BY17a.csv")
-ljobs <- fread(file.path(data.dir, "jobs_lodes2018_preloc_05292020_wbg.csv"))
+#lodes.file.name <- "jobs_lodes2018_preloc_05292020_wbg.csv"
+lodes.file.name <- "jobs.csv"
+ljobs <- fread(file.path(data.dir, lodes.file.name))
+colnames(ljobs) <- gsub(":.*", "", colnames(ljobs)) # remove column types from the names
 #ljobs[cb, census_block_group_id := i.census_block_group_id, on = "census_block_id"]
 ljobs[, number_of_jobs := 1]
 lbgjobs <- ljobs[, .(number_of_jobs = sum(number_of_jobs)), by = .(census_block_group_id)]
