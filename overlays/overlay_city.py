@@ -1,7 +1,15 @@
-import os, pyodbc, sqlalchemy
+import os, pyodbc, sqlalchemy, time
 import geopandas as gpd
 import pandas as pd
 from shapely import wkt
+
+start = time.time()
+
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+
+#outdir = r'J:\Staff\Christy\usim-baseyear\shapes'
 
 connection_string = 'mssql+pyodbc://AWS-PROD-SQL\Sockeye/ElmerGeo?driver=SQL Server?Trusted_Connection=yes'
 
@@ -17,14 +25,38 @@ def read_from_sde(connection_string, feature_class_name, crs = {'init' :'epsg:22
     cols = [col for col in gdf.columns if col not in ['Shape', 'GDB_GEOMATTR_DATA', 'SDE_STATE_ID']]
     return gdf[cols]
 
-city = read_from_sde(connection_string, 'cities')
-#city_2 = gpd.read_file(r'W:\geodata\political\city.shp')
-
 parcels = gpd.read_file(r'J:\Projects\2018_base_year\Region\prclpt18.shp') # this shape has 1,302,434 rows
-#parcels_gelmer = read_from_sde(connection_string, 'parcels_urbansim_2018_pts') # this shape has 1,302,412 rows and diff columns
 
-prcl_city = gpd.sjoin(parcels, city, how='left')
+# dict of layer name and columns to exclude
+features_dict = {'cities': ['OBJECTID', 'acres_gis', 'feat_type'],
+                 'floodplains': ['OBJECTID', 'county', 'Shape_Leng']}
+buffer_dict = {'floodplains': 100}
 
-# QC ---------------------------------------------------------------
-prcl_city['city_name'].isnull().sum() # number of nan (uninc areas)
-prcl_city['city_name'].notnull().sum() # incorp areas
+# dict keys as list
+features = list(features_dict.keys())
+buffers = list(buffer_dict.keys())
+
+for i in range(len(features)):
+    print('reading ' + features[i])
+    cols_to_rm = features_dict[features[i]]
+    join_shp = read_from_sde(connection_string, features[i]) # read feature
+    # check if feature needs buffering
+    if features[i] in buffers:
+        print(features[i] + ' needs buffer; add buffer')
+        join_shp['geometry'] = join_shp.geometry.buffer(buffer_dict[features[i]])
+    # remove unecessary columns
+    join_shp = join_shp.drop(cols_to_rm, axis=1) if len(cols_to_rm) > 0 else join_shp
+    if i == 0:
+        print('joining parcels to ' + features[i])
+        prcls_joined = gpd.sjoin(parcels, join_shp, how='left') # join parcels to first feature
+    else:
+        print('joining joined parcels to ' + features[i])
+        prcls_joined = prcls_joined.drop(['index_right'], axis=1) # remove index field
+        print('dropped index column')
+        prcls_joined = gpd.sjoin(prcls_joined, join_shp, how='left') # join subsequent parcel output to feature
+        print('overlays completed')
+
+end = time.time()
+print(str(((end-start)/60)/60) + " hours")
+
+
