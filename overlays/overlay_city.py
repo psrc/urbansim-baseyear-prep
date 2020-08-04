@@ -27,9 +27,13 @@ def read_from_sde(connection_string, feature_class_name, crs = {'init' :'epsg:22
 
 parcels = gpd.read_file(r'J:\Projects\2018_base_year\Region\prclpt18.shp') # this shape has 1,302,434 rows
 
-# dict of layer name and columns to exclude
-features_dict = {'cities': ['OBJECTID', 'acres_gis', 'feat_type'],
-                 'floodplains': ['OBJECTID', 'county', 'Shape_Leng']}
+# dict of layer name and columns to keep
+features_dict = {'cities': ['city_name', 'cnty_name', 'city_fips', 'cnty_fips'],
+                 'floodplains': ['flood_plain'],
+                 'Open_Space_Parks': ['site_name'],
+                 'Farmland': ['fid_ag_farmedland']}
+
+# dict of buffer sizes (ft)
 buffer_dict = {'floodplains': 100}
 
 # dict keys as list
@@ -38,25 +42,28 @@ buffers = list(buffer_dict.keys())
 
 for i in range(len(features)):
     print('reading ' + features[i])
-    cols_to_rm = features_dict[features[i]]
+    cols_to_keep = features_dict[features[i]]
+
     join_shp = read_from_sde(connection_string, features[i]) # read feature
-    # check if feature needs buffering
-    if features[i] in buffers:
+    join_shp = join_shp[features_dict[features[i]] + ['OBJECTID', 'geometry']] # keep essential columns
+
+    if features[i] in buffers: # check if feature needs buffering
         print(features[i] + ' needs buffer; add buffer')
         join_shp['geometry'] = join_shp.geometry.buffer(buffer_dict[features[i]])
-    # remove unecessary columns
-    join_shp = join_shp.drop(cols_to_rm, axis=1) if len(cols_to_rm) > 0 else join_shp
+
+    join_shp = join_shp.drop(['OBJECTID'], axis=1)
+    
     if i == 0:
         print('joining parcels to ' + features[i])
         prcls_joined = gpd.sjoin(parcels, join_shp, how='left') # join parcels to first feature
+        prcls_joined = prcls_joined.drop(['index_right'], axis=1) # remove index field
     else:
         print('joining joined parcels to ' + features[i])
-        prcls_joined = prcls_joined.drop(['index_right'], axis=1) # remove index field
-        print('dropped index column')
         prcls_joined = gpd.sjoin(prcls_joined, join_shp, how='left') # join subsequent parcel output to feature
+        prcls_joined = prcls_joined.drop(['index_right'], axis=1) # remove remaining index field
+        print('dropped index column')
         print('overlays completed')
 
 end = time.time()
-print(str(((end-start)/60)/60) + " hours")
-
+print(str(round(((end-start)/60)/60, 2)) + " hours")
 
