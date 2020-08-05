@@ -9,7 +9,7 @@ pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-#outdir = r'J:\Staff\Christy\usim-baseyear\shapes'
+outdir = r'J:\Staff\Christy\usim-baseyear\shapes'
 
 connection_string = 'mssql+pyodbc://AWS-PROD-SQL\Sockeye/ElmerGeo?driver=SQL Server?Trusted_Connection=yes'
 
@@ -27,14 +27,25 @@ def read_from_sde(connection_string, feature_class_name, crs = {'init' :'epsg:22
 
 parcels = gpd.read_file(r'J:\Projects\2018_base_year\Region\prclpt18.shp') # this shape has 1,302,434 rows
 
-# dict of layer name and columns to keep
+# gpd.sjoin() creates a one-to-many relationship if an environ layer has overlapping polygons or from 
+# a result of buffering, creates overlapping polygons within itself.A solution is to dissolve the shp before joining.
+
+# dict of layer name and either columns to keep or a binary column to create/keep
 features_dict = {'cities': ['city_name', 'cnty_name', 'city_fips', 'cnty_fips'],
-                 'floodplains': ['flood_plain'],
-                 'Open_Space_Parks': ['site_name'],
-                 'Farmland': ['fid_ag_farmedland']}
+                 'waterbodies': ['in_wtrbod'], # aka waterfront
+                 'floodplains': ['in_fldpln'], 
+                 'Open_Space_Parks': ['in_osp'] , 
+                 'Farmland': ['in_farm'], 
+                 'WorkingForests': ['in_wrkfor'], 
+                 'Aquatic_Systems': ['in_aqsys'], 
+                 }
 
 # dict of buffer sizes (ft)
-buffer_dict = {'floodplains': 100}
+buffer_dict = {'waterbodies': 300,
+               'floodplains': 100}
+
+# list of layers to not dissolve
+do_not_dissolve = ['cities']
 
 # dict keys as list
 features = list(features_dict.keys())
@@ -45,7 +56,16 @@ for i in range(len(features)):
     cols_to_keep = features_dict[features[i]]
 
     join_shp = read_from_sde(connection_string, features[i]) # read feature
-    join_shp = join_shp[features_dict[features[i]] + ['OBJECTID', 'geometry']] # keep essential columns
+
+    # subset/create column(s)
+    if features[i] in do_not_dissolve: 
+        join_shp = join_shp[cols_to_keep + ['OBJECTID', 'geometry']] # keep essential columns
+    else: 
+        new_col_name = cols_to_keep[0]
+        print('creating new column: ' + new_col_name)
+        join_shp[new_col_name] = 1 # create essential column (binary)
+        join_shp = join_shp.dissolve(by=new_col_name).reset_index()
+        join_shp = join_shp[[new_col_name, 'geometry', 'OBJECTID']]
 
     if features[i] in buffers: # check if feature needs buffering
         print(features[i] + ' needs buffer; add buffer')
@@ -66,4 +86,8 @@ for i in range(len(features)):
 
 end = time.time()
 print(str(round(((end-start)/60)/60, 2)) + " hours")
+
+#prcls_joined.to_file(os.path.join(outdir, 'prclpt18_overlay.shp'))
+#is_waterfront = gpd.read_file(r'J:\Projects\2018_base_year\Region\Parcel_Attribute_Layers\prclpt18_h2o.shp') # Grace's waterfront output
+#lu_tbl = pd.read_csv('land_use_types.csv')
 
