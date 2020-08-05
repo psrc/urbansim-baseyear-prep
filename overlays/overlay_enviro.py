@@ -82,8 +82,9 @@ for i in range(len(features)):
         prcls_joined = gpd.sjoin(prcls_joined, join_shp, how='left') # join subsequent parcel output to feature
         prcls_joined = prcls_joined.drop(['index_right'], axis=1) # remove remaining index field
         print('dropped index column')
-        print('overlays completed')
+        print('overlay completed')
 
+print('overlays completed')
 end = time.time()
 print(str(round(((end-start)/60)/60, 2)) + " hours")
 
