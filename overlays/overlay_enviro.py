@@ -12,9 +12,9 @@ pd.set_option('display.width', 1000)
 start = time.time()
 
 append_new_overlay_to_existing_shp = True
-export_shp = False
+export_shp = True
 outdir = r'J:\Staff\Christy\usim-baseyear\shapes'
-existing_nm = 'prclpt18_overlay_2020-08-13.shp'
+existing_nm = 'prclpt18_overlay_2020-08-13b.shp'
 export_nm = 'prclpt18_overlay_' + str(date.today()) + '.shp'
 
 base_year_parcels = r'J:\Projects\2018_base_year\Region\prclpt18.shp' # this shape has 1,302,434 rows
@@ -139,7 +139,8 @@ for i in range(len(features)):
 
 # join main tbl back to shp
 if append_new_overlay_to_existing_shp == True:
-    final_parcels = existing_overlay_parcel_shp.merge(all_cols_tbl, on='PIN', how='left')
+    exist_parcels = gpd.read_file(os.path.join(outdir, existing_nm))
+    final_parcels = exist_parcels.merge(all_cols_tbl, on='PIN', how='left')
 else:
     final_parcels = parcels.merge(all_cols_tbl, on='PIN', how='left') 
 
