@@ -11,7 +11,7 @@ pd.set_option('display.width', 1000)
 
 start = time.time()
 
-append_new_overlay_to_existing_shp = True
+append_new_overlay_to_existing_shp = False
 export_shp = True
 outdir = r'J:\Staff\Christy\usim-baseyear\shapes'
 existing_nm = 'prclpt18_overlay_2020-08-13b.shp'
@@ -42,26 +42,26 @@ def get_feature(col_name):
 # a result of buffering, creates overlapping polygons within itself.A solution is to dissolve the shp before joining.
 
 # dict of layer name and either columns to keep or a binary column to create/keep
-features_dict = {'cities': ['city_name', 'cnty_name', 'city_fips', 'cnty_fips'],
-                 'waterbodies': ['in_wtrbod'], # aka waterfront
-                 'floodplains': ['in_fldpln'], 
-                 'Open_Space_Parks': ['in_osp'], 
-                 'Farmland': ['in_farm'], 
-                 'WorkingForests': ['in_wrkfor'], 
-                 'Aquatic_Systems': ['in_aqsys'],
-                 'rivers': ['in_river'],
+features_dict = {#'cities': ['city_name', 'cnty_name', 'city_fips', 'cnty_fips'],
+                 #'waterbodies': ['in_wtrbod'], # aka waterfront
+                 #'floodplains': ['in_fldpln'], 
+                 'open_space_parks': ['in_osp'], 
+                 'wetlands': ['in_wetld'],
+                 'farmland': ['in_farm'], 
+                 'working_forests': ['in_wrkfor'], 
+                 'aquatic_systems': ['in_aqsys'],
+                 #'rivers': ['in_river'],
                  'steep_slopes': ['grid_code'],
-                 'NaturalLands': ['in_natlds'], 
-                 'National_Forest_Land_Not_Harvestable': ['in_fornoth']
+                 'natural_lands': ['in_natlds'], 
+                 #'National_Forest_Land_Not_Harvestable': ['in_fornoth']
                  }
 
 # dict of buffer sizes (ft)
-buffer_dict = {'waterbodies': 300,
-               'floodplains': 100,
-               'rivers': 100}
+buffer_dict = {#'waterbodies': 300,
+               'wetlands': 110}
 
 # list of layers to not dissolve
-do_not_dissolve = ['cities', 'steep_slopes']
+do_not_dissolve = ['steep_slopes']
 
 # dict keys as list
 features = list(features_dict.keys())
