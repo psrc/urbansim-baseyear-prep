@@ -28,7 +28,7 @@ for (col in c(maxht.cols, max.cols, cols.sets$Mixed$dens, cols.sets$Mixed$height
   if(is.character(col)) flu[, (col) := as.numeric(str_extract(get(eval(col)), "\\d+"))]
 }
 
-# loop through cols.sets
+# loop through cols.sets, create new '_imp' columns with imputed values if max height is available
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
   
@@ -40,12 +40,12 @@ for (i in 1:length(cols.sets)) {
     
     newcolnm <- paste0(j, "_imp")
     
-    # formula
+    # calculation, set to new column ending in '_imp'
     ifelse(str_detect(j, "DU"),
            equat <- parse(text = paste0(newcolnm, ":= (", ht.col, "/15)^ 2")),
            equat <- parse(text = paste0(newcolnm, ":=", ht.col, "/20")))
     
-    # density columns (switch for Mixed)
+    # density columns (switch for Mixed Use)
     if (names(cols.sets[i]) == "Mixed") {
       ifelse(str_detect(j, "DU"), density.col <- cols.sets[[i]]$dens$du, density.col <- cols.sets[[i]]$dens$far)
     } else {
