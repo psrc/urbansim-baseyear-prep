@@ -78,6 +78,7 @@ oflu <- oflu[, ..oflu.cols]
 
 # join flu to old flu (2016)
 # _new = flu, _prev = old flu
+# all join/union, to see what joins and what doesn't
 flu.join <- merge(flu, oflu, by = c("Key"), suffixes = c("_new", "_prev"), all = TRUE)
 setnames(flu.join, oflu.max.cols, paste0(oflu.max.cols, "_prev"))
 
@@ -165,19 +166,24 @@ for (i in 1:length(cols.sets)) {
     imp.density.col <- paste0(density.col, "_imp")
 
     # update col ending '_imp' with prev du/far
-    flu.join[get(eval(use.col)) == "Y" & 
+    flu.join[!is.na(Jurisdicti_new) &
+               get(eval(use.col)) == "Y" & 
                is.na(get(eval(imp.density.col))) & 
                is.na(get(eval(density.col))) & 
                is.na(get(eval(ht.col))) & 
                (get(eval(prev.dens.col)) > 0) , (imp.density.col) := get(eval(prev.dens.col))]
     
-    # # update col ending '_imp' with original du/far
-    # flu.join[get(eval(use.col)) == "Y" &
-    #            is.na(get(eval(imp.density.col))) &
-    #            !is.na(get(eval(density.col))), (imp.density.col) := get(eval(density.col))]
+    # update col ending '_imp' with original du/far
+    flu.join[!is.na(Jurisdicti_new) &
+               get(eval(use.col)) == "Y" &
+               is.na(get(eval(imp.density.col))) &
+               !is.na(get(eval(density.col))), (imp.density.col) := get(eval(density.col))]
 
   } 
 }
+
+# exclude _prev records that didn't match current flu records
+flu.final <- flu.join[!is.na(Jurisdicti_new)]
 
 
 # QC
@@ -186,5 +192,5 @@ for (i in 1:length(cols.sets)) {
 # f <- comp.flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxDU_Res_imp) & is.na(MaxHt_Res), ..f.cols]
 # f <- flu.join[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxHt_Res) & (Max_DU_Ac_prev > 0), ..f.cols]
 # f <- flu.join[Res_Use == "Y" & !is.na(MaxDU_Res) & is.na(MaxDU_Res_imp), ..f.cols]
-# f <- flu.join[Jurisdicti_new == "Bellevue" & Res_Use == "Y", ..f.cols]
+# f <- flu.join[Jurisdicti_new == "Bellevue", ..f.cols]
 
