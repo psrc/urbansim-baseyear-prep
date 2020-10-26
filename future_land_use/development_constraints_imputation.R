@@ -109,6 +109,9 @@ setcolorder(comp.flu, c("Key",
                         str_subset(colnames(comp.flu), "Mixed"),
                         str_subset(colnames(comp.flu), "_prev")))
 
+# export comp.flu for review
+# write.csv(comp.flu, "T:/2020October/christy/baseyear/impute_flu_comparison.csv", row.names = F)
+
 # tally how many are na, how many are na but have prev DU or FAR 
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
@@ -126,22 +129,23 @@ for (i in 1:length(cols.sets)) {
       density.col <- s$dens
     }
     
-    cat("total na", 
+    cat("total na remaining: ", 
         comp.flu[get(eval(use.col)) == "Y" & is.na(get(eval(paste0(density.col, "_imp")))) & is.na(get(eval(density.col))) & is.na(get(eval(ht.col))), .N],
         "\n")
     
-    cat("na but with prev", 
+    cat("na but has density from 2016: ", 
         comp.flu[get(eval(use.col)) == "Y" & is.na(get(eval(paste0(density.col, "_imp")))) & is.na(get(eval(density.col))) & is.na(get(eval(ht.col))) & (get(eval(prev.dens.col)) > 0) , .N],
         "\n\n")
   }          
 }
 
 
-# update remaining na in _imp columns if prev values available -------------
+# Update remaining na in _imp columns if prev values available -------------
 
 
 # if max height is missing 
-# loop thru cols.sets, update col ending '_imp' with prev du/far if not na
+# loop thru cols.sets, update col ending '_imp' with prev du/far if available
+# optional to copy original Max du/far to '_imp' cols
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
   s <- cols.sets[[i]]
@@ -160,19 +164,27 @@ for (i in 1:length(cols.sets)) {
     
     imp.density.col <- paste0(density.col, "_imp")
 
+    # update col ending '_imp' with prev du/far
     flu.join[get(eval(use.col)) == "Y" & 
                is.na(get(eval(imp.density.col))) & 
                is.na(get(eval(density.col))) & 
                is.na(get(eval(ht.col))) & 
                (get(eval(prev.dens.col)) > 0) , (imp.density.col) := get(eval(prev.dens.col))]
+    
+    # # update col ending '_imp' with original du/far
+    # flu.join[get(eval(use.col)) == "Y" &
+    #            is.na(get(eval(imp.density.col))) &
+    #            !is.na(get(eval(density.col))), (imp.density.col) := get(eval(density.col))]
 
-  }          
+  } 
 }
 
 
 # QC
-f.cols <- c(str_subset(colnames(comp.flu), "Juris"), str_subset(colnames(comp.flu), "Res"), str_subset(colnames(comp.flu), "_prev"))
+# f.cols <- c(str_subset(colnames(comp.flu), "Juris"), str_subset(colnames(comp.flu), "Res"), str_subset(colnames(comp.flu), "_prev"))
 # f <- comp.flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxDU_Res_imp) & is.na(MaxHt_Res) & (Max_DU_Ac_prev > 0)]
 # f <- comp.flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxDU_Res_imp) & is.na(MaxHt_Res), ..f.cols]
-f <- flu.join[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxHt_Res) & (Max_DU_Ac_prev > 0), ..f.cols]
+# f <- flu.join[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxHt_Res) & (Max_DU_Ac_prev > 0), ..f.cols]
+# f <- flu.join[Res_Use == "Y" & !is.na(MaxDU_Res) & is.na(MaxDU_Res_imp), ..f.cols]
+# f <- flu.join[Jurisdicti_new == "Bellevue" & Res_Use == "Y", ..f.cols]
 
