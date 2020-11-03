@@ -1,0 +1,57 @@
+---
+title: "FLU 2016 vs Imputed 2018"
+date: "11/2/2020"
+output: 
+  html_notebook:
+    theme: readable
+---
+
+```{r prep data}
+library(data.table)
+library(tidyverse)
+library(patchwork)
+
+df <- fread("J:/Staff/Christy/usim-baseyear/flu/impute_flu_comparison_filled.csv")
+
+# create long format for imputed/current FLU densities
+id.cols <- c("Key", "Jurisdicti_new", "Definition_new")  
+msr.cols <- str_subset(colnames(df), "_imp")
+prev.cols <- str_subset(colnames(df), "_prev")
+dfm <- melt(df, id.vars = id.cols, measure.vars = msr.cols, variable.name = "imputed_type", value.name = "imputed_value")
+
+# subset for 2016 columns, remove duplicate rows (b/c orig. format is shapefile)
+sub.cols <- c("Key", prev.cols)
+dfs <- df[, ..sub.cols]
+dfu <- unique(dfs) # remove duplicate rows
+
+# join melted df and add type columns
+dfj <- dfm[dfu, on = "Key"]
+dfj [, `:=`(dens_type = str_extract(imputed_type, "^Max\\w{2,3}(?=_)"),
+             use_type = str_extract(imputed_type, "(?<=_)\\w+(?=_)"))]
+```
+
+```{r ggplot functions}
+scatterplot <- function(df, xvar, yvar, colorvar) {
+    ggplot(df) +
+    geom_point(aes_string(x = xvar, y = yvar, color = colorvar),
+             alpha = .7) +
+    geom_abline()
+}
+
+log_scale <- list(scale_y_log10(), scale_x_log10())
+
+```
+
+```{r, fig.height=5, fig.width=10}
+du <- scatterplot(dfj[dens_type == "MaxDU", ], "Max_DU_Ac_prev", "imputed_value", "use_type")
+du_log <- du + log_scale
+du + du_log
+```
+
+
+
+```{r}
+far <- scatterplot(dfj[dens_type == "MaxFAR", ], "Max_FAR_prev", "imputed_value", "use_type")
+print(far)
+```
+

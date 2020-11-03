@@ -111,7 +111,7 @@ setcolorder(comp.flu, c("Key",
                         str_subset(colnames(comp.flu), "_prev")))
 
 # export comp.flu for review
-# write.csv(comp.flu, "T:/2020October/christy/baseyear/impute_flu_comparison.csv", row.names = F)
+fwrite(comp.flu, "T:/2020October/christy/baseyear/impute_flu_comparison_filled.csv", row.names = F)
 
 # tally how many are na, how many are na but have prev DU or FAR 
 for (i in 1:length(cols.sets)) {
