@@ -1,6 +1,6 @@
 ---
 title: "Collected/Imputed vs FLU 2016"
-date: "11/3/2020"
+date: "11/4/2020"
 output: 
   html_notebook:
     theme: readable
@@ -8,56 +8,69 @@ output:
 
 Analysis comparing prev FLU (2016) to what has been collected or imputed.
 
-This analysis uses `J:/Staff/Christy/usim-baseyear/flu/impute_flu_comparison_filled.csv`.
+This analysis uses `J:/Staff/Christy/usim-baseyear/flu/impute_flu_comparison_filled_2020-11-04.csv`.
 
 Notes about the data:
 
 * Imputation is based on the following formulas
   - $DU = (max height/15)^2$
   - $FAR = max height/20$
-* Columns ending in `_imp` contain both imputed and collected density values
+* Columns ending in `_imp` contain both imputed, collected, or previous density values
+* Columns ending in `_src` indicate whether value was imputed, collected, or from the previous FLU
 
 ```{r prep data}
 library(data.table)
 library(tidyverse)
 library(patchwork)
 
-df <- fread("J:/Staff/Christy/usim-baseyear/flu/impute_flu_comparison_filled.csv")
+df <- fread("J:/Staff/Christy/usim-baseyear/flu/impute_flu_comparison_filled_2020-11-04.csv")
 
-# create long format for imputed/current FLU densities
+# create long format 
 id.cols <- c("Key", "Jurisdicti_new", "Definition_new")  
-msr.cols <- str_subset(colnames(df), "_imp")
 prev.cols <- str_subset(colnames(df), "_prev")
-dfm <- melt(df, id.vars = id.cols, measure.vars = msr.cols, variable.name = "imputed_type", value.name = "imputed_value")
+msr.cols <- str_subset(colnames(df), "_imp")
+src.cols <- str_subset(colnames(df), "_src")
+
+dfm.src <- melt(df, id.vars = c(id.cols, msr.cols), measure.vars = src.cols, variable.name = "source_type", value.name = "source_value", variable.factor = F)
+
+dfm <- melt(dfm.src, id.vars = c(id.cols, "source_type", "source_value"), measure.vars = msr.cols, variable.name = "imputed_type", value.name = "imputed_value", variable.factor = F)
+
+# remove extraneous records created because of melts
+dfm[, `:=` (keyimp = str_extract(imputed_type, "^\\w+_\\w+(?=_\\w+)"),
+            keysrc = str_extract(source_type, "^\\w+_\\w+(?=_\\w+)"))]
+dfm <- dfm[keyimp == keysrc, ]
 
 # subset for 2016 columns, remove duplicate rows (b/c orig. format is shapefile)
 sub.cols <- c("Key", prev.cols)
 dfs <- df[, ..sub.cols]
 dfu <- unique(dfs) # remove duplicate rows
 
-# join melted df and add type columns
+# join melted df to prev df and add type columns
 dfj <- dfm[dfu, on = "Key"]
 dfj[, `:=`(dens_type = str_extract(imputed_type, "^Max\\w{2,3}(?=_)"),
              use_type = str_extract(imputed_type, "(?<=_)\\w+(?=_)"))]
 # add res type to criteria
-dfj[!is.na(Max_FAR_prev) & !is.na(imputed_value) & dens_type == "MaxFAR", max_far_diff := Max_FAR_prev - imputed_value]
-dfj[!is.na(Max_DU_Ac_prev) & !is.na(imputed_value) & dens_type == "MaxDU", max_du_diff := Max_DU_Ac_prev - imputed_value]
+dfj[!is.na(Max_FAR_prev) & !is.na(imputed_value) & dens_type == "MaxFAR", max_far_diff := imputed_value-Max_FAR_prev]
+dfj[!is.na(Max_DU_Ac_prev) & !is.na(imputed_value) & dens_type == "MaxDU", max_du_diff := imputed_value- Max_DU_Ac_prev]
+dfj[source_value == "", source_value := NA]
+dfj <- dfj[!is.na(source_value)]
 
 ```
 
 ```{r ggplot functions}
-scatterplot <- function(df, xvar, yvar, colorvar) {
+scatterplot <- function(df, xvar, yvar, colorvar, srcvar) {
     ggplot(df) +
-    geom_point(aes_string(x = xvar, y = yvar, color = colorvar),
+    geom_point(aes_string(x = xvar, y = yvar, color = colorvar, shape = srcvar),
              alpha = .7) +
+    scale_shape_manual(values = c(1,2,3)) +
     geom_abline()
 }
 
-dotplot <- function(df, xvar, facetvar) {
+dotplot <- function(df, xvar, horfacet, verfacet) {
   ggplot(df) +
     geom_dotplot(aes_string(xvar), dotsize = .6) +
     scale_y_continuous(NULL, breaks = NULL) +
-    facet_grid(. ~ .data[[facetvar]])
+    facet_grid(source_value ~ .data[[horfacet]])
 }
 
 log_scale <- list(scale_y_log10(), scale_x_log10())
@@ -65,22 +78,27 @@ log_scale <- list(scale_y_log10(), scale_x_log10())
 ```
 
 ```{r, fig.height=5, fig.width=10}
-du <- scatterplot(dfj[dens_type == "MaxDU", ], "Max_DU_Ac_prev", "imputed_value", "use_type") +
+du <- scatterplot(dfj[dens_type == "MaxDU", ], "Max_DU_Ac_prev", "imputed_value", "use_type", "source_value") +
   labs(title = "Default scale")
 du_log <- du + log_scale + labs(title = "Log scale")
-du + du_log & labs(y = "Collected & Imputed Value")
+du + du_log & labs(y = "Current density")
 ```
 
 
 
 ```{r}
-far <- scatterplot(dfj[dens_type == "MaxFAR", ], "Max_FAR_prev", "imputed_value", "use_type")
-far + labs(y = "Collected & Imputed Value")
+far <- scatterplot(dfj[dens_type == "MaxFAR", ], "Max_FAR_prev", "imputed_value", "use_type", "source_value")
+far + labs(y = "Current Density")
 ```
-```{r, fig.height=10, fig.width=10}
-far_diff_dotplot <- dotplot(dfj[dens_type == "MaxFAR"], "max_far_diff", "use_type")
-du_diff_dotplot <- dotplot(dfj[dens_type == "MaxDU"], "max_du_diff", "use_type")
+```{r, fig.height=8, fig.width=10}
+far_diff_dotplot <- dotplot(dfj[dens_type == "MaxFAR"], "max_far_diff", "use_type", "source_value")
 
-far_diff_dotplot + du_diff_dotplot + plot_layout(ncol = 1) & labs(title = "Density Differences by Use Type")
+far_diff_dotplot
 ```
+```{r, fig.height=8, fig.width=10}
+du_diff_dotplot <- dotplot(dfj[dens_type == "MaxDU"], "max_du_diff", "use_type", "source_value")
 
+du_diff_dotplot
+
+```
+Outliers in Density Differences

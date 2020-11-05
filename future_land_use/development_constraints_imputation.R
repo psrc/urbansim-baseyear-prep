@@ -46,11 +46,17 @@ for (i in 1:length(cols.sets)) {
     ht.col <- cols.sets[[i]]$height
     
     newcolnm <- paste0(j, "_imp")
+    newcolnm_tag <- paste0(j, "_src")
     
     # calculation, set to new column ending in '_imp'
     ifelse(str_detect(j, "DU"),
-           equat <- parse(text = paste0(newcolnm, ":= (", ht.col, "/15)^ 2")),
-           equat <- parse(text = paste0(newcolnm, ":=", ht.col, "/20")))
+           equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (", ht.col, "/15)^2,", newcolnm_tag, "= 'imputed')")),
+           equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')")))
+    
+    # calculation, set to new column ending in '_imp'
+    # ifelse(str_detect(j, "DU"),
+    #        equat <- parse(text = paste0(newcolnm, ":= (", ht.col, "/15)^ 2")),
+    #        equat <- parse(text = paste0(newcolnm, ":=", ht.col, "/20")))
     
     # density columns (switch for Mixed Use)
     if (names(cols.sets[i]) == "Mixed") {
@@ -60,7 +66,9 @@ for (i in 1:length(cols.sets)) {
     }
     
     # impute if density is na and height available
-    flu[get(eval(use.col)) == "Y" & is.na(get(eval(density.col))) & !is.na(get(eval(ht.col))), eval(equat)]
+    flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))), eval(equat)]
+    # impute if density is na and height available
+    # flu[get(eval(use.col)) == "Y" & is.na(get(eval(density.col))) & !is.na(get(eval(ht.col))), eval(equat)]
     
   }
 }
@@ -99,7 +107,8 @@ comp.cols <- c("Key",
                maxht.cols,
                unname(unlist(flatten(cols.sets[['Mixed']]))),
                str_subset(colnames(flu.join), "_imp"),
-               str_subset(colnames(flu.join), "_prev"))
+               str_subset(colnames(flu.join), "_prev"),
+               str_subset(colnames(flu.join), "_src"))
 comp.flu <- flu.join[!is.na(Jurisdicti_new), ..comp.cols]
 setcolorder(comp.flu, c("Key", 
                         str_subset(colnames(comp.flu), "_new"),
@@ -111,7 +120,7 @@ setcolorder(comp.flu, c("Key",
                         str_subset(colnames(comp.flu), "_prev")))
 
 # export comp.flu for review
-fwrite(comp.flu, "T:/2020October/christy/baseyear/impute_flu_comparison_filled.csv", row.names = F)
+# fwrite(comp.flu, file.path("J:/Staff/Christy/usim-baseyear/flu", paste0("impute_flu_comparison_filled_", Sys.Date(),".csv")), row.names = F)
 
 # tally how many are na, how many are na but have prev DU or FAR 
 for (i in 1:length(cols.sets)) {
@@ -164,23 +173,40 @@ for (i in 1:length(cols.sets)) {
     }
     
     imp.density.col <- paste0(density.col, "_imp")
-
+    newcolnm_tag <- paste0(j, "_src")
+    prev.equat <- parse(text = paste0("\`:=\`(", imp.density.col, "= ", prev.dens.col, ",", newcolnm_tag, "= 'prev')"))
+    orig.equat <- parse(text = paste0("\`:=\`(", imp.density.col, "= ", density.col, ",", newcolnm_tag, "= 'collected')"))
+    
     # update col ending '_imp' with prev du/far
     flu.join[!is.na(Jurisdicti_new) &
-               get(eval(use.col)) == "Y" & 
-               is.na(get(eval(imp.density.col))) & 
-               is.na(get(eval(density.col))) & 
-               is.na(get(eval(ht.col))) & 
-               (get(eval(prev.dens.col)) > 0) , (imp.density.col) := get(eval(prev.dens.col))]
-    
+               get(eval(use.col)) == "Y" &
+               is.na(get(eval(imp.density.col))) &
+               is.na(get(eval(density.col))) &
+               is.na(get(eval(ht.col))) &
+               (get(eval(prev.dens.col)) > 0), eval(prev.equat)]
+
     # update col ending '_imp' with original du/far
     flu.join[!is.na(Jurisdicti_new) &
                get(eval(use.col)) == "Y" &
                is.na(get(eval(imp.density.col))) &
-               !is.na(get(eval(density.col))), (imp.density.col) := get(eval(density.col))]
-
-  } 
+               (get(eval(density.col)) > 0), eval(orig.equat)]
+  }
 }
+    # # update col ending '_imp' with prev du/far
+    # flu.join[!is.na(Jurisdicti_new) &
+    #            get(eval(use.col)) == "Y" &
+    #            is.na(get(eval(imp.density.col))) &
+    #            is.na(get(eval(density.col))) &
+    #            is.na(get(eval(ht.col))) &
+    #            (get(eval(prev.dens.col)) > 0) , (imp.density.col) := get(eval(prev.dens.col))]
+    # 
+    # # update col ending '_imp' with original du/far
+    # flu.join[!is.na(Jurisdicti_new) &
+    #            get(eval(use.col)) == "Y" &
+    #            is.na(get(eval(imp.density.col))) &
+    #            !is.na(get(eval(density.col))), (imp.density.col) := get(eval(density.col))]
+#   }
+# }
 
 # exclude _prev records that didn't match current flu records
 flu.final <- flu.join[!is.na(Jurisdicti_new)]
