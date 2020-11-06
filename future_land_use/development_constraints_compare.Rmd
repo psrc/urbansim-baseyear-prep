@@ -66,11 +66,20 @@ scatterplot <- function(df, xvar, yvar, colorvar, srcvar) {
     geom_abline()
 }
 
-dotplot <- function(df, xvar, horfacet, verfacet) {
+scatterplot_facet <- function(df, xvar, yvar, colorvar, srcvar, rowfacet, colfacet) {
+  scatterplot(df, xvar, yvar, colorvar, srcvar) +
+    facet_grid(rows = vars(.data[[rowfacet]]), cols = vars(.data[[colfacet]]))
+}
+
+dotplot <- function(df, xvar) {
   ggplot(df) +
     geom_dotplot(aes_string(xvar), dotsize = .6) +
-    scale_y_continuous(NULL, breaks = NULL) +
-    facet_grid(source_value ~ .data[[horfacet]])
+    scale_y_continuous(NULL, breaks = NULL)
+}
+
+dotplot_facet <- function(df, xvar, colfacet, rowfacet) {
+  dotplot(df, xvar) +
+    facet_grid(rows = vars(.data[[rowfacet]]), cols = vars(.data[[colfacet]]))
 }
 
 log_scale <- list(scale_y_log10(), scale_x_log10())
@@ -91,14 +100,42 @@ far <- scatterplot(dfj[dens_type == "MaxFAR", ], "Max_FAR_prev", "imputed_value"
 far + labs(y = "Current Density")
 ```
 ```{r, fig.height=8, fig.width=10}
-far_diff_dotplot <- dotplot(dfj[dens_type == "MaxFAR"], "max_far_diff", "use_type", "source_value")
+df.du <- dfj[dens_type == "MaxDU"]
+df.far <- dfj[dens_type == "MaxFAR"]
+
+far_diff_dotplot <- dotplot_facet(df.far, "max_far_diff", "use_type", "source_value")
 
 far_diff_dotplot
 ```
 ```{r, fig.height=8, fig.width=10}
-du_diff_dotplot <- dotplot(dfj[dens_type == "MaxDU"], "max_du_diff", "use_type", "source_value")
+du_diff_dotplot <- dotplot_facet(df.du, "max_du_diff", "use_type", "source_value")
 
 du_diff_dotplot
 
 ```
-Outliers in Density Differences
+### Outliers in Density Differences
+
+```{r, fig.width=10}
+du.outliers <- boxplot.stats(df.du$max_du_diff)
+du.out <- data.frame(outliers = du.outliers$out)
+
+far.outliers <- boxplot.stats(df.far$max_far_diff)
+far.out <- data.frame(outliers = far.outliers$out)
+
+far_diff_out_dotplot <- dotplot(far.out, "outliers") + labs(title = "MaxFAR outliers")
+du_diff_out_dotplot <- dotplot(du.out, "outliers") + labs(title = "MaxDU outliers")
+
+far_diff_out_dotplot + du_diff_out_dotplot & scale_y_continuous(NULL, breaks = NULL)
+```
+
+```{r, fig.width = 10, fig.width=10}
+# View(df.du[max_du_diff %in% du.outliers$out])
+du_diff_out_scatterplot <- scatterplot(df.du[max_du_diff %in% du.outliers$out], "Max_DU_Ac_prev", "imputed_value", "use_type", "source_value") +
+  facet_wrap(Jurisdicti_new ~ .)
+du_diff_out_scatterplot #+ 
+  # geom_text(data = df.du[max_du_diff %in% du.outliers$out],
+  #            aes(x = Max_DU_Ac_prev, y = imputed_value, label = str_extract(Key, "(?<=_).*")),
+  #            size = 2,
+  #           nudge_y = 1)
+```
+
