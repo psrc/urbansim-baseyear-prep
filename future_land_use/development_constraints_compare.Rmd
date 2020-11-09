@@ -1,6 +1,6 @@
 ---
 title: "Collected/Imputed vs FLU 2016"
-date: "11/4/2020"
+date: "11/9/2020"
 output: 
   html_notebook:
     theme: readable
@@ -73,7 +73,8 @@ ht.df.cols <- c(id.cols, ht.cols, "Max_Height_prev")
 dfh <- df[, ..ht.df.cols]
 
 dfm.ht <- melt(dfh, id.vars = c(id.cols, "Max_Height_prev"), measure.vars = ht.cols, variable.name = "height_type", value.name = "height", variable.factor = F)
-dfm.ht[, use_type := str_extract(height_type, "(?<=_)\\w+$")]
+dfm.ht[, `:=` (use_type = str_extract(height_type, "(?<=_)\\w+$"),
+               height_diff = height - Max_Height_prev)]
 
 ```
 
@@ -127,7 +128,7 @@ du + du_log & labs(y = "Current density")
 
 
 
-```{r}
+```{r, fig.width = 10}
 far <- scatterplot(dfj[dens_type == "MaxFAR", ], "Max_FAR_prev", "imputed_value", "use_type", "source_value")
 far + labs(y = "Current Density")
 ```
@@ -138,12 +139,12 @@ df.far <- dfj[dens_type == "MaxFAR"]
 
 far_diff_dotplot <- dotplot_facet(df.far, "max_far_diff", "use_type", "source_value")
 
-far_diff_dotplot
+far_diff_dotplot + labs(title = "Max FAR difference by Use and Source Type")
 ```
 ```{r, fig.height=8, fig.width=10}
 du_diff_dotplot <- dotplot_facet(df.du, "max_du_diff", "use_type", "source_value")
 
-du_diff_dotplot
+du_diff_dotplot + labs(title = "Max DU difference by Use and Source Type")
 
 ```
 ### Density Difference Outliers 
@@ -210,5 +211,32 @@ ht.log <- scatterplot(dfm.ht, 'Max_Height_prev', "height","use_type", NULL) +
 ht + ht.log
 ```
 
+### Height Difference Ranges
+
+```{r}
+dotplot(dfm.ht, "height_diff") + labs(title = "Range of Height Differences")
+```
+### Height Difference Outliers
+```{r}
+ht.outliers <- boxplot.stats(dfm.ht$height_diff)
+
+ht.out <- dfm.ht[height_diff %in% ht.outliers$out]
+
+dotplot(ht.out, "height_diff") + labs(title = "Height Difference Outliers")
+
+```
+
+```{r}
+
+
+ggplot() +
+  geom_point(data = ht.out, aes(Max_Height_prev, height, color = use_type)) +
+  geom_abline(color = "grey") +
+  facet_wrap(Jurisdicti_new ~ .) +
+  labs(title = "Max Height outliers") +
+  theme(axis.text.x = element_text(size = 7, angle = 45, hjust = 1, vjust = 1),
+        axis.text.y = element_text(size = 8))
+
+```
 
 
