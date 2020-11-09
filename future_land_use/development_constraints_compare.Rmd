@@ -176,9 +176,10 @@ ggplot() +
 df.out.cols <- c("Jurisdicti_new", "Definition_new", "use_type")
 df.du.out.grp <- df.du.out[, .(count = .N), by = df.out.cols]
 
+# treemap(df.du.out.grp, "count", "Jurisdicti_new", "Definition_new", "Jurisdicti_new", "use_type") +
+#   labs(title = "Zone Descriptions of MaxDU Outliers by Use Type and Jurisdiction")
 
-
-treemap(df.du.out.grp, "count", "Jurisdicti_new", "Definition_new", "Jurisdicti_new", "use_type") +
+treemap(df.du.out.grp, "count", "use_type", "Definition_new", "use_type", "Jurisdicti_new") +
   labs(title = "Zone Descriptions of MaxDU Outliers by Use Type and Jurisdiction")
 ```
 
@@ -197,7 +198,10 @@ ggplot() +
 ```{r, fig.width=10}
 df.far.out.grp <- df.far.out[, .(count = .N), by = df.out.cols]
 
-treemap(df.far.out.grp, "count", "Jurisdicti_new", "Definition_new", "Jurisdicti_new", "use_type") +
+# treemap(df.far.out.grp, "count", "Jurisdicti_new", "Definition_new", "Jurisdicti_new", "use_type") +
+#   labs(title = "Zone Descriptions of MaxFAR Outliers by Use Type and Jurisdiction")
+
+treemap(df.far.out.grp, "count", "use_type", "Definition_new", "use_type", "Jurisdicti_new") +
   labs(title = "Zone Descriptions of MaxFAR Outliers by Use Type and Jurisdiction")
 ```
 ## Height
@@ -237,6 +241,16 @@ ggplot() +
   theme(axis.text.x = element_text(size = 7, angle = 45, hjust = 1, vjust = 1),
         axis.text.y = element_text(size = 8))
 
+```
+
+```{r, fig.width=10}
+df.ht.out.grp <- ht.out[, .(count = .N), by = df.out.cols]
+
+# treemap(df.ht.out.grp, "count", "Jurisdicti_new", "Definition_new", "Jurisdicti_new", "use_type") +
+#   labs(title = "Zone Descriptions of Max Height Outliers by Use Type and Jurisdiction")
+
+treemap(df.ht.out.grp, "count", "use_type", "Definition_new", "use_type", "Jurisdicti_new") +
+  labs(title = "Zone Descriptions of Max Height Outliers by Use Type and Jurisdiction")
 ```
 
 
