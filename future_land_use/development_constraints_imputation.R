@@ -1,4 +1,10 @@
 # Impute development constraints and compare to previous density table
+# To export final flu output, run the following sections:
+  # "Setup", 
+  # "New flu, impute", 
+  # "Compile previous flu", 
+  # "Update remaining na in _imp columns if prev values available"
+
 library(stringr)
 library(purrr)
 library(magrittr)
@@ -6,10 +12,13 @@ library(data.table)
 library(foreign)
 
 
+# Setup -------------------------------------------------------------------
+
+out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
+
 # read new FLU and old FLU files
 flu <- fread("W:/gis/projects/compplan_zoning/density_table_4_gis.csv")
 oflu <- read.dbf("X:/DSA/FutureLandUse/FLU_2016/FLU_for_DC.dbf", as.is = TRUE) %>% as.data.table
-# old.flu <- fread("C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use/flu_for_dc_2016.csv")
 
 # missing Mixed
 id.cols <- c(str_subset(colnames(flu), "^Juris|Zone"), "Key", "Definition")
@@ -52,12 +61,7 @@ for (i in 1:length(cols.sets)) {
     ifelse(str_detect(j, "DU"),
            equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (", ht.col, "/15)^2,", newcolnm_tag, "= 'imputed')")),
            equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')")))
-    
-    # calculation, set to new column ending in '_imp'
-    # ifelse(str_detect(j, "DU"),
-    #        equat <- parse(text = paste0(newcolnm, ":= (", ht.col, "/15)^ 2")),
-    #        equat <- parse(text = paste0(newcolnm, ":=", ht.col, "/20")))
-    
+  
     # density columns (switch for Mixed Use)
     if (names(cols.sets[i]) == "Mixed") {
       ifelse(str_detect(j, "DU"), density.col <- cols.sets[[i]]$dens$du, density.col <- cols.sets[[i]]$dens$far)
@@ -67,8 +71,6 @@ for (i in 1:length(cols.sets)) {
     
     # impute if density is na and height available
     flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))), eval(equat)]
-    # impute if density is na and height available
-    # flu[get(eval(use.col)) == "Y" & is.na(get(eval(density.col))) & !is.na(get(eval(ht.col))), eval(equat)]
     
   }
 }
@@ -192,25 +194,25 @@ for (i in 1:length(cols.sets)) {
                (get(eval(density.col)) > 0), eval(orig.equat)]
   }
 }
-    # # update col ending '_imp' with prev du/far
-    # flu.join[!is.na(Jurisdicti_new) &
-    #            get(eval(use.col)) == "Y" &
-    #            is.na(get(eval(imp.density.col))) &
-    #            is.na(get(eval(density.col))) &
-    #            is.na(get(eval(ht.col))) &
-    #            (get(eval(prev.dens.col)) > 0) , (imp.density.col) := get(eval(prev.dens.col))]
-    # 
-    # # update col ending '_imp' with original du/far
-    # flu.join[!is.na(Jurisdicti_new) &
-    #            get(eval(use.col)) == "Y" &
-    #            is.na(get(eval(imp.density.col))) &
-    #            !is.na(get(eval(density.col))), (imp.density.col) := get(eval(density.col))]
-#   }
-# }
+
+
+# Final output ------------------------------------------------------------
+
 
 # exclude _prev records that didn't match current flu records
-flu.final <- flu.join[!is.na(Jurisdicti_new)]
+flu.fin.prep <- flu.join[!is.na(Jurisdicti_new)]
 
+# subset columns and rename in preparation for 'unroll_constraints' .py script
+ff.types <- c("Res", "Mixed", "Office", "Indust", "Comm")
+ff.max.cols <- c(paste0("MaxDU_", ff.types), paste0("MaxFAR_", ff.types))
+ff.excl.cols <- c(str_subset(colnames(flu.fin.prep), "_prev"), ff.max.cols)
+
+ff.cols <- setdiff(colnames(flu.fin.prep), ff.excl.cols)
+# remove '_imp' from col name
+flu.fin.prep <- flu.fin.prep[, ..ff.cols] 
+colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_imp", ""))
+
+fwrite(flu.fin.prep, file.path(out.path, "final_flu_imputed.csv"))
 
 # QC
 # f.cols <- c(str_subset(colnames(comp.flu), "Juris"), str_subset(colnames(comp.flu), "Res"), str_subset(colnames(comp.flu), "_prev"))
