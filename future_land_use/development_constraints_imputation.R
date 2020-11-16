@@ -211,6 +211,7 @@ ff.cols <- setdiff(colnames(flu.fin.prep), ff.excl.cols)
 # remove '_imp' from col name
 flu.fin.prep <- flu.fin.prep[, ..ff.cols] 
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_imp", ""))
+colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new", ""))
 
 fwrite(flu.fin.prep, file.path(out.path, "final_flu_imputed.csv"))
 
