@@ -213,7 +213,11 @@ flu.fin.prep <- flu.fin.prep[, ..ff.cols]
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_imp", ""))
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new", ""))
 
-fwrite(flu.fin.prep, file.path(out.path, "final_flu_imputed.csv"))
+# remove duplicate rows (in preparation for assigning plan_type_ids in unroll_constraints.py)
+flu.fin <- unique(flu.fin.prep)
+
+fwrite(flu.fin.prep, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
+
 
 # QC
 # f.cols <- c(str_subset(colnames(comp.flu), "Juris"), str_subset(colnames(comp.flu), "Res"), str_subset(colnames(comp.flu), "_prev"))
