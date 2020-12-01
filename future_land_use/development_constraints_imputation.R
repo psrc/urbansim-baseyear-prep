@@ -214,9 +214,10 @@ colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_imp
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new", ""))
 
 # remove duplicate rows (in preparation for assigning plan_type_ids in unroll_constraints.py)
-flu.fin <- unique(flu.fin.prep)
+gb.cols <- setdiff(colnames(flu.fin.prep), "Zone_adj")
+flu.fin <- unique(flu.fin.prep, by = gb.cols, fromLast = T)
 
-fwrite(flu.fin.prep, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
+fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
 
 
 # QC
