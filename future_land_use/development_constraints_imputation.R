@@ -1,9 +1,4 @@
 # Impute development constraints and compare to previous density table
-# To export final flu output, run the following sections:
-  # "Setup", 
-  # "New flu, impute", 
-  # "Compile previous flu", 
-  # "Update remaining na in _imp columns if prev values available"
 
 library(stringr)
 library(purrr)
@@ -93,67 +88,41 @@ flu.join <- merge(flu, oflu, by = c("Key"), suffixes = c("_new", "_prev"), all =
 setnames(flu.join, oflu.max.cols, paste0(oflu.max.cols, "_prev"))
 
 
-# Compare collected, imputed, previous flu vals --------------------------
+# Export file to compare collected, imputed, previous flu vals --------------------------
 
-
-# overall tally matches/unmatched
-flu.join[is.na(Jurisdicti_new), .N] # unmatched flu
-flu.join[is.na(Jurisdicti_prev), .N] # unmatched old flu
-flu.join[!is.na(Jurisdicti_prev) & !is.na(Jurisdicti_new), .N] # matched
-
-# flu comparison
-comp.cols <- c("Key", 
-               str_subset(colnames(flu.join), "_new"),
-               use.cols,
-               max.cols,
-               maxht.cols,
-               unname(unlist(flatten(cols.sets[['Mixed']]))),
-               str_subset(colnames(flu.join), "_imp"),
-               str_subset(colnames(flu.join), "_prev"),
-               str_subset(colnames(flu.join), "_src"))
-comp.flu <- flu.join[!is.na(Jurisdicti_new), ..comp.cols]
-setcolorder(comp.flu, c("Key", 
-                        str_subset(colnames(comp.flu), "_new"),
-                        str_subset(colnames(comp.flu), "Res"),
-                        str_subset(colnames(comp.flu), "Comm"),
-                        str_subset(colnames(comp.flu), "Indust"),
-                        str_subset(colnames(comp.flu), "Office"),
-                        str_subset(colnames(comp.flu), "Mixed"),
-                        str_subset(colnames(comp.flu), "_prev")))
-
-# export comp.flu for review
-# fwrite(comp.flu, file.path("J:/Staff/Christy/usim-baseyear/flu", paste0("impute_flu_comparison_filled_", Sys.Date(),".csv")), row.names = F)
-
-# tally how many are na, how many are na but have prev DU or FAR 
-for (i in 1:length(cols.sets)) {
-  print(names(cols.sets[i]))
-  s <- cols.sets[[i]]
-
-  for (j in s$dens) {
-    use.col <-s$use
-    ht.col <- s$height
-    
-    ifelse(str_detect(j, "DU"), prev.dens.col <- "Max_DU_Ac_prev", prev.dens.col <- "Max_FAR_prev")
-    
-    if (names(cols.sets[i]) == "Mixed") {
-      ifelse(str_detect(j, "DU"), density.col <- s$dens$du, density.col <- s$dens$far)
-    } else {
-      density.col <- s$dens
-    }
-    
-    cat("total na remaining: ", 
-        comp.flu[get(eval(use.col)) == "Y" & is.na(get(eval(paste0(density.col, "_imp")))) & is.na(get(eval(density.col))) & is.na(get(eval(ht.col))), .N],
-        "\n")
-    
-    cat("na but has density from 2016: ", 
-        comp.flu[get(eval(use.col)) == "Y" & is.na(get(eval(paste0(density.col, "_imp")))) & is.na(get(eval(density.col))) & is.na(get(eval(ht.col))) & (get(eval(prev.dens.col)) > 0) , .N],
-        "\n\n")
-  }          
+export.for.comparison <- function(flu.join, out.filepath) {
+  # flu comparison
+  comp.cols <- c("Key", 
+                 str_subset(colnames(flu.join), "_new"),
+                 use.cols,
+                 max.cols,
+                 maxht.cols,
+                 unname(unlist(flatten(cols.sets[['Mixed']]))),
+                 str_subset(colnames(flu.join), "_imp"),
+                 str_subset(colnames(flu.join), "_prev"),
+                 str_subset(colnames(flu.join), "_src"))
+  comp.flu <- flu.join[!is.na(Jurisdicti_new), ..comp.cols]
+  setcolorder(comp.flu, c("Key", 
+                          str_subset(colnames(comp.flu), "_new"),
+                          str_subset(colnames(comp.flu), "Res"),
+                          str_subset(colnames(comp.flu), "Comm"),
+                          str_subset(colnames(comp.flu), "Indust"),
+                          str_subset(colnames(comp.flu), "Office"),
+                          str_subset(colnames(comp.flu), "Mixed"),
+                          str_subset(colnames(comp.flu), "_prev")))
+  
+  # export comp.flu for review
+  fwrite(comp.flu, file.path(out.filepath, paste0("impute_flu_comparison_filled_", Sys.Date(),".csv")), row.names = F)
 }
+
+# for use with development_constraints_compare.Rmd
+# export.for.comparison(flu.join, "J:/Staff/Christy/usim-baseyear/flu")
 
 
 # Update remaining na in _imp columns if prev values available -------------
 
+
+flu.imp <- copy(flu.join)
 
 # if max height is missing 
 # loop thru cols.sets, update col ending '_imp' with prev du/far if available
@@ -180,7 +149,7 @@ for (i in 1:length(cols.sets)) {
     orig.equat <- parse(text = paste0("\`:=\`(", imp.density.col, "= ", density.col, ",", newcolnm_tag, "= 'collected')"))
     
     # update col ending '_imp' with prev du/far
-    flu.join[!is.na(Jurisdicti_new) &
+    flu.imp[!is.na(Jurisdicti_new) &
                get(eval(use.col)) == "Y" &
                is.na(get(eval(imp.density.col))) &
                is.na(get(eval(density.col))) &
@@ -188,7 +157,7 @@ for (i in 1:length(cols.sets)) {
                (get(eval(prev.dens.col)) > 0), eval(prev.equat)]
 
     # update col ending '_imp' with original du/far
-    flu.join[!is.na(Jurisdicti_new) &
+    flu.imp[!is.na(Jurisdicti_new) &
                get(eval(use.col)) == "Y" &
                is.na(get(eval(imp.density.col))) &
                (get(eval(density.col)) > 0), eval(orig.equat)]
@@ -200,7 +169,7 @@ for (i in 1:length(cols.sets)) {
 
 
 # exclude _prev records that didn't match current flu records
-flu.fin.prep <- flu.join[!is.na(Jurisdicti_new)]
+flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
 
 # subset columns and rename in preparation for 'unroll_constraints' .py script
 ff.types <- c("Res", "Mixed", "Office", "Indust", "Comm")
@@ -219,12 +188,4 @@ flu.fin <- unique(flu.fin.prep, by = gb.cols, fromLast = T)
 
 fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
 
-
-# QC
-# f.cols <- c(str_subset(colnames(comp.flu), "Juris"), str_subset(colnames(comp.flu), "Res"), str_subset(colnames(comp.flu), "_prev"))
-# f <- comp.flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxDU_Res_imp) & is.na(MaxHt_Res) & (Max_DU_Ac_prev > 0)]
-# f <- comp.flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxDU_Res_imp) & is.na(MaxHt_Res), ..f.cols]
-# f <- flu.join[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxHt_Res) & (Max_DU_Ac_prev > 0), ..f.cols]
-# f <- flu.join[Res_Use == "Y" & !is.na(MaxDU_Res) & is.na(MaxDU_Res_imp), ..f.cols]
-# f <- flu.join[Jurisdicti_new == "Bellevue", ..f.cols]
 
