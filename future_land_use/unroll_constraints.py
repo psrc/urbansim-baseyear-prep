@@ -9,17 +9,35 @@ pd.set_option('display.width', 1000)
 
 # read in original flu shape
 flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_19_dissolve.shp"
-flu_shp = gpd.read_file(flu_shp_path)
+flu_shp = gpd.read_file(flu_shp_path) # 1894 rows
 
-# read in imputed data (as shapefile or convert to shape later) 
-flu_imp = r"C:\Users\clam\Desktop\urbansim-baseyear-prep\future_land_use\final_flu_imputed_2020-11-20.csv"
-f = pd.read_csv(flu_imp)
+# read in imputed data 
+flu_imp = r"C:\Users\clam\Desktop\urbansim-baseyear-prep\future_land_use\final_flu_imputed_2020-12-02.csv"
+#flu_imp = r"J:\Staff\Christy\usim-baseyear\flu\final_flu_imputed_2020-12-02.csv"
+f = pd.read_csv(flu_imp) # 1697 rows
+
+# clean up f; remove extra/unecessary fields before join
+f_col_keep = [col for col in f.columns if col not in ['Jurisdicti', 'Key', 'Zone_adj', 'Definition'] + list(f.columns[f.columns.str.endswith("src")])]
+f = f[f_col_keep]
 
 # assign plan_type_id
 f['plan_type_id'] = np.arange(len(f)) + 1
 
+# join imputed data back to FLU shapefile
+flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1894 rows
+
+# spatial join parcels to flu to assign plan_type_id----------------------------------------------------
+# read parcels file (Stefan's output parcel's file or a clean file?)
+base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
+prcls = gpd.read_file(base_year_prcl_path)
+
+prcls_flu = prcls.sjoin(flu)
+prcls_flu.to_file(r"J:\Staff\Christy\usim-baseyear\shapes\prclpt18_ptid_"+ str(date.today()) + '.shp')
+
+# create development constraints table------------------------------------------------------------------
 # unroll constraints from plan_type
-id_cols = ['Juris_zn', 'plan_type_id', 'generic_land_use_type_id', 'constraint_type']
+id_cols = ['plan_type_id', 'generic_land_use_type_id', 'constraint_type']
+
 # sf
 sf = f[(f['MaxDU_Res'] < 35.1) & (f['Res_Use'] == 'Y')]
 sf['generic_land_use_type_id'] = 1
