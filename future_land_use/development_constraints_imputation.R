@@ -20,21 +20,28 @@ id.cols <- c(str_subset(colnames(flu), "^Juris|Zone"), "Key", "Definition")
 use.cols <- str_subset(colnames(flu), "^[R|C|O|I].*_Use$")
 max.cols <- c(str_subset(colnames(flu), "^MaxD.*_[R].*"), str_subset(colnames(flu), "^MaxF.*_[C|O|I].*"))
 maxht.cols <- str_subset(colnames(flu), "^MaxHt.*_[R|C|O|I].*")
+lc.cols <- str_subset(colnames(flu), "^LC_[R|C|O|I].*")
 
-# organize column names
-cols.sets <- pmap(list(use.cols, max.cols, maxht.cols), list)  %>% 
-  map(~set_names(.x, c("use", "dens", "height"))) %>% 
+# organize column names into sets of lists
+cols.sets <- pmap(list(use.cols, max.cols, maxht.cols, lc.cols), list) %>% 
+  map(~set_names(.x, c("use", "dens", "height", "lc"))) %>% 
   set_names(c("Res", "Comm", "Office", "Indust"))
 
 # add mixed use to cols.sets
 cols.sets[['Mixed']] <- list(use = "Mixed_Use", 
                              dens = list(du = "MaxDU_Mixed", far = "MaxFAR_Mixed"),
-                             height = "MaxHt_Mixed")
+                             height = "MaxHt_Mixed",
+                             lc = "LC_Mixed")
 
-# clean data (temp)
-for (col in c(maxht.cols, max.cols, cols.sets$Mixed$dens, cols.sets$Mixed$height)) {
-  if(is.character(col)) flu[, (col) := as.numeric(str_extract(get(eval(col)), "\\d+"))]
+# clean data
+for (col in unlist(c(maxht.cols, max.cols, lc.cols, cols.sets$Mixed$dens, cols.sets$Mixed$height, cols.sets$Mixed$lc))) {
+  if(is.character(flu[[col]]))
+    flu[[col]] <- as.double(flu[[col]])
 }
+
+# QC
+fm1 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & !is.na(LC_Res),] # 3 recs with where Res_Use == N.
+fm2 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & is.na(LC_Res),]
 
 # New flu, impute ---------------------------------------------------------
 
@@ -48,15 +55,11 @@ for (i in 1:length(cols.sets)) {
     
     use.col <-cols.sets[[i]]$use
     ht.col <- cols.sets[[i]]$height
+    lc.col <- cols.sets[[i]]$lc
     
     newcolnm <- paste0(j, "_imp")
     newcolnm_tag <- paste0(j, "_src")
     
-    # calculation, set to new column ending in '_imp'
-    ifelse(str_detect(j, "DU"),
-           equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (", ht.col, "/15)^2,", newcolnm_tag, "= 'imputed')")),
-           equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')")))
-  
     # density columns (switch for Mixed Use)
     if (names(cols.sets[i]) == "Mixed") {
       ifelse(str_detect(j, "DU"), density.col <- cols.sets[[i]]$dens$du, density.col <- cols.sets[[i]]$dens$far)
@@ -64,8 +67,20 @@ for (i in 1:length(cols.sets)) {
       density.col <- cols.sets[[i]]$dens
     }
     
-    # impute if density is na and height available
-    flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))), eval(equat)]
+    if (str_detect(j, "DU")) {
+     
+      # Records with missing DU/acre, non-missing heights and non-missing lot coverage(LC)
+      equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(1.335 + 0.647*log(", ht.col, ") + 2.132*log(", lc.col, "))),", newcolnm_tag, "= 'imputed')"))
+      flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))) & !is.na(get(eval(lc.col))), eval(equat)]
+      
+      # Records with missing DU/acre, non-missing heights and missing lot coverage
+      equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(-2.987 + 1.407*log(", ht.col, "))),", newcolnm_tag, "= 'imputed')"))
+      flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))) & is.na(get(eval(lc.col))), eval(equat)]
+      
+    } else {
+      equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')"))
+      flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))), eval(equat)]
+    }
     
   }
 }
