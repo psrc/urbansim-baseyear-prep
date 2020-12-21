@@ -108,14 +108,6 @@ def init_pool(overlay):
 
 if __name__ == '__main__':
     
-   
-    buffer_dict = {#'waterbodies': 300,
-               'wetlands': 110}
-
-    # dict keys as list
-    #features = list(features_dict.keys())
-    #buffers = list(buffer_dict.keys())
-
     print('Reading fresh parcels file')
     start_read_prcl_time = time.time()
     
