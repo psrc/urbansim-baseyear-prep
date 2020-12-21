@@ -158,7 +158,6 @@ if __name__ == '__main__':
 
         print('overlay completed\n')
 
-    # join main tbl back to shp
     dfs = [df.set_index(parcels_feature_id) for df in results_list]
     df = pd.concat(dfs, axis=1)
     df.fillna(0, inplace = True)
