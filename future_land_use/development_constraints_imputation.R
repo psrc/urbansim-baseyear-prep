@@ -62,30 +62,37 @@ cols.sets[['Mixed']] <- list(use = "Mixed_Use",
 # clean FLU ---------------------------------------------------------------
 
 clean.cols <- c(maxht.cols, max.cols, lc.cols, cols.sets$Mixed$dens, cols.sets$Mixed$height, cols.sets$Mixed$lc, 'MaxFAR_Res')
-# for (col in unlist(c(maxht.cols, max.cols, lc.cols, 
-#                      cols.sets$Mixed$dens, cols.sets$Mixed$height, cols.sets$Mixed$lc,
-#                      'MaxFAR_Res'))) {
 for (col in unlist(clean.cols)) {
   if(is.character(flu[[col]]))
     flu[[col]] <- as.double(flu[[col]])
 }
 
+# adjust MaxHt_Res column prior to imputation (retain original)
+flu[, MaxHt_Res_orig := MaxHt_Res]
+adj1 <- with (flu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res < MaxFAR_Mixed & MaxFAR_Res > 0)
+adj2 <- with(flu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res > MaxFAR_Mixed)
+flu[adj1, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/MaxFAR_Mixed)]
+flu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))]
+
+
 # QC
 fm1 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & !is.na(LC_Res),] # 3 recs with where Res_Use == N.
 fm2 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & is.na(LC_Res),]
-# fm3 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & !is.na(LC_Res)]
-# fm4 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & is.na(LC_Res)]
+fm3 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & !is.na(LC_Res)]
+fm4 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & is.na(LC_Res)]
+
 
 # New flu, impute ---------------------------------------------------------
+
 
 # coefficients
 coeff <- list(a = 1.434, b = 0.624, c = 2.148, d = -2.492, e = 1.271)
 
-# Impute max DU/ac and FAR 
-# create new '_imp' columns with imputed values if criteria is met and tag '_src' column
-# Impute height for Residential cases (DU/ac)
-# create new 'MaxHt_XXX_imp' columns with imputed values if criteria is met and tag 'MaxHt_XXX_src' column
+# Impute max DU/ac, residential height, and FAR
 for (i in 1:length(cols.sets)) {
+  # create new '_imp' columns with imputed values if criteria is met and tag '_src' column
+  # Impute height for Residential cases (DU/ac)
+  # create new 'MaxHt_XXX_imp' columns with imputed values if criteria is met and tag 'MaxHt_XXX_src' column
   print(names(cols.sets[i]))
   
   for (j in cols.sets[[i]]$dens) {
@@ -174,8 +181,8 @@ setnames(flu.join, oflu.max.cols, paste0(oflu.max.cols, "_prev"))
 
 flu.imp <- copy(flu.join)
 
-# loop thru cols.sets, update col ending '_imp' with prev du/far if available
-# and copy original Max du/far to '_imp' cols
+# loop thru cols.sets, 
+# update col ending '_imp' with prev du/far if available and copy original Max du/far to '_imp' cols
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
   s <- cols.sets[[i]]
@@ -213,28 +220,55 @@ for (i in 1:length(cols.sets)) {
   }
 }
 
-# if max height is missing
-# loop thru cols.sets, update col ending '_imp' with prev du/far if available
+# if Residential max height is missing
+# loop thru cols.sets, update col ending '_imp' with prev MaxHt if available
 # optional to copy original Max du/far to '_imp' cols
+for (stype in c('Res', 'Mixed')) {
+  s <- cols.sets[[stype]]
 
+  use.col <-s$use
+  ht.col <- s$height
+  
+  prev.ht.col <- "Max_Height_prev"
+  imp.ht.col <- paste0(ht.col, "_imp")
+  newcolnm_tag <- paste0(ht.col, "_src")
+  
+  prev.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", prev.ht.col, ",", newcolnm_tag, "= 'prev')"))
+  orig.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", ht.col, ",", newcolnm_tag, "= 'collected')"))
+  
+  # update col ending '_imp' with prev height
+  flu.imp[!is.na(Jurisdicti_new) &
+            get(eval(use.col)) == "Y" &
+            is.na(get(eval(imp.ht.col))) &
+            is.na(get(eval(ht.col))) &
+            (get(eval(prev.dens.col)) > 0), eval(prev.equat)]
+  
+  # update col ending '_imp' with collected height
+  flu.imp[!is.na(Jurisdicti_new) &
+            get(eval(use.col)) == "Y" &
+            is.na(get(eval(imp.ht.col))) &
+            (get(eval(ht.col)) > 0), eval(orig.equat)]
+}
 
-# for use with development_constraints_compare.Rmd
-export.for.comparison(flu.imp, "J:/Staff/Christy/usim-baseyear/flu")
+# exclude _prev records that didn't match current flu records
+flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
+# temp write for QC
+fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
+
 
 # Final output ------------------------------------------------------------
 
 
-# exclude _prev records that didn't match current flu records
-flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
-
 # subset columns and rename in preparation for 'unroll_constraints' .py script
 ff.types <- c("Res", "Mixed", "Office", "Indust", "Comm")
 ff.max.cols <- c(paste0("MaxDU_", ff.types), paste0("MaxFAR_", ff.types))
-ff.excl.cols <- c(str_subset(colnames(flu.fin.prep), "_prev"), ff.max.cols)
+ff.excl.cols <- c(str_subset(colnames(flu.fin.prep), "_prev"), ff.max.cols, 
+                  "MaxHt_Res", "MaxHt_Mixed", "MaxHt_Res_orig") # add MaxHt cols
 
 ff.cols <- setdiff(colnames(flu.fin.prep), ff.excl.cols)
-# remove '_imp' from col name
 flu.fin.prep <- flu.fin.prep[, ..ff.cols] 
+
+# remove '_imp' from col name
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_imp", ""))
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new", ""))
 
@@ -243,5 +277,8 @@ gb.cols <- setdiff(colnames(flu.fin.prep), "Zone_adj")
 flu.fin <- unique(flu.fin.prep, by = gb.cols, fromLast = T)
 
 fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
+
+# for use with development_constraints_compare.Rmd
+# export.for.comparison(flu.imp, "J:/Staff/Christy/usim-baseyear/flu")
 
 
