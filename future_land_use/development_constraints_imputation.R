@@ -6,6 +6,31 @@ library(magrittr)
 library(data.table)
 library(foreign)
 
+export.for.comparison <- function(flu.join, out.filepath) {
+  # Export file to compare collected, imputed, previous flu vals
+  # flu comparison
+  comp.cols <- c("Key", 
+                 str_subset(colnames(flu.join), "_new"),
+                 use.cols,
+                 max.cols,
+                 maxht.cols,
+                 unname(unlist(flatten(cols.sets[['Mixed']]))),
+                 str_subset(colnames(flu.join), "_imp"),
+                 str_subset(colnames(flu.join), "_prev"),
+                 str_subset(colnames(flu.join), "_src"))
+  comp.flu <- flu.join[!is.na(Jurisdicti_new), ..comp.cols]
+  setcolorder(comp.flu, c("Key", 
+                          str_subset(colnames(comp.flu), "_new"),
+                          str_subset(colnames(comp.flu), "Res"),
+                          str_subset(colnames(comp.flu), "Comm"),
+                          str_subset(colnames(comp.flu), "Indust"),
+                          str_subset(colnames(comp.flu), "Office"),
+                          str_subset(colnames(comp.flu), "Mixed"),
+                          str_subset(colnames(comp.flu), "_prev")))
+  
+  # export comp.flu for review
+  fwrite(comp.flu, file.path(out.filepath, paste0("impute_flu_comparison_filled_", Sys.Date(),".csv")), row.names = F)
+}
 
 # Setup -------------------------------------------------------------------
 
@@ -33,8 +58,12 @@ cols.sets[['Mixed']] <- list(use = "Mixed_Use",
                              height = "MaxHt_Mixed",
                              lc = "LC_Mixed")
 
-# clean data
-for (col in unlist(c(maxht.cols, max.cols, lc.cols, cols.sets$Mixed$dens, cols.sets$Mixed$height, cols.sets$Mixed$lc))) {
+
+# clean FLU ---------------------------------------------------------------
+
+for (col in unlist(c(maxht.cols, max.cols, lc.cols, 
+                     cols.sets$Mixed$dens, cols.sets$Mixed$height, cols.sets$Mixed$lc,
+                     'MaxFAR_Res'))) {
   if(is.character(flu[[col]]))
     flu[[col]] <- as.double(flu[[col]])
 }
@@ -42,11 +71,16 @@ for (col in unlist(c(maxht.cols, max.cols, lc.cols, cols.sets$Mixed$dens, cols.s
 # QC
 fm1 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & !is.na(LC_Res),] # 3 recs with where Res_Use == N.
 fm2 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & is.na(LC_Res),]
+# fm3 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & !is.na(LC_Res)]
+# fm4 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & is.na(LC_Res)]
 
 # New flu, impute ---------------------------------------------------------
 
 
-# loop through cols.sets, create new '_imp' columns with imputed values if max height is available
+# Impute max DU/ac and FAR 
+# create new '_imp' columns with imputed values if criteria is met and tag '_src' column
+# Impute height for Residential cases (DU/ac)
+# create new 'MaxHt_XXX_imp' columns with imputed values if criteria is met and tag 'MaxHt_XXX_src' column
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
   
@@ -59,6 +93,9 @@ for (i in 1:length(cols.sets)) {
     
     newcolnm <- paste0(j, "_imp")
     newcolnm_tag <- paste0(j, "_src")
+    
+    newcolnm.ht <- paste0(ht.col, "_imp")
+    newcolnm_tag.ht <- paste0(ht.col, "_src")
     
     # density columns (switch for Mixed Use)
     if (names(cols.sets[i]) == "Mixed") {
@@ -76,6 +113,22 @@ for (i in 1:length(cols.sets)) {
       # Records with missing DU/acre, non-missing heights and missing lot coverage
       equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(-2.987 + 1.407*log(", ht.col, "))),", newcolnm_tag, "= 'imputed')"))
       flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))) & is.na(get(eval(lc.col))), eval(equat)]
+      
+      # Records with missing height, non-missing DU/acre and non-missing lot coverage:
+      # height = exp[(log(DU/acre) - 1.335 - 2.132*log(LC))/0.647]
+      equat <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") - 1.335 - 2.132*log(", lc.col,"))/0.647)),", newcolnm_tag.ht, "= 'imputed')"))
+      flu[get(eval(use.col)) == "Y" &
+            (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0) &
+            (!is.na(get(eval(density.col))) | get(eval(density.col)) != 0) &
+            (!is.na(get(eval(lc.col))) | get(eval(lc.col)) != 0), eval(equat)]
+      
+      # Records with missing height, non-missing DU/acre and missing lot coverage:
+      # height = exp[(log(DU/acre) + 2.987)/1.407]
+      equat <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") + 2.987)/1.407)),", newcolnm_tag.ht, "= 'imputed')"))
+      flu[get(eval(use.col)) == "Y" &
+            (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0) &
+            (!is.na(get(eval(density.col))) | get(eval(density.col)) != 0) &
+            (is.na(get(eval(lc.col))) | get(eval(lc.col)) == 0), eval(equat)]
       
     } else {
       equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')"))
@@ -103,45 +156,13 @@ flu.join <- merge(flu, oflu, by = c("Key"), suffixes = c("_new", "_prev"), all =
 setnames(flu.join, oflu.max.cols, paste0(oflu.max.cols, "_prev"))
 
 
-# Export file to compare collected, imputed, previous flu vals --------------------------
-
-export.for.comparison <- function(flu.join, out.filepath) {
-  # flu comparison
-  comp.cols <- c("Key", 
-                 str_subset(colnames(flu.join), "_new"),
-                 use.cols,
-                 max.cols,
-                 maxht.cols,
-                 unname(unlist(flatten(cols.sets[['Mixed']]))),
-                 str_subset(colnames(flu.join), "_imp"),
-                 str_subset(colnames(flu.join), "_prev"),
-                 str_subset(colnames(flu.join), "_src"))
-  comp.flu <- flu.join[!is.na(Jurisdicti_new), ..comp.cols]
-  setcolorder(comp.flu, c("Key", 
-                          str_subset(colnames(comp.flu), "_new"),
-                          str_subset(colnames(comp.flu), "Res"),
-                          str_subset(colnames(comp.flu), "Comm"),
-                          str_subset(colnames(comp.flu), "Indust"),
-                          str_subset(colnames(comp.flu), "Office"),
-                          str_subset(colnames(comp.flu), "Mixed"),
-                          str_subset(colnames(comp.flu), "_prev")))
-  
-  # export comp.flu for review
-  fwrite(comp.flu, file.path(out.filepath, paste0("impute_flu_comparison_filled_", Sys.Date(),".csv")), row.names = F)
-}
-
-# for use with development_constraints_compare.Rmd
-# export.for.comparison(flu.join, "J:/Staff/Christy/usim-baseyear/flu")
-
-
 # Update remaining na in _imp columns if prev values available -------------
 
 
 flu.imp <- copy(flu.join)
 
-# if max height is missing 
 # loop thru cols.sets, update col ending '_imp' with prev du/far if available
-# optional to copy original Max du/far to '_imp' cols
+# and copy original Max du/far to '_imp' cols
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
   s <- cols.sets[[i]]
@@ -179,6 +200,13 @@ for (i in 1:length(cols.sets)) {
   }
 }
 
+# if max height is missing
+# loop thru cols.sets, update col ending '_imp' with prev du/far if available
+# optional to copy original Max du/far to '_imp' cols
+
+
+# for use with development_constraints_compare.Rmd
+export.for.comparison(flu.imp, "J:/Staff/Christy/usim-baseyear/flu")
 
 # Final output ------------------------------------------------------------
 
