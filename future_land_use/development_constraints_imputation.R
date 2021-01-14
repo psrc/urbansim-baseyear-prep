@@ -133,8 +133,6 @@ for (i in 1:length(cols.sets)) {
             (!is.na(get(eval(lc.col))) | get(eval(lc.col)) != 0), eval(equat3)]
       
       # Records with missing height, non-missing DU/acre and missing lot coverage:
-      # height = exp[(log(DU/acre) + 2.987)/1.407]
-      # equat <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") + 2.987)/1.407)),", newcolnm_tag.ht, "= 'imputed')"))
       equat4 <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,")-",coeff$d,")/",coeff$e,")),", 
                                    newcolnm_tag.ht, "= 'imputed')"))
       flu[get(eval(use.col)) == "Y" &
