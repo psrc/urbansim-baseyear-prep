@@ -7,8 +7,7 @@ library(data.table)
 library(foreign)
 
 export.for.comparison <- function(flu.join, out.filepath) {
-  # Export file to compare collected, imputed, previous flu vals
-  # flu comparison
+  # Export file to compare collected, imputed, previous flu vals in .Rmd
   comp.cols <- c("Key", 
                  str_subset(colnames(flu.join), "_new"),
                  use.cols,
@@ -75,18 +74,11 @@ flu[adj1, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/MaxFAR_Mixed)]
 flu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))]
 
 
-# QC
-fm1 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & !is.na(LC_Res),] # 3 recs with where Res_Use == N.
-fm2 <- flu[is.na(MaxDU_Res) & !is.na(MaxHt_Res) & is.na(LC_Res),]
-fm3 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & !is.na(LC_Res)]
-fm4 <- flu[is.na(MaxHt_Res) & !is.na(MaxDU_Res) & is.na(LC_Res)]
-
-
 # New flu, impute ---------------------------------------------------------
 
 
 # coefficients
-coeff <- list(a = 1.434, b = 0.624, c = 2.148, d = -2.492, e = 1.271)
+coeff <- list(a = 1.635, b = 0.582, c = 2.182, d = -2.697, e = 1.340)
 
 # Impute max DU/ac, residential height, and FAR
 for (i in 1:length(cols.sets)) {
@@ -253,7 +245,7 @@ for (stype in c('Res', 'Mixed')) {
 # exclude _prev records that didn't match current flu records
 flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
 # temp write for QC
-fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
+# fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
 
 
 # Final output ------------------------------------------------------------
