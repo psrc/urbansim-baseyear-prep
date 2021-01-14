@@ -68,7 +68,7 @@ for (col in unlist(clean.cols)) {
 
 # adjust MaxHt_Res column prior to imputation (retain original)
 flu[, MaxHt_Res_orig := MaxHt_Res]
-adj1 <- with (flu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res < MaxFAR_Mixed & MaxFAR_Res > 0)
+adj1 <- with(flu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res < MaxFAR_Mixed & MaxFAR_Res > 0)
 adj2 <- with(flu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res > MaxFAR_Mixed)
 flu[adj1, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/MaxFAR_Mixed)]
 flu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))]
@@ -110,21 +110,21 @@ for (i in 1:length(cols.sets)) {
     if (str_detect(j, "DU")) {
      
       # Records with missing DU/acre, non-missing heights and non-missing lot coverage(LC)
-      # equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(1.335 + 0.647*log(", ht.col, ") + 2.132*log(", lc.col, "))),",
-      #                              newcolnm_tag, "= 'imputed')"))      
       equat1 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(",coeff$a," + ", coeff$b,"*log(", ht.col, ") +", coeff$c,"*log(", lc.col, "))),",
                                    newcolnm_tag, "= 'imputed')"))
-      flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))) & !is.na(get(eval(lc.col))), eval(equat1)]
+      flu[get(eval(use.col)) == "Y" & 
+            (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & 
+            !is.na(get(eval(ht.col))) & 
+            !is.na(get(eval(lc.col))), eval(equat1)]
     
       # Records with missing DU/acre, non-missing heights and missing lot coverage
-      # equat <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(-2.987 + 1.407*log(", ht.col, "))),", newcolnm_tag, "= 'imputed')"))
       equat2 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(", coeff$d ,"+", coeff$e,"*log(", ht.col, "))),", 
                                    newcolnm_tag, "= 'imputed')"))
-      flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))) & is.na(get(eval(lc.col))), eval(equat2)]
+      flu[get(eval(use.col)) == "Y" & 
+            (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & 
+            !is.na(get(eval(ht.col))) & is.na(get(eval(lc.col))), eval(equat2)]
       
       # Records with missing height, non-missing DU/acre and non-missing lot coverage:
-      # height = exp[(log(DU/acre) - 1.335 - 2.132*log(LC))/0.647]
-      # equat <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") - 1.335 - 2.132*log(", lc.col,"))/0.647)),", newcolnm_tag.ht, "= 'imputed')"))
       equat3 <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") - ", coeff$a,"-", coeff$c,"*log(", lc.col,"))/", coeff$b ,")),", 
                                    newcolnm_tag.ht, "= 'imputed')"))
       flu[get(eval(use.col)) == "Y" &
@@ -144,7 +144,9 @@ for (i in 1:length(cols.sets)) {
       
     } else {
       equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')"))
-      flu[get(eval(use.col)) == "Y" & (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & !is.na(get(eval(ht.col))), eval(equat)]
+      flu[get(eval(use.col)) == "Y" & 
+            (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) & 
+            !is.na(get(eval(ht.col))), eval(equat)]
     }
     
   }
@@ -244,7 +246,8 @@ for (stype in c('Res', 'Mixed')) {
 
 # exclude _prev records that didn't match current flu records
 flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
-# temp write for QC
+
+# temp write for QC (kitchen sink file)
 # fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
 
 
