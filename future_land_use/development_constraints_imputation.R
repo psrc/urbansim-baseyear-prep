@@ -76,6 +76,9 @@ flu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))
 
 # New flu, impute ---------------------------------------------------------
 
+# flu[Res_Use == 'Y' &  is.na(MaxDU_Res)]
+# flu[Res_Use == 'Y' &  is.na(MaxDU_Res) & !is.na(MaxFAR_Res),]
+# flu[Res_Use == 'Y' &  is.na(MaxDU_Res) & is.na(MaxFAR_Res),]
 
 # coefficients
 coeff <- list(a = 1.635, b = 0.582, c = 2.182, d = -2.697, e = 1.340)
@@ -108,6 +111,19 @@ for (i in 1:length(cols.sets)) {
     }
     
     if (str_detect(j, "DU")) {
+      
+      if (j == "MaxDU_Res") {
+        # Records with non-missing MaxFAR_Res and missing MaxDU_Res. 
+        # Update original MaxDU_Res column and _imp column.
+        convert.far.du <-  "43560 * MaxFAR_Res/1000"
+        equat0 <- parse(text = paste0("\`:=\`(", density.col, " = ", convert.far.du,",", 
+                                      newcolnm, "= ", convert.far.du, ",",
+                                      newcolnm_tag, "= 'convert')"))
+        flu[get(eval(use.col)) == "Y" & 
+              is.na(MaxDU_Res) & 
+              !is.na(MaxFAR_Res), 
+            eval(equat0)]
+      }
      
       # Records with missing DU/acre, non-missing heights and non-missing lot coverage(LC)
       equat1 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(",coeff$a," + ", coeff$b,"*log(", ht.col, ") +", coeff$c,"*log(", lc.col, "))),",
@@ -246,7 +262,7 @@ for (stype in c('Res', 'Mixed')) {
 flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
 
 # temp write for QC (kitchen sink file)
-# fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
+fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
 
 
 # Final output ------------------------------------------------------------
