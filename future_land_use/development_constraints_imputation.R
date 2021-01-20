@@ -118,7 +118,7 @@ for (i in 1:length(cols.sets)) {
         convert.far.du <-  "43560 * MaxFAR_Res/1000"
         equat0 <- parse(text = paste0("\`:=\`(", density.col, " = ", convert.far.du,",", 
                                       newcolnm, "= ", convert.far.du, ",",
-                                      newcolnm_tag, "= 'convert')"))
+                                      newcolnm_tag, "= 'imputed')"))
         flu[get(eval(use.col)) == "Y" & 
               is.na(MaxDU_Res) & 
               !is.na(MaxFAR_Res), 
