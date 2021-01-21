@@ -17,8 +17,7 @@ flu_shp = gpd.read_file(flu_shp_path) # 1894 rows
 
 # read in imputed data 
 #flu_imp = r"C:\Users\clam\Desktop\urbansim-baseyear-prep\future_land_use\final_flu_imputed_2020-12-02.csv"
-#flu_imp = r"J:\Staff\Christy\usim-baseyear\flu\final_flu_imputed_2021-01-04.csv"
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-01-04.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-01-20.csv')
 f = pd.read_csv(flu_imp) # 1697 rows
 
 # clean up f; remove extra/unecessary fields before join
@@ -34,16 +33,19 @@ f.to_csv(os.path.join(dir, r'flu\flu_imputed_ptid_' + str(date.today()) + '.csv'
 # join imputed data back to FLU shapefile
 flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1894 rows
 
+#flu.to_file(os.path.join(dir, r'shapes\flu_for_qc.shp')) # export flu for qc in arcgis
+
 # spatial join parcels to flu to assign plan_type_id----------------------------------------------------
-# read parcels file (Stefan's output parcel's file or a clean file?)
+# read parcels file
 base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
 prcls = gpd.read_file(base_year_prcl_path)
 
 prcls_flu = gpd.sjoin(prcls, flu)
-prcls_flu_prev = prcls_flu[['PIN', 'plan_type_id']] # preview
 
+prcls_flu_prev = prcls_flu[['PIN', 'plan_type_id']] # preview
 prcls_flu_prev.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
-prcls_flu.to_file(os.path.join(dir, 'shapes\prclpt18_ptid_' + str(date.today()) + '.shp'))
+
+#prcls_flu.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp'))
 
 # create development constraints table------------------------------------------------------------------
 # unroll constraints from plan_type
@@ -123,5 +125,5 @@ devconstr.loc[devconstr['lc'].isnull(), 'lc'] = 1
 # add an id column
 devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
 
-devconstr.to_csv(os.path.join(dir, 'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
+devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
 
