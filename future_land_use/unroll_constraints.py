@@ -12,12 +12,11 @@ pd.set_option('display.width', 1000)
 dir = r"J:\Staff\Christy\usim-baseyear"
 
 # read in original flu shape
-flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_19_dissolve.shp"
-flu_shp = gpd.read_file(flu_shp_path) # 1894 rows
+flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
+flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
 
-# read in imputed data 
-#flu_imp = r"C:\Users\clam\Desktop\urbansim-baseyear-prep\future_land_use\final_flu_imputed_2020-12-02.csv"
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-01-20.csv')
+# read in imputed data
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-02-02.csv')
 f = pd.read_csv(flu_imp) # 1697 rows
 
 # clean up f; remove extra/unecessary fields before join
@@ -31,23 +30,42 @@ f['plan_type_id'] = np.arange(len(f)) + 1
 f.to_csv(os.path.join(dir, r'flu\flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False)
 
 # join imputed data back to FLU shapefile
-flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1894 rows
+flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1882 rows
 
 #flu.to_file(os.path.join(dir, r'shapes\flu_for_qc.shp')) # export flu for qc in arcgis
 
 # spatial join parcels to flu to assign plan_type_id----------------------------------------------------
+
 # read parcels file
 base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
 prcls = gpd.read_file(base_year_prcl_path)
 
 prcls_flu = gpd.sjoin(prcls, flu)
 
+# QC FLU shapefile------------------------------------------------------------------
+
+# count number of ptids per parcel
+pin_cnt = prcls_flu.groupby(['PIN'])['plan_type_id'].count().reset_index()
+pin_cnt = pin_cnt.rename(columns = {'plan_type_id': 'ptid_count'})
+
+pins_multi = pin_cnt[pin_cnt['ptid_count'] > 1]
+
+if (len(pins_multi) > 0):
+    # export list of parcels that overlay stacked flu polygons
+    pins_multi.to_csv(os.path.join(dir, r'flu_qc\pins_multi_'+ str(date.today()) +'.csv'), index=False) 
+    # export point shapefile of where overlapping zones occur for GIS staff to reconcile
+    prcls_multi_ptid = prcls_flu[prcls_flu['PIN'].isin(pins_multi['PIN'].tolist())]
+    prcls_multi_ptid = prcls_multi_ptid[['PIN', 'geometry', 'PINFIPS', 'FIPS', 'Jurisdicti', 'Juris_zn', 'Zone_adj', 'plan_type_id']]
+    prcls_multi_ptid.to_file(os.path.join(dir, r'flu_qc\prcls_multi_ptid_'+ str(date.today()) +'.shp'))
+
+# export table of parcels/ptid 
 prcls_flu_prev = prcls_flu[['PIN', 'plan_type_id']] # preview
 prcls_flu_prev.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
 
 #prcls_flu.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp'))
 
 # create development constraints table------------------------------------------------------------------
+
 # unroll constraints from plan_type
 id_cols = ['plan_type_id', 'generic_land_use_type_id', 'constraint_type']
 
