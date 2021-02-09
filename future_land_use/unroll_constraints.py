@@ -16,7 +16,7 @@ flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
 flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
 
 # read in imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-02-02.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-02-09.csv')
 f = pd.read_csv(flu_imp) # 1697 rows
 
 # clean up f; remove extra/unecessary fields before join
@@ -59,8 +59,9 @@ if (len(pins_multi) > 0):
     prcls_multi_ptid.to_file(os.path.join(dir, r'flu_qc\prcls_multi_ptid_'+ str(date.today()) +'.shp'))
 
 # export table of parcels/ptid 
-prcls_flu_prev = prcls_flu[['PIN', 'plan_type_id']] # preview
-prcls_flu_prev.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
+prcls_flu_subset = prcls_flu[['PIN', 'plan_type_id']] # preview
+prcls_flu_ptid = prcls_flu_subset[prcls_flu_subset['plan_type_id'].notna()] # remove NA
+prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
 
 #prcls_flu.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp'))
 
