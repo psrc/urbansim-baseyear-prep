@@ -5,6 +5,7 @@ library(purrr)
 library(magrittr)
 library(data.table)
 library(foreign)
+library(openxlsx)
 
 export.for.comparison <- function(flu.join, out.filepath) {
   # Export file to compare collected, imputed, previous flu vals in .Rmd
@@ -33,11 +34,14 @@ export.for.comparison <- function(flu.join, out.filepath) {
 
 # Setup -------------------------------------------------------------------
 
+in.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
 out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
+master.lookup <- "Full_FLU_Master_Corres_File.xlsx"
 
 # read new FLU and old FLU files
 flu <- fread("W:/gis/projects/compplan_zoning/density_table_4_gis.csv")
 oflu <- read.dbf("X:/DSA/FutureLandUse/FLU_2016/FLU_for_DC.dbf", as.is = TRUE) %>% as.data.table
+lu <- read.xlsx(file.path(in.path, master.lookup)) %>% as.data.table
 
 # missing Mixed
 id.cols <- c(str_subset(colnames(flu), "^Juris|Zone"), "Key", "Definition")
@@ -83,7 +87,6 @@ flu[, rural := ifelse(startsWith(rural, "rural"), TRUE, FALSE)]
 # flu[Res_Use == 'Y' &  is.na(MaxDU_Res) & is.na(MaxFAR_Res),]
 
 # coefficients
-# coeff <- list(a = 1.635, b = 0.582, c = 2.182, d = -2.697, e = 1.340)
 coeff <- list(a = 1.403, b = 0.654, c = 2.121, q = -0.980, d = -2.880, e = 1.448, r = -2.187)
 
 # Impute max DU/ac, residential height, and FAR
@@ -129,8 +132,6 @@ for (i in 1:length(cols.sets)) {
       }
      
       # Records with missing DU/acre, non-missing heights and non-missing lot coverage(LC)
-      # equat1 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(",coeff$a," + ", coeff$b,"*log(", ht.col, ") +", coeff$c,"*log(", lc.col, "))),",
-      #                              newcolnm_tag, "= 'imputed')"))
       # DU/acre = exp(a + b*log(height) + c*log(LC) + q*I(rural))
       equat1 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(",coeff$a," + ", 
                                     coeff$b,"*log(", ht.col, ") + ", 
@@ -143,8 +144,6 @@ for (i in 1:length(cols.sets)) {
             !is.na(get(eval(lc.col))), eval(equat1)]
     
       # Records with missing DU/acre, non-missing heights and missing lot coverage
-      # equat2 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(", coeff$d ,"+", coeff$e,"*log(", ht.col, "))),", 
-      #                              newcolnm_tag, "= 'imputed')"))      
       # DU/acre = exp(d + e*log(height)+ r*I(rural))
       equat2 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(", coeff$d ,"+", 
                                     coeff$e,"*log(", ht.col, ") + ", 
@@ -155,8 +154,6 @@ for (i in 1:length(cols.sets)) {
             !is.na(get(eval(ht.col))) & is.na(get(eval(lc.col))), eval(equat2)]
       
       # Records with missing height, non-missing DU/acre and non-missing lot coverage:
-      # equat3 <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") - ", coeff$a,"-", coeff$c,"*log(", lc.col,"))/", coeff$b ,")),", 
-      #                              newcolnm_tag.ht, "= 'imputed')"))
       # height = exp[(log(DU/acre) - a - c*log(LC) - q*I(rural))/b]
       equat3 <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,") - ", 
                                     coeff$a,"-", 
@@ -170,8 +167,6 @@ for (i in 1:length(cols.sets)) {
             (!is.na(get(eval(lc.col))) | get(eval(lc.col)) != 0), eval(equat3)]
       
       # Records with missing height, non-missing DU/acre and missing lot coverage:
-      # equat4 <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,")-",coeff$d,")/",coeff$e,")),", 
-      #                              newcolnm_tag.ht, "= 'imputed')"))
       # height = exp[(log(DU/acre) - d - r*I(rural))/e]
       equat4 <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= (exp((log(", density.col,")-",
                                     coeff$d," -", 
@@ -204,10 +199,24 @@ oflu.max.cols <- str_subset(colnames(oflu), "^Max_.*")
 oflu.cols <- c("Jurisdicti", "Key", "Definition", oflu.max.cols)
 oflu <- oflu[, ..oflu.cols]
 
-# join flu to old flu (2016)
-# _new = flu, _prev = old flu
+
+# Clean lookup ------------------------------------------------------------
+
+
+# attach master id to flu and oflu
+lu.flu <- lu[, .(FLU_master_ID, Key = FLUadj_Key)]
+flu <- merge(flu, lu.flu, all.x = TRUE, by = 'Key')
+
+lu.oflu <- lu[, .(FLU_master_ID, Key = FLU16_Key)]
+oflu <- merge(oflu, lu.oflu, all.x = TRUE, by = 'Key')
+
+
+# Join flu to old flu -----------------------------------------------------
+
+
+# _new = flu, _prev = old flu (2016)
 # all join/union, to see what joins and what doesn't
-flu.join <- merge(flu, oflu, by = c("Key"), suffixes = c("_new", "_prev"), all = TRUE)
+flu.join <- merge(flu, oflu, by = c("FLU_master_ID"), suffixes = c("_new", "_prev"), all = TRUE)
 setnames(flu.join, oflu.max.cols, paste0(oflu.max.cols, "_prev"))
 
 

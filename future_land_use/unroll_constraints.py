@@ -16,7 +16,7 @@ flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
 flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
 
 # read in imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-02-09.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-03-22.csv')
 f = pd.read_csv(flu_imp) # 1697 rows
 
 # clean up f; remove extra/unecessary fields before join
