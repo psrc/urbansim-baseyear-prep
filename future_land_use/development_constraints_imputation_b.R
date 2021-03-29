@@ -9,7 +9,8 @@ library(openxlsx)
 
 # Setup -------------------------------------------------------------------
 
-in.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
+# in.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
+in.path <- "J:/Staff/Christy/usim-baseyear/flu"
 out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
 master.lookup <- "Full_FLU_Master_Corres_File.xlsx"
 
