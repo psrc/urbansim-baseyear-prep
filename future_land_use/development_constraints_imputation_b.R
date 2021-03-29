@@ -168,9 +168,8 @@ flu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))
 coeff <- list(a = 1.403, b = 0.654, c = 2.121, q = -0.980, d = -2.880, e = 1.448, r = -2.187)
 
 # Impute max DU/ac, residential height, and FAR
+# Update 'Max_XXX_imp' columns with imputed values if criteria is met and tag 'Max_XXX_src' column as 'imputed'
 for (i in 1:length(cols.sets)) {
-  # Impute height for Residential cases (DU/ac)
-  # Update 'MaxHt_XXX_imp' columns with imputed values if criteria is met and tag 'MaxHt_XXX_src' column
   print(names(cols.sets[i]))
   
   for (j in cols.sets[[i]]$dens) {
