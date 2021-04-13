@@ -214,7 +214,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$b,"*log(", ht.col, ") + ",
                                     coeff$c,"*log(", lc.col, ") + ",
                                     coeff$q, "*I(rural))),",
-                                    newcolnm_tag, "= 'imputed1')"))
+                                    newcolnm_tag, "= 'imputed')"))
       flu.imp[get(eval(use.col)) == "Y" &
             (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) &
             !is.na(get(eval(ht.col))) &
@@ -226,7 +226,7 @@ for (i in 1:length(cols.sets)) {
       equat2 <- parse(text = paste0("\`:=\`(", newcolnm, "= (exp(", coeff$d ,"+",
                                     coeff$e,"*log(", ht.col, ") + ",
                                     coeff$r, "*I(rural))),",
-                                    newcolnm_tag, "= 'imputed2')"))
+                                    newcolnm_tag, "= 'imputed')"))
       flu.imp[get(eval(use.col)) == "Y" &
             (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) &
             !is.na(get(eval(ht.col))) & 
@@ -240,7 +240,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$c,"*log(", lc.col,") -",
                                     coeff$r, "*I(rural))/",
                                     coeff$b ,")),",
-                                    newcolnm_tag.ht, "= 'imputed3')"))
+                                    newcolnm_tag.ht, "= 'imputed')"))
       flu.imp[get(eval(use.col)) == "Y" &
             (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0) &
             (!is.na(get(eval(density.col))) | get(eval(density.col)) != 0) &
@@ -252,7 +252,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$d," -",
                                     coeff$r, "*I(rural))/",
                                     coeff$e,")),",
-                                    newcolnm_tag.ht, "= 'imputed4')"))
+                                    newcolnm_tag.ht, "= 'imputed')"))
       flu.imp[get(eval(use.col)) == "Y" &
             (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0) &
             (!is.na(get(eval(density.col))) | get(eval(density.col)) != 0) &
@@ -260,7 +260,7 @@ for (i in 1:length(cols.sets)) {
               is.na(get(eval(newcolnm.ht))), eval(equat4)]
 
     } else {
-      equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed5')"))
+      equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", ht.col, "/20,", newcolnm_tag, "= 'imputed')"))
       flu.imp[get(eval(use.col)) == "Y" &
             (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) &
             !is.na(get(eval(ht.col))) &
