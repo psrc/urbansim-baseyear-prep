@@ -23,3 +23,4 @@ def check_multi_pins(prcls_flu_shp, out_dir):
         prcls_multi_ptid = prcls_flu[prcls_flu['PIN'].isin(pins_multi['PIN'].tolist())]
         prcls_multi_ptid = prcls_multi_ptid[['PIN', 'geometry', 'PINFIPS', 'FIPS', 'Jurisdicti', 'Juris_zn', 'Zone_adj', 'plan_type_id']]
         prcls_multi_ptid.to_file(os.path.join(out_dir, r'flu_qc\prcls_multi_ptid_'+ str(date.today()) +'.shp'))
+        print('exported list of multi ptid instances as csv and shp to ' + out_dir)
