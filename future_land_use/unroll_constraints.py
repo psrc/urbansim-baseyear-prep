@@ -4,6 +4,8 @@ import geopandas as gpd
 import numpy as np
 from datetime import date
 
+exec(open(r'C:\Users\clam\Desktop\urbansim-baseyear-prep\future_land_use\unroll_constraints_functions.py').read())
+
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -16,7 +18,7 @@ flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
 flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
 
 # read in imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-03-22.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-06-09.csv')
 f = pd.read_csv(flu_imp) # 1697 rows
 
 # clean up f; remove extra/unecessary fields before join
@@ -44,21 +46,22 @@ prcls_flu = gpd.sjoin(prcls, flu)
 
 # QC FLU shapefile------------------------------------------------------------------
 
-# count number of ptids per parcel
-pin_cnt = prcls_flu.groupby(['PIN'])['plan_type_id'].count().reset_index()
-pin_cnt = pin_cnt.rename(columns = {'plan_type_id': 'ptid_count'})
+check_multi_pins(prcls_flu, dir)
+## count number of ptids per parcel
+#pin_cnt = prcls_flu.groupby(['PIN'])['plan_type_id'].count().reset_index()
+#pin_cnt = pin_cnt.rename(columns = {'plan_type_id': 'ptid_count'})
 
-pins_multi = pin_cnt[pin_cnt['ptid_count'] > 1]
+#pins_multi = pin_cnt[pin_cnt['ptid_count'] > 1]
 
-if (len(pins_multi) > 0):
-    # export list of parcels that overlay stacked flu polygons
-    pins_multi.to_csv(os.path.join(dir, r'flu_qc\pins_multi_'+ str(date.today()) +'.csv'), index=False) 
-    # export point shapefile of where overlapping zones occur for GIS staff to reconcile
-    prcls_multi_ptid = prcls_flu[prcls_flu['PIN'].isin(pins_multi['PIN'].tolist())]
-    prcls_multi_ptid = prcls_multi_ptid[['PIN', 'geometry', 'PINFIPS', 'FIPS', 'Jurisdicti', 'Juris_zn', 'Zone_adj', 'plan_type_id']]
-    prcls_multi_ptid.to_file(os.path.join(dir, r'flu_qc\prcls_multi_ptid_'+ str(date.today()) +'.shp'))
+#if (len(pins_multi) > 0):
+#    # export list of parcels that overlay stacked flu polygons
+#    pins_multi.to_csv(os.path.join(dir, r'flu_qc\pins_multi_'+ str(date.today()) +'.csv'), index=False) 
+#    # export point shapefile of where overlapping zones occur for GIS staff to reconcile
+#    prcls_multi_ptid = prcls_flu[prcls_flu['PIN'].isin(pins_multi['PIN'].tolist())]
+#    prcls_multi_ptid = prcls_multi_ptid[['PIN', 'geometry', 'PINFIPS', 'FIPS', 'Jurisdicti', 'Juris_zn', 'Zone_adj', 'plan_type_id']]
+#    prcls_multi_ptid.to_file(os.path.join(dir, r'flu_qc\prcls_multi_ptid_'+ str(date.today()) +'.shp'))
 
-# export table of parcels/ptid 
+# export table of parcels/ptid -----------------------------------------------------
 prcls_flu_subset = prcls_flu[['PIN', 'plan_type_id']] # preview
 prcls_flu_ptid = prcls_flu_subset[prcls_flu_subset['plan_type_id'].notna()] # remove NA
 prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
@@ -133,8 +136,24 @@ lockout_df = pd.DataFrame({'plan_type_id': np.repeat(lockout_id, 7),
 
 devconstr = pd.concat([devconstr, lockout_df], sort=False)
 
-# remove missing data
-devconstr = devconstr[(devconstr['minimum'].notnull()) | (devconstr['maximum'].notnull())]
+#### test/Peter's QC
+#ptids = [19, 121, 131, 138, 139, 150, 157, 183, 189]
+#f_qc = f[f['plan_type_id'].isin(ptids)]
+#ptids_qc = devconstr[devconstr['plan_type_id'].isin(ptids)]
+
+#import re
+#r = re.compile(".*_Use")
+#cols_qc = ['Juris_zn', 'plan_type_id'] + list(filter(r.match, f.columns))
+#f_qc2 = f_qc[cols_qc]
+
+#### my QC
+#devconstr.head()
+#devconstr[(devconstr['minimum'].notnull()) | (devconstr['maximum'].notnull())]
+#devconstr[(devconstr['minimum'].isnull()) & (devconstr['maximum'].isnull())]
+#devconstr[devconstr['plan_type_id'].isin([19])]
+
+# remove missing data (do not remove recs where both min and max are null. keep for usim processing)
+#devconstr = devconstr[(devconstr['minimum'].notnull()) | (devconstr['maximum'].notnull())]
 
 # replace NA with 0, or 1 for Lot Coverage (lc)
 devconstr.loc[devconstr['minimum'].isnull(), 'minimum'] = 0
