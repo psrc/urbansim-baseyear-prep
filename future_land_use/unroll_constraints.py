@@ -15,11 +15,14 @@ pd.set_option('display.width', 1000)
 # root outdir
 dir = r"J:\Staff\Christy\usim-baseyear"
 
-# read in original flu shape
+# original flu shape
 flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
 
-# read in imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-06-09.csv')
+# imputed data
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-06-10.csv')
+
+# parcels file
+base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
 
 # read/process files ----------------------------------------------------
 
@@ -44,7 +47,6 @@ flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1882 rows
 # spatial join parcels to flu to assign plan_type_id----------------------------------------------------
 
 # read parcels file
-base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
 prcls = gpd.read_file(base_year_prcl_path)
 
 prcls_flu = gpd.sjoin(prcls, flu)
@@ -127,25 +129,6 @@ lockout_df = pd.DataFrame({'plan_type_id': np.repeat(lockout_id, 7),
               'constraint_type': list(np.repeat("units_per_acre", 2)) + list(np.repeat("far", 4)) + ["units_per_acre"]})
 
 devconstr = pd.concat([devconstr, lockout_df], sort=False)
-
-#### test/Peter's QC
-#ptids = [19, 121, 131, 138, 139, 150, 157, 183, 189]
-#f_qc = f[f['plan_type_id'].isin(ptids)]
-#ptids_qc = devconstr[devconstr['plan_type_id'].isin(ptids)]
-
-#import re
-#r = re.compile(".*_Use")
-#cols_qc = ['Juris_zn', 'plan_type_id'] + list(filter(r.match, f.columns))
-#f_qc2 = f_qc[cols_qc]
-
-#### my QC
-#devconstr.head()
-#devconstr[(devconstr['minimum'].notnull()) | (devconstr['maximum'].notnull())]
-#devconstr[(devconstr['minimum'].isnull()) & (devconstr['maximum'].isnull())]
-#devconstr[devconstr['plan_type_id'].isin([19])]
-
-# remove missing data (do not remove recs where both min and max are null. keep for usim processing)
-#devconstr = devconstr[(devconstr['minimum'].notnull()) | (devconstr['maximum'].notnull())]
 
 # replace NA with 0, or 1 for Lot Coverage (lc)
 devconstr.loc[devconstr['minimum'].isnull(), 'minimum'] = 0

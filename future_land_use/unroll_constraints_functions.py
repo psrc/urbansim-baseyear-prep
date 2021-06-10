@@ -14,7 +14,7 @@ def check_multi_pins(prcls_flu_shp, out_dir):
     pins_multi = pin_cnt[pin_cnt['ptid_count'] > 1]
 
     print(pins_multi)
-    print('Number of unique parcel_ids affected by overlapping FLU polygons: ' + len(pins_multi))
+    print('Number of unique parcel_ids affected by overlapping FLU polygons: ' + str(len(pins_multi)))
 
     if (len(pins_multi) > 0):
         # export list of parcels that overlay stacked flu polygons
