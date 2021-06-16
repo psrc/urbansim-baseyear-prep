@@ -4,6 +4,10 @@ import geopandas as gpd
 import numpy as np
 from datetime import date
 
+# config ----------------------------------------------------
+
+exec(open(r'C:\Users\clam\Desktop\urbansim-baseyear-prep\future_land_use\unroll_constraints_functions.py').read())
+
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -11,12 +15,18 @@ pd.set_option('display.width', 1000)
 # root outdir
 dir = r"J:\Staff\Christy\usim-baseyear"
 
-# read in original flu shape
+# original flu shape
 flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
-flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
 
-# read in imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-02-09.csv')
+# imputed data
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-06-10.csv')
+
+# parcels file
+base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
+
+# read/process files ----------------------------------------------------
+
+flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
 f = pd.read_csv(flu_imp) # 1697 rows
 
 # clean up f; remove extra/unecessary fields before join
@@ -37,28 +47,15 @@ flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1882 rows
 # spatial join parcels to flu to assign plan_type_id----------------------------------------------------
 
 # read parcels file
-base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
 prcls = gpd.read_file(base_year_prcl_path)
 
 prcls_flu = gpd.sjoin(prcls, flu)
 
 # QC FLU shapefile------------------------------------------------------------------
 
-# count number of ptids per parcel
-pin_cnt = prcls_flu.groupby(['PIN'])['plan_type_id'].count().reset_index()
-pin_cnt = pin_cnt.rename(columns = {'plan_type_id': 'ptid_count'})
+check_multi_pins(prcls_flu, dir)
 
-pins_multi = pin_cnt[pin_cnt['ptid_count'] > 1]
-
-if (len(pins_multi) > 0):
-    # export list of parcels that overlay stacked flu polygons
-    pins_multi.to_csv(os.path.join(dir, r'flu_qc\pins_multi_'+ str(date.today()) +'.csv'), index=False) 
-    # export point shapefile of where overlapping zones occur for GIS staff to reconcile
-    prcls_multi_ptid = prcls_flu[prcls_flu['PIN'].isin(pins_multi['PIN'].tolist())]
-    prcls_multi_ptid = prcls_multi_ptid[['PIN', 'geometry', 'PINFIPS', 'FIPS', 'Jurisdicti', 'Juris_zn', 'Zone_adj', 'plan_type_id']]
-    prcls_multi_ptid.to_file(os.path.join(dir, r'flu_qc\prcls_multi_ptid_'+ str(date.today()) +'.shp'))
-
-# export table of parcels/ptid 
+# export table of parcels/ptid -----------------------------------------------------
 prcls_flu_subset = prcls_flu[['PIN', 'plan_type_id']] # preview
 prcls_flu_ptid = prcls_flu_subset[prcls_flu_subset['plan_type_id'].notna()] # remove NA
 prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
@@ -132,9 +129,6 @@ lockout_df = pd.DataFrame({'plan_type_id': np.repeat(lockout_id, 7),
               'constraint_type': list(np.repeat("units_per_acre", 2)) + list(np.repeat("far", 4)) + ["units_per_acre"]})
 
 devconstr = pd.concat([devconstr, lockout_df], sort=False)
-
-# remove missing data
-devconstr = devconstr[(devconstr['minimum'].notnull()) | (devconstr['maximum'].notnull())]
 
 # replace NA with 0, or 1 for Lot Coverage (lc)
 devconstr.loc[devconstr['minimum'].isnull(), 'minimum'] = 0
