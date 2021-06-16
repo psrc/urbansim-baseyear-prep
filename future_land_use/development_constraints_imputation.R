@@ -122,6 +122,8 @@ for (i in 1:length(cols.sets)) {
   }
 }
 
+cat("\n")
+
 ## residential max height ----
 
 # For 'Res' and 'Mixed' types, update col ending '_imp' with prev MaxHt if available
@@ -168,7 +170,7 @@ flu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))
 # coefficients
 coeff <- list(a = 1.403, b = 0.654, c = 2.121, q = -0.980, d = -2.880, e = 1.448, r = -2.187)
 
-# Impute max DU/ac, residential height, and FAR
+# Impute max DU/ac, height, and FAR
 # Update 'Max_XXX_imp' columns with imputed values if criteria is met and tag 'Max_XXX_src' column as 'imputed'
 for (i in 1:length(cols.sets)) {
   print(names(cols.sets[i]))
@@ -266,6 +268,17 @@ for (i in 1:length(cols.sets)) {
             (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) &
             !is.na(get(eval(ht.col))) &
               is.na(get(eval(newcolnm))), eval(equat)]
+      
+      # impute height for non-res use
+      # height = pmax(12, 12*FAR/lot_coverage)
+      # missing lot_coverage fill in with 1
+      flu.imp[get(eval(use.col)) == "Y" &
+                (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0) &
+                is.na(get(eval(lc.col))), (lc.col) := 1]
+      
+      equat.nonres.ht <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= pmax(12, 12*", newcolnm,"/", lc.col,"), ", newcolnm_tag.ht, "= 'imputed')"))
+      flu.imp[get(eval(use.col)) == "Y" &
+                (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0), eval(equat.nonres.ht)]
     }
   }
 }
