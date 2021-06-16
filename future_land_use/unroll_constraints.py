@@ -139,9 +139,5 @@ devconstr.loc[devconstr['maxht'].isnull(), 'maxht'] = 0
 # add an id column
 devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
 
-# subset for MaxHt columns join with MaxHt sub-table
-#f_max_ht = f.loc[:, ['plan_type_id'] + list(f.columns[f.columns.str.startswith("MaxHt")])]
-#devconstr = devconstr.merge(f_max_ht, how='left', on='plan_type_id')
-
 devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
 
