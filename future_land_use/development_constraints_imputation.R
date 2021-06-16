@@ -292,16 +292,16 @@ for (i in 1:length(cols.sets)) {
 flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
 
 ## temp output for QC (kitchen sink file) ----
-# fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
+fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
 
 # Final output ------------------------------------------------------------
 
 
 # subset columns and rename in preparation for 'unroll_constraints' .py script
 ff.types <- c("Res", "Mixed", "Office", "Indust", "Comm")
-ff.max.cols <- c(paste0("MaxDU_", ff.types), paste0("MaxFAR_", ff.types))
-ff.excl.cols <- c(str_subset(colnames(flu.fin.prep), "_prev"), ff.max.cols, 
-                  "MaxHt_Res", "MaxHt_Mixed", "MaxHt_Res_orig") # add MaxHt cols
+ff.max.cols <- c(paste0("MaxDU_", ff.types), paste0("MaxFAR_", ff.types), paste0("MaxHt_", ff.types))
+ff.excl.cols <- c(str_subset(colnames(flu.fin.prep), "_prev"), ff.max.cols,
+                  "MaxHt_Res_orig")
 
 ff.cols <- setdiff(colnames(flu.fin.prep), ff.excl.cols)
 flu.fin.prep <- flu.fin.prep[, ..ff.cols] 
@@ -315,4 +315,4 @@ gb.cols <- setdiff(colnames(flu.fin.prep), "Zone_adj")
 flu.fin <- unique(flu.fin.prep, by = gb.cols, fromLast = T)
 
 ## output for use with unroll_constraints.py ----
-# fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
+fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
