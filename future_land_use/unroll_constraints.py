@@ -19,7 +19,7 @@ dir = r"J:\Staff\Christy\usim-baseyear"
 flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
 
 # imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-06-10.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_imputed_2021-06-16.csv')
 
 # parcels file
 base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
@@ -71,50 +71,50 @@ id_cols = ['plan_type_id', 'generic_land_use_type_id', 'constraint_type']
 sf = f[(f['MaxDU_Res'] < 35.1) & (f['Res_Use'] == 'Y')]
 sf['generic_land_use_type_id'] = 1
 sf['constraint_type'] = 'units_per_acre'
-sf = sf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res']]
-sf = sf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc'})
+sf = sf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']]
+sf = sf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # mf
 mf = f[(f['MaxDU_Res'] > 11.9) & (f['Res_Use'] == 'Y')]
 mf['generic_land_use_type_id'] = 2
 mf['constraint_type'] = 'units_per_acre'
-mf = mf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res']]
-mf = mf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc'})
+mf = mf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']]
+mf = mf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # off
 off = f[(f['Office_Use'] == 'Y')]
 off['generic_land_use_type_id'] = 3
 off['constraint_type'] = 'far'
-off = off[id_cols + ['MinFAR_Office', 'MaxFAR_Office', 'LC_Office']]
-off = off.rename(columns = {'MinFAR_Office': 'minimum', 'MaxFAR_Office': 'maximum', 'LC_Office':'lc'})
+off = off[id_cols + ['MinFAR_Office', 'MaxFAR_Office', 'LC_Office', 'MaxHt_Office']]
+off = off.rename(columns = {'MinFAR_Office': 'minimum', 'MaxFAR_Office': 'maximum', 'LC_Office':'lc', 'MaxHt_Office':'maxht'})
 
 # comm
 comm = f[(f['Comm_Use'] == 'Y')]
 comm['generic_land_use_type_id'] = 4
 comm['constraint_type'] = 'far'
-comm = comm[id_cols + ['MinFAR_Comm', 'MaxFAR_Comm', 'LC_Comm']]
-comm = comm.rename(columns = {'MinFAR_Comm': 'minimum', 'MaxFAR_Comm': 'maximum', 'LC_Comm':'lc'})
+comm = comm[id_cols + ['MinFAR_Comm', 'MaxFAR_Comm', 'LC_Comm', 'MaxHt_Comm']]
+comm = comm.rename(columns = {'MinFAR_Comm': 'minimum', 'MaxFAR_Comm': 'maximum', 'LC_Comm':'lc', 'MaxHt_Comm':'maxht'})
 
 # ind
 ind = f[(f['Indust_Use'] == 'Y')]
 ind['generic_land_use_type_id'] = 5
 ind['constraint_type'] = 'far'
-ind = ind[id_cols + ['MinFAR_Indust', 'MaxFAR_Indust', 'LC_Indust']]
-ind = ind.rename(columns = {'MinFAR_Indust': 'minimum', 'MaxFAR_Indust': 'maximum', 'LC_Indust':'lc'})
+ind = ind[id_cols + ['MinFAR_Indust', 'MaxFAR_Indust', 'LC_Indust', 'MaxHt_Indust']]
+ind = ind.rename(columns = {'MinFAR_Indust': 'minimum', 'MaxFAR_Indust': 'maximum', 'LC_Indust':'lc', 'MaxHt_Indust':'maxht'})
 
 # mixed
 mixed = f[(f['Mixed_Use'] == 'Y')]
 mixed['generic_land_use_type_id'] = 6
 mixed['constraint_type'] = 'far'
-mixed = mixed[id_cols + ['MinFAR_Mixed', 'MaxFAR_Mixed', 'LC_Mixed']]
-mixed = mixed.rename(columns = {'MinFAR_Mixed': 'minimum', 'MaxFAR_Mixed': 'maximum', 'LC_Mixed':'lc'})
+mixed = mixed[id_cols + ['MinFAR_Mixed', 'MaxFAR_Mixed', 'LC_Mixed', 'MaxHt_Mixed']]
+mixed = mixed.rename(columns = {'MinFAR_Mixed': 'minimum', 'MaxFAR_Mixed': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
 # mixed du
 mixed_du = f[(f['Mixed_Use'] == 'Y')]
 mixed_du['generic_land_use_type_id'] = 6
 mixed_du['constraint_type'] = 'units_per_acre'
-mixed_du = mixed_du[id_cols + ['MinDU_Mixed', 'MaxDU_Mixed', 'LC_Mixed']]
-mixed_du = mixed_du.rename(columns = {'MinDU_Mixed': 'minimum', 'MaxDU_Mixed': 'maximum', 'LC_Mixed':'lc'})
+mixed_du = mixed_du[id_cols + ['MinDU_Mixed', 'MaxDU_Mixed', 'LC_Mixed', 'MaxHt_Mixed']]
+mixed_du = mixed_du.rename(columns = {'MinDU_Mixed': 'minimum', 'MaxDU_Mixed': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
 # combine together and add lockouts
 lockout_id = 9999
@@ -134,9 +134,14 @@ devconstr = pd.concat([devconstr, lockout_df], sort=False)
 devconstr.loc[devconstr['minimum'].isnull(), 'minimum'] = 0
 devconstr.loc[devconstr['maximum'].isnull(), 'maximum'] = 0
 devconstr.loc[devconstr['lc'].isnull(), 'lc'] = 1
+devconstr.loc[devconstr['maxht'].isnull(), 'maxht'] = 0
 
 # add an id column
 devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
+
+# subset for MaxHt columns join with MaxHt sub-table
+#f_max_ht = f.loc[:, ['plan_type_id'] + list(f.columns[f.columns.str.startswith("MaxHt")])]
+#devconstr = devconstr.merge(f_max_ht, how='left', on='plan_type_id')
 
 devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
 
