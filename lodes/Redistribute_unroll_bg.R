@@ -2,14 +2,32 @@ library(magrittr)
 library(data.table)
 
 # load data
-lodes.file <- 'AdjLodes_BY18rev.csv'
-lodes <- fread(lodes.file, colClasses=c("character", "numeric", "numeric", "numeric"))
+#lodes.file <- 'AdjLodes_BY18rev.csv' # 2017 LODES adjusted to 2018
+lodes.file <- 'AdjLodes18.csv' # 2018 LODES
+lodes <- fread(lodes.file, colClasses=c("numeric", "character", "numeric", "numeric")) # set block group to character and county to numeric
+#lodes17 <- fread('AdjLodes_BY18rev.csv', colClasses=c("character", "numeric", "numeric", "numeric")) # set block group to character and county to numeric
+
 
 # function for trimming leading and trailing spaces
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
-lodes$sector_id <- as.integer(lodes$sector_id)
-lodes$census_2010_block_group_id <- trim(lodes$census_2010_block_group_id)
+#lodes$sector_id <- as.integer(lodes$sector_id)
+lodes[, census_2010_block_group_id := trim(census_2010_block_group_id)]
+
+
+# adjust two UW BGs and Amazon
+uw.change <- 24139
+if(nrow(lodes[census_2010_block_group_id == "530330053023" & sector_id == 13]) == 0)
+  lodes <- rbind(lodes, data.table(county_id = 33, census_2010_block_group_id = "530330053023",
+                                   sector_id = 13, number_of_jobs = 0))
+lodes[census_2010_block_group_id == "530330053022" & sector_id == 13, number_of_jobs := number_of_jobs - uw.change]
+lodes[census_2010_block_group_id == "530330053023" & sector_id == 13, number_of_jobs := number_of_jobs + uw.change]
+
+amazon.change <- 32400
+lodes[census_2010_block_group_id == "530330073003" & sector_id == 5, number_of_jobs := number_of_jobs - amazon.change]
+lodes[census_2010_block_group_id == "530330073003" & sector_id == 7, number_of_jobs := number_of_jobs + amazon.change]
+
+# add ID
 lodes[, id := 1:nrow(lodes)]
 
 # deal with negatives
@@ -40,10 +58,15 @@ for(i in 1:nrow(neg)) {
     }
   }
 }
+
 logres <- data.frame(number_of_jobs=log.distr, number_of_blocks=log.distr.counter)
 rownames(logres) <- names(log.distr)
 cat("\nNegatives redistributed as follows:\n")
 print(logres)
+
+# join with US census block group id
+bg <- fread("census_block_groups.csv", colClasses = c("character", "numeric", "numeric"))
+lodes[bg, census_block_group_id := i.census_block_group_id, on = "census_2010_block_group_id"]
 
 # unroll into individual jobs
 cat("\n\nWriting jobs.csv ...")
