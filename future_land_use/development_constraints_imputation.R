@@ -124,11 +124,12 @@ for (i in 1:length(cols.sets)) {
 
 cat("\n")
 
-## residential max height ----
+## Max height ----
 
-# For 'Res' and 'Mixed' types, update col ending '_imp' with prev MaxHt if available
-## option to copy original Max du/far to '_imp' cols
-for (stype in c('Res', 'Mixed')) {
+# update original Max Ht to '_imp' cols
+# also copy prev MaxHt for 'Res' and 'Mixed' if available to col ending '_imp' 
+
+for (stype in c('Res', 'Mixed', 'Comm', 'Office', 'Indust')) {
   s <- cols.sets[[stype]]
   
   use.col <-s$use
@@ -138,7 +139,7 @@ for (stype in c('Res', 'Mixed')) {
   imp.ht.col <- paste0(ht.col, "_imp")
   newcolnm_tag <- paste0(ht.col, "_src")
   
-  prev.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", prev.ht.col, ",", newcolnm_tag, "= 'prev')"))
+  
   orig.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", ht.col, ",", newcolnm_tag, "= 'collected')"))
   
   # update col ending '_imp' with collected height
@@ -146,14 +147,17 @@ for (stype in c('Res', 'Mixed')) {
             get(eval(use.col)) == "Y" &
             (get(eval(ht.col)) > 0), eval(orig.equat)]
   
-  # update col ending '_imp' with prev height
-  flu.imp[!is.na(Jurisdicti_new) &
-            get(eval(use.col)) == "Y" &
-            is.na(get(eval(imp.ht.col))) &
-            is.na(get(eval(ht.col))) &
-            (get(eval(prev.dens.col)) > 0), eval(prev.equat)]
+  if(stype %in% c('Res', 'Mixed')) {
+    prev.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", prev.ht.col, ",", newcolnm_tag, "= 'prev')"))
+    
+    # update col ending '_imp' with prev height
+    flu.imp[!is.na(Jurisdicti_new) &
+              get(eval(use.col)) == "Y" &
+              is.na(get(eval(imp.ht.col))) &
+              is.na(get(eval(ht.col))) &
+              (get(eval(prev.dens.col)) > 0), eval(prev.equat)]
+  }
   
-
 }
 
 
@@ -288,7 +292,7 @@ for (i in 1:length(cols.sets)) {
 flu.fin.prep <- flu.imp[!is.na(Jurisdicti_new)]
 
 ## temp output for QC (kitchen sink file) ----
-fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
+# fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
 
 # Final output ------------------------------------------------------------
 
@@ -311,4 +315,4 @@ gb.cols <- setdiff(colnames(flu.fin.prep), "Zone_adj")
 flu.fin <- unique(flu.fin.prep, by = gb.cols, fromLast = T)
 
 ## output for use with unroll_constraints.py ----
-fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
+# fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
