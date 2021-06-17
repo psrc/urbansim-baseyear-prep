@@ -139,24 +139,21 @@ for (stype in c('Res', 'Mixed', 'Comm', 'Office', 'Indust')) {
   imp.ht.col <- paste0(ht.col, "_imp")
   newcolnm_tag <- paste0(ht.col, "_src")
   
-  
+  # update col ending '_imp' with collected height
   orig.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", ht.col, ",", newcolnm_tag, "= 'collected')"))
   
-  # update col ending '_imp' with collected height
   flu.imp[!is.na(Jurisdicti_new) &
             get(eval(use.col)) == "Y" &
             (get(eval(ht.col)) > 0), eval(orig.equat)]
   
-  if(stype %in% c('Res', 'Mixed')) {
-    prev.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", prev.ht.col, ",", newcolnm_tag, "= 'prev')"))
-    
-    # update col ending '_imp' with prev height
-    flu.imp[!is.na(Jurisdicti_new) &
-              get(eval(use.col)) == "Y" &
-              is.na(get(eval(imp.ht.col))) &
-              is.na(get(eval(ht.col))) &
-              (get(eval(prev.dens.col)) > 0), eval(prev.equat)]
-  }
+  # update col ending '_imp' with prev height
+  prev.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", prev.ht.col, ",", newcolnm_tag, "= 'prev')"))
+  
+  flu.imp[!is.na(Jurisdicti_new) &
+            get(eval(use.col)) == "Y" &
+            is.na(get(eval(imp.ht.col))) &
+            is.na(get(eval(ht.col))) &
+            (get(eval(prev.ht.col)) > 0), eval(prev.equat)]
   
 }
 
@@ -282,6 +279,7 @@ for (i in 1:length(cols.sets)) {
       
       equat.nonres.ht <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= pmax(12, 12*", newcolnm,"/", lc.col,"), ", newcolnm_tag.ht, "= 'imputed')"))
       flu.imp[get(eval(use.col)) == "Y" &
+                (is.na(get(eval(newcolnm.ht))) | get(eval(newcolnm.ht)) == 0) &
                 (is.na(get(eval(ht.col))) | get(eval(ht.col)) == 0), eval(equat.nonres.ht)]
     }
   }
