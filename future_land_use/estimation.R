@@ -80,6 +80,9 @@ summary(fitlt)
 fitl1t <- lm(logMaxDU_Res ~ log(MaxHt_Res) + log(LC_Res) + I(rural), data = sflu1)
 summary(fitl1t)
 
+result <- list(a = fitl1t$coefficients[1], b = fitl1t$coefficients[2], c = fitl1t$coefficients[3], q = fitl1t$coefficients[4],
+               d = fitlt$coefficients[1], e = fitlt$coefficients[2], r = fitlt$coefficients[3])
+result
 
 ############################################
 # Below are some diagnostics plots and experimentation code
