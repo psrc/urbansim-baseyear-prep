@@ -1,0 +1,224 @@
+city_id,"rg_proposed",fips_rgs_proposed_id,"rg_existing",county_id,"city_name",fips_rgs_id,rgs_id
+13,"Metro",3301,"Metro",33,"Bellevue",3301,1
+9,"Metro",3301,"Metro",33,"Seattle",3301,1
+2,"Core",3302,"Core",33,"Auburn",3302,2
+28,"Core",3302,"Core",33,"Bothell",3302,2
+23,"Core",3302,"Core",33,"Burien",3302,2
+20,"Core",3302,"Core",33,"Federal Way",3302,2
+7,"Core",3302,"Core",33,"Kent",3302,2
+14,"Core",3302,"Core",33,"Kirkland",3302,2
+15,"Core",3302,"Core",33,"Redmond",3302,2
+12,"Core",3302,"Core",33,"Renton",3302,2
+4,"Core",3302,"Core",33,"SeaTac",3302,2
+8,"Core",3302,"Core",33,"Tukwila",3302,2
+16,"CitiesTowns",3304,"Larger",33,"Covington",3303,3
+18,"HCT",3303,"Larger",33,"Des Moines",3303,3
+22,"Core",3302,"Larger",33,"Issaquah",3303,3
+26,"HCT",3303,"Larger",33,"Kenmore",3303,3
+42,"CitiesTowns",3304,"Larger",33,"Maple Valley",3303,3
+19,"HCT",3303,"Larger",33,"Mercer Island",3303,3
+21,"CitiesTowns",3304,"Larger",33,"Sammamish",3303,3
+5,"HCT",3303,"Larger",33,"Shoreline",3303,3
+30,"HCT",3303,"Larger",33,"Woodinville",3303,3
+31,"CitiesTowns",3304,"Small",33,"Algona",3304,4
+51,"CitiesTowns",3304,"Small",33,"Beaux Arts",3304,4
+35,"CitiesTowns",3304,"Small",33,"Black Diamond",3304,4
+55,"CitiesTowns",3304,"Small",33,"Carnation",3304,4
+41,"CitiesTowns",3304,"Small",33,"Clyde Hill",3304,4
+27,"CitiesTowns",3304,"Small",33,"Duvall",3304,4
+17,"CitiesTowns",3304,"Small",33,"Enumclaw",3304,4
+48,"CitiesTowns",3304,"Small",33,"Hunts Point",3304,4
+33,"HCT",3303,"Small",33,"Lake Forest Park",3304,4
+50,"CitiesTowns",3304,"Small",33,"Medina",3304,4
+54,"CitiesTowns",3304,"Small",33,"Milton",3304,4
+43,"HCT",3303,"Small",33,"Newcastle",3304,4
+1,"CitiesTowns",3304,"Small",33,"Normandy Park",3304,4
+32,"CitiesTowns",3304,"Small",33,"North Bend",3304,4
+39,"CitiesTowns",3304,"Small",33,"Pacific",3304,4
+52,"CitiesTowns",3304,"Small",33,"Skykomish",3304,4
+37,"CitiesTowns",3304,"Small",33,"Snoqualmie",3304,4
+47,"CitiesTowns",3304,"Small",33,"Yarrow Point",3304,4
+60,"UU",3305,"UU",33,"Auburn PAA",3305,5
+38,"UU",3305,"UU",33,"Bear Creek UPD",3305,5
+58,"UU",3305,"UU",33,"Bellevue PAA",3305,5
+45,"UU",3305,"UU",33,"Black Diamond PAA",3305,5
+25,"HCT",3303,"UU",33,"Federal Way PAA",3305,5
+44,"UU",3305,"UU",33,"Issaquah PAA",3305,5
+10,"UU",3305,"UU",33,"Kent PAA",3305,5
+57,"UU",3305,"UU",33,"Milton PAA",3305,5
+36,"UU",3305,"UU",33,"Newcastle PAA",3305,5
+11,"HCT",3303,"UU",33,"North Highline",3305,5
+61,"UU",3305,"UU",33,"Pacific PAA",3305,5
+34,"UU",3305,"UU",33,"Redmond PAA",3305,5
+6,"HCT",3303,"UU",33,"Renton PAA",3305,5
+24,"UU",3305,"UU",33,"Sammamish PAA",3305,5
+62,"UU",3305,"UU",33,"Seattle PAA",3305,5
+40,"UU",3305,"UU",33,"Tukwila PAA",3305,5
+46,"UU",3305,"UU",33,"UUU",3305,5
+3,"Rural",3306,"Rural",33,"King-Rural",3306,6
+65,"Metro",3501,"Metro",35,"Bremerton",3501,1
+70,"Core",3502,"Core",35,"Silverdale",3502,2
+69,"HCT",3503,"Larger",35,"Bainbridge Island",3503,3
+64,"HCT",3503,"Small",35,"Port Orchard",3504,4
+71,"HCT",3503,"Small",35,"Poulsbo",3504,4
+66,"Metro",3501,"UU",35,"Bremerton UGA",3505,5
+68,"UU",3505,"UU",35,"Central Kitsap UGA",3505,5
+73,"HCT",3503,"UU",35,"Kingston UGA",3505,5
+67,"HCT",3503,"UU",35,"Port Orchard UGA",3505,5
+72,"HCT",3503,"UU",35,"Poulsbo UGA",3505,5
+63,"Rural",3506,"Rural",35,"Kitsap-Rural",3506,6
+59,"Metro",5301,"Metro",53,"Tacoma",5301,1
+138,"Core",5302,"Core",53,"Auburn",5302,2
+79,"Core",5302,"Core",53,"Lakewood",5302,2
+85,"Core",5302,"Core",53,"Puyallup",5302,2
+89,"CitiesTowns",5304,"Larger",53,"Bonney Lake",5303,3
+83,"HCT",5303,"Larger",53,"Fife",5303,3
+80,"Core",5302,"Larger",53,"University Place",5303,3
+92,"CitiesTowns",5304,"Small",53,"Buckley",5304,4
+91,"CitiesTowns",5304,"Small",53,"Carbonado",5304,4
+76,"HCT",5303,"Small",53,"DuPont",5304,4
+84,"CitiesTowns",5304,"Small",53,"Eatonville",5304,4
+87,"CitiesTowns",5304,"Small",53,"Edgewood",5304,4
+81,"HCT",5303,"Small",53,"Fircrest",5304,4
+77,"CitiesTowns",5304,"Small",53,"Gig Harbor",5304,4
+141,"CitiesTowns",5304,"Small",53,"Milton",5304,4
+86,"CitiesTowns",5304,"Small",53,"Orting",5304,4
+142,"CitiesTowns",5304,"Small",53,"Pacific",5304,4
+78,"CitiesTowns",5304,"Small",53,"Roy",5304,4
+82,"CitiesTowns",5304,"Small",53,"Ruston",5304,4
+90,"CitiesTowns",5304,"Small",53,"South Prairie",5304,4
+74,"CitiesTowns",5304,"Small",53,"Steilacoom",5304,4
+88,"HCT",5303,"Small",53,"Sumner",5304,4
+93,"CitiesTowns",5304,"Small",53,"Wilkeson",5304,4
+150,"UU",5305,"UU",53,"Auburn PAA",5305,5
+151,"UU",5305,"UU",53,"Bonney Lake PAA",5305,5
+152,"UU",5305,"UU",53,"Carbonado PAA",5305,5
+153,"UU",5305,"UU",53,"Eatonville PAA",5305,5
+154,"UU",5305,"UU",53,"Fife Milton Overlap",5305,5
+155,"UU",5305,"UU",53,"Fife PAA",5305,5
+156,"UU",5305,"UU",53,"Fircrest PAA",5305,5
+157,"UU",5305,"UU",53,"Frederickson",5305,5
+158,"UU",5305,"UU",53,"Gig Harbor PAA",5305,5
+75,"UU",5305,"UU",53,"JBLM",5305,5
+159,"UU",5305,"UU",53,"Lakewood Steilacoom Overlap",5305,5
+160,"UU",5305,"UU",53,"Milton PAA",5305,5
+161,"UU",5305,"UU",53,"Pacific PAA",5305,5
+162,"UU",5305,"UU",53,"Puyallup PAA",5305,5
+163,"UU",5305,"UU",53,"Roy PAA",5305,5
+164,"UU",5305,"UU",53,"South Prairie PAA",5305,5
+165,"UU",5305,"UU",53,"Sumner PAA",5305,5
+166,"HCT",5303,"UU",53,"Tacoma PAA",5305,5
+53,"UU",5305,"UU",53,"UU",5305,5
+29,"Rural",5306,"Rural",53,"Pierce-Rural",5306,6
+95,"Metro",6101,"Metro",61,"Everett",6101,1
+139,"Core",6102,"Core",61,"Bothell",6102,2
+94,"Core",6102,"Core",61,"Lynnwood",6102,2
+111,"HCT",6103,"Larger",61,"Arlington",6103,3
+98,"HCT",6103,"Larger",61,"Edmonds",6103,3
+113,"CitiesTowns",6104,"Larger",61,"Lake Stevens",6103,3
+106,"HCT",6103,"Larger",61,"Marysville",6103,3
+100,"HCT",6103,"Larger",61,"Mill Creek",6103,3
+110,"CitiesTowns",6104,"Larger",61,"Monroe",6103,3
+101,"HCT",6103,"Larger",61,"Mountlake Terrace",6103,3
+120,"HCT",6103,"Larger",61,"Mukilteo",6103,3
+96,"CitiesTowns",6104,"Small",61,"Brier",6104,4
+116,"CitiesTowns",6104,"Small",61,"Darrington",6104,4
+128,"CitiesTowns",6104,"Small",61,"Gold Bar",6104,4
+129,"CitiesTowns",6104,"Small",61,"Granite Falls",6104,4
+131,"CitiesTowns",6104,"Small",61,"Index",6104,4
+112,"CitiesTowns",6104,"Small",61,"Snohomish",6104,4
+123,"CitiesTowns",6104,"Small",61,"Stanwood",6104,4
+114,"CitiesTowns",6104,"Small",61,"Sultan",6104,4
+115,"CitiesTowns",6104,"Small",61,"Woodway",6104,4
+124,"UU",6105,"UU",61,"Arlington UGA",6105,5
+105,"HCT",6103,"UU",61,"Bothell MUGA",6105,5
+97,"UU",6105,"UU",61,"Brier MUGA",6105,5
+137,"UU",6105,"UU",61,"Darrington UGA",6105,5
+118,"HCT",6103,"UU",61,"Edmonds MUGA",6105,5
+109,"HCT",6103,"UU",61,"Everett MUGA",6105,5
+117,"UU",6105,"UU",61,"Gold Bar UGA",6105,5
+133,"UU",6105,"UU",61,"Granite Falls UGA",6105,5
+122,"UU",6105,"UU",61,"Lake Stevens UGA",6105,5
+107,"UU",6105,"UU",61,"Lake Stickney Gap",6105,5
+104,"HCT",6103,"UU",61,"Larch Way Overlap",6105,5
+102,"HCT",6103,"UU",61,"Lynnwood MUGA",6105,5
+132,"UU",6105,"UU",61,"Maltby UGA",6105,5
+121,"UU",6105,"UU",61,"Marysville UGA",6105,5
+99,"HCT",6103,"UU",61,"Meadowdale Gap MUGA",6105,5
+103,"HCT",6103,"UU",61,"Mill Creek MUGA",6105,5
+125,"UU",6105,"UU",61,"Monroe UGA",6105,5
+119,"UU",6105,"UU",61,"Mountlake Terrace MUGA",6105,5
+108,"HCT",6103,"UU",61,"Mukilteo MUGA",6105,5
+134,"UU",6105,"UU",61,"PAINE FIELD AREA",6105,5
+127,"UU",6105,"UU",61,"Silver Firs Gap MUGA",6105,5
+126,"UU",6105,"UU",61,"Snohomish UGA",6105,5
+130,"UU",6105,"UU",61,"Stanwood UGA",6105,5
+135,"UU",6105,"UU",61,"Sultan UGA",6105,5
+136,"UU",6105,"UU",61,"Woodway MUGA",6105,5
+49,"Rural",6106,"Rural",61,"Snohomish-Rural",6106,6
+1013,"Metro",3301,"Metro",33,"Bellevue",3301,1
+1009,"Metro",3301,"Metro",33,"Seattle",3301,1
+1002,"Core",3302,"Core",33,"Auburn",3302,2
+1028,"Core",3302,"Core",33,"Bothell",3302,2
+1023,"Core",3302,"Core",33,"Burien",3302,2
+1020,"Core",3302,"Core",33,"Federal Way",3302,2
+1007,"Core",3302,"Core",33,"Kent",3302,2
+1014,"Core",3302,"Core",33,"Kirkland",3302,2
+1015,"Core",3302,"Core",33,"Redmond",3302,2
+1012,"Core",3302,"Core",33,"Renton",3302,2
+1004,"Core",3302,"Core",33,"SeaTac",3302,2
+1008,"Core",3302,"Core",33,"Tukwila",3302,2
+1018,"HCT",3303,"Larger",33,"Des Moines",3303,3
+1022,"Core",3302,"Larger",33,"Issaquah",3303,3
+1026,"HCT",3303,"Larger",33,"Kenmore",3303,3
+1019,"HCT",3303,"Larger",33,"Mercer Island",3303,3
+1005,"HCT",3303,"Larger",33,"Shoreline",3303,3
+1030,"HCT",3303,"Larger",33,"Woodinville",3303,3
+1033,"HCT",3303,"Small",33,"Lake Forest Park",3304,4
+1043,"HCT",3303,"Small",33,"Newcastle",3304,4
+1025,"HCT",3303,"UU",33,"Federal Way PAA",3305,5
+1011,"HCT",3303,"UU",33,"North Highline",3305,5
+1006,"HCT",3303,"UU",33,"Renton PAA",3305,5
+1065,"Metro",3501,"Metro",35,"Bremerton",3501,1
+1070,"Core",3502,"Core",35,"Silverdale",3502,2
+1069,"HCT",3503,"Larger",35,"Bainbridge Island",3503,3
+1064,"HCT",3503,"Small",35,"Port Orchard",3504,4
+1071,"HCT",3503,"Small",35,"Poulsbo",3504,4
+1073,"HCT",3503,"UU",35,"Kingston UGA",3505,5
+1067,"HCT",3503,"UU",35,"Port Orchard UGA",3505,5
+1072,"HCT",3503,"UU",35,"Poulsbo UGA",3505,5
+1059,"Metro",5301,"Metro",53,"Tacoma",5301,1
+1079,"Core",5302,"Core",53,"Lakewood",5302,2
+1085,"Core",5302,"Core",53,"Puyallup",5302,2
+1083,"HCT",5303,"Larger",53,"Fife",5303,3
+1080,"Core",5302,"Larger",53,"University Place",5303,3
+1076,"HCT",5303,"Small",53,"DuPont",5304,4
+1081,"HCT",5303,"Small",53,"Fircrest",5304,4
+1088,"HCT",5303,"Small",53,"Sumner",5304,4
+1166,"HCT",5303,"UU",53,"Tacoma PAA",5305,5
+1139,"Core",6102,"Core",61,"Bothell",6102,2
+1094,"Core",6102,"Core",61,"Lynnwood",6102,2
+1111,"HCT",6103,"Larger",61,"Arlington",6103,3
+1098,"HCT",6103,"Larger",61,"Edmonds",6103,3
+1106,"HCT",6103,"Larger",61,"Marysville",6103,3
+1100,"HCT",6103,"Larger",61,"Mill Creek",6103,3
+1101,"HCT",6103,"Larger",61,"Mountlake Terrace",6103,3
+1120,"HCT",6103,"Larger",61,"Mukilteo",6103,3
+1105,"HCT",6103,"UU",61,"Bothell MUGA",6105,5
+1118,"HCT",6103,"UU",61,"Edmonds MUGA",6105,5
+1109,"HCT",6103,"UU",61,"Everett MUGA",6105,5
+1104,"HCT",6103,"UU",61,"Larch Way Overlap",6105,5
+1102,"HCT",6103,"UU",61,"Lynnwood MUGA",6105,5
+1103,"HCT",6103,"UU",61,"Mill Creek MUGA",6105,5
+1108,"HCT",6103,"UU",61,"Mukilteo MUGA",6105,5
+170,"HCT",5303,"UU",53,"Mid-County Community Plan",5305,5
+171,"HCT",5303,"UU",53,"Parkland-Spanaway-Midland Communities Plan",5305,5
+172,"HCT",5303,"UU",53,"Puyallup PAA - HCT",5305,5
+173,"HCT",5303,"UU",53,"South Hill Community Plan",5305,5
+1095,"Metro",6101,"Metro",61,"Everett",6101,1
+1099,"HCT",6103,"UU",61,"Meadowdale Gap MUGA",6105,5
+1138,"Core",5302,"Core",53,"Auburn",5302,2
+1170,"HCT",5303,"UU",53,"Mid-County Community Plan",5305,5
+1171,"HCT",5303,"UU",53,"Parkland-Spanaway-Midland Communities Plan",5305,5
+1172,"HCT",5303,"UU",53,"Puyallup PAA - HCT",5305,5
+1173,"HCT",5303,"UU",53,"South Hill Community Plan",5305,5

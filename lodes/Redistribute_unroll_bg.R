@@ -2,8 +2,9 @@ library(magrittr)
 library(data.table)
 
 # load data
-#lodes.file <- 'AdjLodes_BY18rev.csv' # 2017 LODES adjusted to 2018
-lodes.file <- 'AdjLodes18.csv' # 2018 LODES
+data.dir <- "data"
+#lodes.file <- file.path(data.dir, 'AdjLodes_BY18rev.csv') # 2017 LODES adjusted to 2018
+lodes.file <- file.path(data.dir, 'AdjLodes18.csv') # 2018 LODES
 lodes <- fread(lodes.file, colClasses=c("numeric", "character", "numeric", "numeric")) # set block group to character and county to numeric
 #lodes17 <- fread('AdjLodes_BY18rev.csv', colClasses=c("character", "numeric", "numeric", "numeric")) # set block group to character and county to numeric
 
@@ -65,7 +66,7 @@ cat("\nNegatives redistributed as follows:\n")
 print(logres)
 
 # join with US census block group id
-bg <- fread("census_block_groups.csv", colClasses = c("character", "numeric", "numeric"))
+bg <- fread(file.path(data.dir, "census_block_groups.csv"), colClasses = c("character", "numeric", "numeric"))
 lodes[bg, census_block_group_id := i.census_block_group_id, on = "census_2010_block_group_id"]
 
 # unroll into individual jobs
