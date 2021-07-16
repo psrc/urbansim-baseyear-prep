@@ -1,1116 +1,1116 @@
-countyid,juris_name,industry_id,emp_covered
-33,_Unincorporated,1,1056
-33,_Unincorporated,10,1876
-33,_Unincorporated,11,2839
-33,_Unincorporated,12,3908
-33,_Unincorporated,13,5710
-33,_Unincorporated,2,6285
-33,_Unincorporated,3,2171
-33,_Unincorporated,4,3527
-33,_Unincorporated,5,2505
-33,_Unincorporated,7,6502
-33,_Unincorporated,8,1108
-33,_Unincorporated,9,3293
-33,_Unincorporated,Total,40779
+county,juris,industry,emp_all
 33,Algona,1,0
-33,Algona,10,S
-33,Algona,11,19
-33,Algona,12,23
-33,Algona,2,140
-33,Algona,3,1521
-33,Algona,4,417
-33,Algona,5,3
-33,Algona,7,82
+33,Algona,2,186
+33,Algona,3,1530
+33,Algona,4,439
+33,Algona,5,9
+33,Algona,7,120
 33,Algona,8,S
-33,Algona,9,16
-33,Algona,Total,2244
-33,Auburn,1,38
-33,Auburn,10,2233
-33,Auburn,11,2246
+33,Algona,9,32
+33,Algona,10,S
+33,Algona,11,43
+33,Algona,12,23
+33,Algona,Total,2408
+33,Auburn,1,81
+33,Auburn,2,4807
+33,Auburn,3,8941
+33,Auburn,4,7631
+33,Auburn,5,5277
+33,Auburn,7,5405
+33,Auburn,8,255
+33,Auburn,9,5132
+33,Auburn,10,2331
+33,Auburn,11,3004
 33,Auburn,12,3307
 33,Auburn,13,3256
-33,Auburn,2,4116
-33,Auburn,3,8776
-33,Auburn,4,7310
-33,Auburn,5,5087
-33,Auburn,7,4541
-33,Auburn,8,197
-33,Auburn,9,4924
-33,Auburn,Total,46031
+33,Auburn,Total,49720
+33,Beaux Arts,7,13
 33,Beaux Arts,11,0
 33,Beaux Arts,12,2
-33,Beaux Arts,7,13
-33,Beaux Arts,Total,15
-33,Bellevue,1,41
-33,Bellevue,10,8839
-33,Bellevue,11,9323
+33,Beaux Arts,Total,16
+33,Bellevue,1,108
+33,Bellevue,2,6517
+33,Bellevue,3,5020
+33,Bellevue,4,8524
+33,Bellevue,5,15094
+33,Bellevue,7,68748
+33,Bellevue,8,4019
+33,Bellevue,9,14972
+33,Bellevue,10,9066
+33,Bellevue,11,11555
 33,Bellevue,12,3921
 33,Bellevue,13,4765
-33,Bellevue,2,5780
-33,Bellevue,3,4843
-33,Bellevue,4,8129
-33,Bellevue,5,14628
-33,Bellevue,7,64436
-33,Bellevue,8,3043
-33,Bellevue,9,13840
-33,Bellevue,Total,141587
+33,Bellevue,Total,152758
 33,Black Diamond,1,S
-33,Black Diamond,10,48
-33,Black Diamond,11,69
+33,Black Diamond,2,157
+33,Black Diamond,3,S
+33,Black Diamond,4,39
+33,Black Diamond,5,21
+33,Black Diamond,7,95
+33,Black Diamond,8,18
+33,Black Diamond,9,21
+33,Black Diamond,10,49
+33,Black Diamond,11,84
 33,Black Diamond,12,46
 33,Black Diamond,13,49
-33,Black Diamond,2,145
-33,Black Diamond,3,S
-33,Black Diamond,4,38
-33,Black Diamond,5,16
-33,Black Diamond,7,85
-33,Black Diamond,8,14
-33,Black Diamond,9,20
-33,Black Diamond,Total,554
-33,Bothell,1,12
-33,Bothell,10,1047
-33,Bothell,11,624
+33,Black Diamond,Total,606
+33,Bothell,1,14
+33,Bothell,2,1025
+33,Bothell,3,1065
+33,Bothell,4,957
+33,Bothell,5,1205
+33,Bothell,7,6217
+33,Bothell,8,377
+33,Bothell,9,1958
+33,Bothell,10,1065
+33,Bothell,11,760
 33,Bothell,12,591
 33,Bothell,13,1912
-33,Bothell,2,950
-33,Bothell,3,1049
-33,Bothell,4,940
-33,Bothell,5,1175
-33,Bothell,7,5989
-33,Bothell,8,250
-33,Bothell,9,1908
-33,Bothell,Total,16448
-33,Burien,1,28
-33,Burien,10,1424
-33,Burien,11,857
+33,Bothell,Total,17507
+33,Burien,1,36
+33,Burien,2,912
+33,Burien,3,127
+33,Burien,4,560
+33,Burien,5,2163
+33,Burien,7,1672
+33,Burien,8,218
+33,Burien,9,3594
+33,Burien,10,1479
+33,Burien,11,1169
 33,Burien,12,469
 33,Burien,13,1238
-33,Burien,2,722
-33,Burien,3,87
-33,Burien,4,449
-33,Burien,5,2085
-33,Burien,7,1284
-33,Burien,8,163
-33,Burien,9,3477
-33,Burien,Total,12284
-33,Carnation,1,20
+33,Burien,Total,13639
+33,Carnation,1,22
+33,Carnation,2,74
+33,Carnation,3,27
+33,Carnation,4,19
+33,Carnation,5,55
+33,Carnation,7,28
+33,Carnation,8,0
+33,Carnation,9,289
 33,Carnation,10,109
-33,Carnation,11,4
+33,Carnation,11,14
 33,Carnation,12,49
 33,Carnation,13,206
-33,Carnation,2,62
-33,Carnation,3,25
-33,Carnation,4,17
-33,Carnation,5,51
-33,Carnation,7,14
-33,Carnation,8,0
-33,Carnation,9,283
-33,Carnation,Total,840
-33,Clyde Hill,10,27
-33,Clyde Hill,11,63
+33,Carnation,Total,892
+33,Clyde Hill,2,43
+33,Clyde Hill,3,S
+33,Clyde Hill,4,41
+33,Clyde Hill,5,9
+33,Clyde Hill,7,105
+33,Clyde Hill,8,S
+33,Clyde Hill,9,14
+33,Clyde Hill,10,29
+33,Clyde Hill,11,76
 33,Clyde Hill,12,36
 33,Clyde Hill,13,80
-33,Clyde Hill,2,37
-33,Clyde Hill,3,S
-33,Clyde Hill,4,39
-33,Clyde Hill,5,6
-33,Clyde Hill,7,91
-33,Clyde Hill,8,S
-33,Clyde Hill,9,13
-33,Clyde Hill,Total,634
+33,Clyde Hill,Total,815
 33,Covington,1,0
-33,Covington,10,942
-33,Covington,11,261
+33,Covington,2,662
+33,Covington,3,18
+33,Covington,4,184
+33,Covington,5,1697
+33,Covington,7,399
+33,Covington,8,23
+33,Covington,9,493
+33,Covington,10,965
+33,Covington,11,353
 33,Covington,12,233
 33,Covington,13,668
-33,Covington,2,593
-33,Covington,3,7
-33,Covington,4,162
-33,Covington,5,1669
-33,Covington,7,299
-33,Covington,8,12
-33,Covington,9,446
-33,Covington,Total,5292
-33,Des Moines,1,10
-33,Des Moines,10,968
-33,Des Moines,11,494
+33,Covington,Total,5701
+33,Des Moines,1,14
+33,Des Moines,2,483
+33,Des Moines,3,103
+33,Des Moines,4,325
+33,Des Moines,5,532
+33,Des Moines,7,602
+33,Des Moines,8,72
+33,Des Moines,9,1508
+33,Des Moines,10,988
+33,Des Moines,11,621
 33,Des Moines,12,293
 33,Des Moines,13,1574
-33,Des Moines,2,411
-33,Des Moines,3,91
-33,Des Moines,4,288
-33,Des Moines,5,504
-33,Des Moines,7,458
-33,Des Moines,8,48
-33,Des Moines,9,1465
-33,Des Moines,Total,6604
+33,Des Moines,Total,7394
 33,Duvall,1,0
-33,Duvall,10,241
-33,Duvall,11,96
+33,Duvall,2,113
+33,Duvall,3,65
+33,Duvall,4,47
+33,Duvall,5,116
+33,Duvall,7,269
+33,Duvall,8,111
+33,Duvall,9,135
+33,Duvall,10,249
+33,Duvall,11,134
 33,Duvall,12,83
 33,Duvall,13,237
-33,Duvall,2,90
-33,Duvall,3,60
-33,Duvall,4,42
-33,Duvall,5,107
-33,Duvall,7,228
-33,Duvall,8,88
-33,Duvall,9,118
-33,Duvall,Total,1389
+33,Duvall,Total,1562
 33,Edgewood,11,0
 33,Edgewood,Total,0
-33,Enumclaw,1,3
-33,Enumclaw,10,635
-33,Enumclaw,11,166
+33,Enumclaw,1,21
+33,Enumclaw,2,615
+33,Enumclaw,3,549
+33,Enumclaw,4,145
+33,Enumclaw,5,736
+33,Enumclaw,7,803
+33,Enumclaw,8,49
+33,Enumclaw,9,967
+33,Enumclaw,10,656
+33,Enumclaw,11,262
 33,Enumclaw,12,326
 33,Enumclaw,13,585
-33,Enumclaw,2,552
-33,Enumclaw,3,526
-33,Enumclaw,4,127
-33,Enumclaw,5,705
-33,Enumclaw,7,705
-33,Enumclaw,8,44
-33,Enumclaw,9,932
-33,Enumclaw,Total,5306
-33,Federal Way,1,94
-33,Federal Way,10,3414
-33,Federal Way,11,1702
+33,Enumclaw,Total,5716
+33,Federal Way,1,102
+33,Federal Way,2,1454
+33,Federal Way,3,362
+33,Federal Way,4,1777
+33,Federal Way,5,5041
+33,Federal Way,7,5810
+33,Federal Way,8,447
+33,Federal Way,9,8162
+33,Federal Way,10,3515
+33,Federal Way,11,2231
 33,Federal Way,12,1768
 33,Federal Way,13,2295
-33,Federal Way,2,1086
-33,Federal Way,3,311
-33,Federal Way,4,1614
-33,Federal Way,5,4916
-33,Federal Way,7,5028
-33,Federal Way,8,325
-33,Federal Way,9,7929
-33,Federal Way,Total,30481
-33,Hunts Point,11,22
-33,Hunts Point,12,3
+33,Federal Way,Total,32963
 33,Hunts Point,2,S
 33,Hunts Point,4,S
 33,Hunts Point,5,0
-33,Hunts Point,7,19
-33,Hunts Point,Total,52
-33,Issaquah,1,35
-33,Issaquah,10,2177
-33,Issaquah,11,2076
+33,Hunts Point,7,21
+33,Hunts Point,11,26
+33,Hunts Point,12,3
+33,Hunts Point,Total,58
+33,Issaquah,1,46
+33,Issaquah,2,712
+33,Issaquah,3,950
+33,Issaquah,4,1380
+33,Issaquah,5,3367
+33,Issaquah,7,10716
+33,Issaquah,8,540
+33,Issaquah,9,4800
+33,Issaquah,10,2234
+33,Issaquah,11,2619
 33,Issaquah,12,835
 33,Issaquah,13,862
-33,Issaquah,2,572
-33,Issaquah,3,900
-33,Issaquah,4,1333
-33,Issaquah,5,3264
-33,Issaquah,7,9883
-33,Issaquah,8,421
-33,Issaquah,9,4545
-33,Issaquah,Total,26903
-33,Kenmore,1,2
-33,Kenmore,10,304
-33,Kenmore,11,326
+33,Issaquah,Total,29061
+33,Kenmore,1,4
+33,Kenmore,2,563
+33,Kenmore,3,86
+33,Kenmore,4,367
+33,Kenmore,5,425
+33,Kenmore,7,726
+33,Kenmore,8,571
+33,Kenmore,9,396
+33,Kenmore,10,313
+33,Kenmore,11,405
 33,Kenmore,12,126
 33,Kenmore,13,543
-33,Kenmore,2,493
-33,Kenmore,3,75
-33,Kenmore,4,348
-33,Kenmore,5,405
-33,Kenmore,7,610
-33,Kenmore,8,365
-33,Kenmore,9,373
-33,Kenmore,Total,3968
-33,Kent,1,93
-33,Kent,10,3390
-33,Kent,11,3227
+33,Kenmore,Total,4523
+33,Kent,1,132
+33,Kent,2,8333
+33,Kent,3,14422
+33,Kent,4,21354
+33,Kent,5,6276
+33,Kent,7,10450
+33,Kent,8,637
+33,Kent,9,6422
+33,Kent,10,3565
+33,Kent,11,4314
 33,Kent,12,3195
 33,Kent,13,2692
-33,Kent,2,7450
-33,Kent,3,14201
-33,Kent,4,20623
-33,Kent,5,6025
-33,Kent,7,8969
-33,Kent,8,417
-33,Kent,9,6031
-33,Kent,Total,76312
-33,Kirkland,1,126
-33,Kirkland,10,3551
-33,Kirkland,11,3130
+33,Kent,Total,81802
+33,Kirkland,1,150
+33,Kirkland,2,4240
+33,Kirkland,3,1990
+33,Kirkland,4,2625
+33,Kirkland,5,4866
+33,Kirkland,7,16483
+33,Kirkland,8,1646
+33,Kirkland,9,6085
+33,Kirkland,10,3652
+33,Kirkland,11,4037
 33,Kirkland,12,5357
 33,Kirkland,13,2042
-33,Kirkland,2,3782
-33,Kirkland,3,1908
-33,Kirkland,4,2514
-33,Kirkland,5,4687
-33,Kirkland,7,15033
-33,Kirkland,8,1131
-33,Kirkland,9,5670
-33,Kirkland,Total,48930
+33,Kirkland,Total,53324
 33,Lake Forest Park,1,0
-33,Lake Forest Park,10,172
-33,Lake Forest Park,11,188
+33,Lake Forest Park,2,160
+33,Lake Forest Park,3,17
+33,Lake Forest Park,4,56
+33,Lake Forest Park,5,212
+33,Lake Forest Park,7,304
+33,Lake Forest Park,8,22
+33,Lake Forest Park,9,322
+33,Lake Forest Park,10,180
+33,Lake Forest Park,11,238
 33,Lake Forest Park,12,108
 33,Lake Forest Park,13,157
-33,Lake Forest Park,2,133
-33,Lake Forest Park,3,11
-33,Lake Forest Park,4,52
-33,Lake Forest Park,5,201
-33,Lake Forest Park,7,246
-33,Lake Forest Park,8,14
-33,Lake Forest Park,9,304
-33,Lake Forest Park,Total,1585
-33,Maple Valley,1,5
-33,Maple Valley,10,898
-33,Maple Valley,11,407
+33,Lake Forest Park,Total,1776
+33,Maple Valley,1,12
+33,Maple Valley,2,759
+33,Maple Valley,3,74
+33,Maple Valley,4,283
+33,Maple Valley,5,546
+33,Maple Valley,7,586
+33,Maple Valley,8,85
+33,Maple Valley,9,535
+33,Maple Valley,10,921
+33,Maple Valley,11,519
 33,Maple Valley,12,201
 33,Maple Valley,13,357
-33,Maple Valley,2,693
-33,Maple Valley,3,55
-33,Maple Valley,4,268
-33,Maple Valley,5,517
-33,Maple Valley,7,452
-33,Maple Valley,8,65
-33,Maple Valley,9,500
-33,Maple Valley,Total,4418
+33,Maple Valley,Total,4877
 33,Medina,1,0
+33,Medina,2,10
+33,Medina,3,4
+33,Medina,4,8
+33,Medina,5,30
+33,Medina,7,74
+33,Medina,8,S
+33,Medina,9,4
 33,Medina,10,S
-33,Medina,11,156
+33,Medina,11,168
 33,Medina,12,27
 33,Medina,13,80
-33,Medina,2,7
-33,Medina,3,3
-33,Medina,4,5
-33,Medina,5,26
-33,Medina,7,39
-33,Medina,8,S
-33,Medina,9,2
-33,Medina,Total,444
-33,Mercer Island,1,2
-33,Mercer Island,10,666
-33,Mercer Island,11,893
+33,Medina,Total,557
+33,Mercer Island,1,6
+33,Mercer Island,2,361
+33,Mercer Island,3,55
+33,Mercer Island,4,156
+33,Mercer Island,5,549
+33,Mercer Island,7,2231
+33,Mercer Island,8,629
+33,Mercer Island,9,1208
+33,Mercer Island,10,681
+33,Mercer Island,11,1065
 33,Mercer Island,12,324
 33,Mercer Island,13,691
-33,Mercer Island,2,312
-33,Mercer Island,3,42
-33,Mercer Island,4,143
-33,Mercer Island,5,526
-33,Mercer Island,7,1907
-33,Mercer Island,8,444
-33,Mercer Island,9,1139
-33,Mercer Island,Total,7086
-33,Milton,11,0
+33,Mercer Island,Total,7954
 33,Milton,2,0
 33,Milton,3,0
 33,Milton,4,S
 33,Milton,5,0
-33,Milton,7,4
+33,Milton,7,6
 33,Milton,9,S
-33,Milton,Total,88
+33,Milton,11,0
+33,Milton,Total,98
 33,Newcastle,1,0
-33,Newcastle,10,182
-33,Newcastle,11,433
+33,Newcastle,2,84
+33,Newcastle,3,52
+33,Newcastle,4,90
+33,Newcastle,5,262
+33,Newcastle,7,829
+33,Newcastle,8,24
+33,Newcastle,9,265
+33,Newcastle,10,187
+33,Newcastle,11,512
 33,Newcastle,12,66
 33,Newcastle,13,341
-33,Newcastle,2,67
-33,Newcastle,3,45
-33,Newcastle,4,79
-33,Newcastle,5,249
-33,Newcastle,7,741
-33,Newcastle,8,18
-33,Newcastle,9,244
-33,Newcastle,Total,2464
+33,Newcastle,Total,2716
 33,Normandy Park,1,0
-33,Normandy Park,10,75
-33,Normandy Park,11,87
+33,Normandy Park,2,86
+33,Normandy Park,3,5
+33,Normandy Park,4,19
+33,Normandy Park,5,193
+33,Normandy Park,7,140
+33,Normandy Park,8,29
+33,Normandy Park,9,228
+33,Normandy Park,10,76
+33,Normandy Park,11,105
 33,Normandy Park,12,30
 33,Normandy Park,13,87
-33,Normandy Park,2,73
-33,Normandy Park,3,4
-33,Normandy Park,4,17
-33,Normandy Park,5,188
-33,Normandy Park,7,118
-33,Normandy Park,8,26
-33,Normandy Park,9,221
-33,Normandy Park,Total,924
+33,Normandy Park,Total,998
 33,North Bend,1,S
-33,North Bend,10,499
-33,North Bend,11,197
+33,North Bend,2,461
+33,North Bend,3,219
+33,North Bend,4,178
+33,North Bend,5,809
+33,North Bend,7,419
+33,North Bend,8,S
+33,North Bend,9,396
+33,North Bend,10,515
+33,North Bend,11,258
 33,North Bend,12,138
 33,North Bend,13,199
-33,North Bend,2,420
-33,North Bend,3,208
-33,North Bend,4,163
-33,North Bend,5,788
-33,North Bend,7,341
-33,North Bend,8,S
-33,North Bend,9,374
-33,North Bend,Total,3390
-33,Pacific,10,80
+33,North Bend,Total,3682
+33,Pacific,2,441
+33,Pacific,3,51
+33,Pacific,4,106
+33,Pacific,5,63
+33,Pacific,7,212
+33,Pacific,8,0
+33,Pacific,9,76
+33,Pacific,10,85
 33,Pacific,11,S
 33,Pacific,12,71
 33,Pacific,13,78
-33,Pacific,2,388
-33,Pacific,3,45
-33,Pacific,4,87
-33,Pacific,5,53
-33,Pacific,7,166
-33,Pacific,8,0
-33,Pacific,9,61
-33,Pacific,Total,1079
-33,Redmond,1,41
-33,Redmond,10,4607
-33,Redmond,11,2248
+33,Pacific,Total,1264
+33,Redmond,1,122
+33,Redmond,2,3615
+33,Redmond,3,8021
+33,Redmond,4,4063
+33,Redmond,5,4468
+33,Redmond,7,61886
+33,Redmond,8,2023
+33,Redmond,9,5413
+33,Redmond,10,4745
+33,Redmond,11,3575
 33,Redmond,12,1029
 33,Redmond,13,1320
-33,Redmond,2,3038
-33,Redmond,3,7764
-33,Redmond,4,3805
-33,Redmond,5,4153
-33,Redmond,7,59348
-33,Redmond,8,1235
-33,Redmond,9,4812
-33,Redmond,Total,93401
+33,Redmond,Total,100282
 33,Renton,1,S
-33,Renton,10,3835
-33,Renton,11,3172
+33,Renton,2,3240
+33,Renton,3,S
+33,Renton,4,5932
+33,Renton,5,5952
+33,Renton,7,11990
+33,Renton,8,797
+33,Renton,9,6381
+33,Renton,10,3966
+33,Renton,11,4177
 33,Renton,12,6792
 33,Renton,13,3023
-33,Renton,2,2622
-33,Renton,3,S
-33,Renton,4,5605
-33,Renton,5,5715
-33,Renton,7,10574
-33,Renton,8,630
-33,Renton,9,5980
-33,Renton,Total,66050
-33,Sammamish,1,4
-33,Sammamish,10,570
-33,Sammamish,11,651
+33,Renton,Total,70695
+33,Sammamish,1,10
+33,Sammamish,2,316
+33,Sammamish,3,77
+33,Sammamish,4,356
+33,Sammamish,5,746
+33,Sammamish,7,1570
+33,Sammamish,8,960
+33,Sammamish,9,702
+33,Sammamish,10,582
+33,Sammamish,11,803
 33,Sammamish,12,268
 33,Sammamish,13,1717
-33,Sammamish,2,253
-33,Sammamish,3,57
-33,Sammamish,4,333
-33,Sammamish,5,700
-33,Sammamish,7,1287
-33,Sammamish,8,674
-33,Sammamish,9,650
-33,Sammamish,Total,7163
+33,Sammamish,Total,8106
 33,SeaTac,1,0
-33,SeaTac,10,3186
-33,SeaTac,11,2981
+33,SeaTac,2,803
+33,SeaTac,3,503
+33,SeaTac,4,19446
+33,SeaTac,5,785
+33,SeaTac,7,2771
+33,SeaTac,8,236
+33,SeaTac,9,1303
+33,SeaTac,10,3239
+33,SeaTac,11,3435
 33,SeaTac,12,3105
 33,SeaTac,13,630
-33,SeaTac,2,605
-33,SeaTac,3,471
-33,SeaTac,4,18822
-33,SeaTac,5,695
-33,SeaTac,7,2266
-33,SeaTac,8,146
-33,SeaTac,9,1180
-33,SeaTac,Total,34088
-33,Seattle,1,1085
-33,Seattle,10,51165
-33,Seattle,11,41929
+33,SeaTac,Total,36280
+33,Seattle,1,1352
+33,Seattle,2,26183
+33,Seattle,3,26299
+33,Seattle,4,33446
+33,Seattle,5,79677
+33,Seattle,7,188022
+33,Seattle,8,17995
+33,Seattle,9,84570
+33,Seattle,10,52624
+33,Seattle,11,53263
 33,Seattle,12,49179
 33,Seattle,13,37302
-33,Seattle,2,22951
-33,Seattle,3,24935
-33,Seattle,4,30985
-33,Seattle,5,77703
-33,Seattle,7,172161
-33,Seattle,8,12340
-33,Seattle,9,80072
-33,Seattle,Total,601806
+33,Seattle,Total,659262
 33,Shoreline,1,0
-33,Shoreline,10,1321
-33,Shoreline,11,1496
+33,Shoreline,2,1082
+33,Shoreline,3,212
+33,Shoreline,4,295
+33,Shoreline,5,2821
+33,Shoreline,7,2065
+33,Shoreline,8,975
+33,Shoreline,9,3599
+33,Shoreline,10,1350
+33,Shoreline,11,1856
 33,Shoreline,12,2136
 33,Shoreline,13,2262
-33,Shoreline,2,909
-33,Shoreline,3,167
-33,Shoreline,4,226
-33,Shoreline,5,2742
-33,Shoreline,7,1678
-33,Shoreline,8,641
-33,Shoreline,9,3437
-33,Shoreline,Total,17017
+33,Shoreline,Total,18918
+33,Skykomish,5,S
 33,Skykomish,10,S
 33,Skykomish,12,14
 33,Skykomish,13,27
-33,Skykomish,5,S
-33,Skykomish,Total,57
-33,Snoqualmie,1,5
-33,Snoqualmie,10,336
-33,Snoqualmie,11,588
+33,Skykomish,Total,58
+33,Snoqualmie,1,9
+33,Snoqualmie,2,278
+33,Snoqualmie,3,862
+33,Snoqualmie,4,354
+33,Snoqualmie,5,136
+33,Snoqualmie,7,830
+33,Snoqualmie,8,108
+33,Snoqualmie,9,242
+33,Snoqualmie,10,350
+33,Snoqualmie,11,685
 33,Snoqualmie,12,582
 33,Snoqualmie,13,555
-33,Snoqualmie,2,249
-33,Snoqualmie,3,845
-33,Snoqualmie,4,345
-33,Snoqualmie,5,117
-33,Snoqualmie,7,719
-33,Snoqualmie,8,88
-33,Snoqualmie,9,210
-33,Snoqualmie,Total,4638
-33,Tukwila,1,4
-33,Tukwila,10,3977
-33,Tukwila,11,3175
+33,Snoqualmie,Total,4990
+33,Tukwila,1,24
+33,Tukwila,2,3504
+33,Tukwila,3,9582
+33,Tukwila,4,5910
+33,Tukwila,5,7812
+33,Tukwila,7,8307
+33,Tukwila,8,199
+33,Tukwila,9,3402
+33,Tukwila,10,4068
+33,Tukwila,11,3619
 33,Tukwila,12,2847
 33,Tukwila,13,461
-33,Tukwila,2,3228
-33,Tukwila,3,9491
-33,Tukwila,4,5477
-33,Tukwila,5,7663
-33,Tukwila,7,7475
-33,Tukwila,8,138
-33,Tukwila,9,3226
-33,Tukwila,Total,47163
-33,Woodinville,1,10
-33,Woodinville,10,1253
-33,Woodinville,11,1010
+33,Tukwila,Total,49736
+33,Woodinville,1,27
+33,Woodinville,2,2403
+33,Woodinville,3,2472
+33,Woodinville,4,1315
+33,Woodinville,5,1876
+33,Woodinville,7,2892
+33,Woodinville,8,420
+33,Woodinville,9,974
+33,Woodinville,10,1291
+33,Woodinville,11,1266
 33,Woodinville,12,157
 33,Woodinville,13,378
-33,Woodinville,2,2278
-33,Woodinville,3,2395
-33,Woodinville,4,1263
-33,Woodinville,5,1814
-33,Woodinville,7,2527
-33,Woodinville,8,307
-33,Woodinville,9,855
-33,Woodinville,Total,14248
-33,Yarrow Point,11,17
-33,Yarrow Point,12,3
+33,Woodinville,Total,15471
 33,Yarrow Point,2,S
 33,Yarrow Point,3,S
 33,Yarrow Point,4,0
 33,Yarrow Point,5,S
-33,Yarrow Point,7,6
+33,Yarrow Point,7,9
 33,Yarrow Point,9,S
-33,Yarrow Point,Total,37
-35,_Unincorporated,1,178
-35,_Unincorporated,10,3225
-35,_Unincorporated,11,1906
-35,_Unincorporated,12,7139
-35,_Unincorporated,13,3440
-35,_Unincorporated,2,2926
-35,_Unincorporated,3,962
-35,_Unincorporated,4,927
-35,_Unincorporated,5,5026
-35,_Unincorporated,7,5149
-35,_Unincorporated,8,258
-35,_Unincorporated,9,4234
-35,_Unincorporated,Total,35369
-35,Bainbridge Island,1,63
-35,Bainbridge Island,10,883
-35,Bainbridge Island,11,839
+33,Yarrow Point,11,21
+33,Yarrow Point,12,3
+33,Yarrow Point,Total,44
+33,_Unincorporated,1,1262
+33,_Unincorporated,2,7021
+33,_Unincorporated,3,2307
+33,_Unincorporated,4,3709
+33,_Unincorporated,5,2690
+33,_Unincorporated,7,7420
+33,_Unincorporated,8,1578
+33,_Unincorporated,9,3461
+33,_Unincorporated,10,1935
+33,_Unincorporated,11,3531
+33,_Unincorporated,12,3908
+33,_Unincorporated,13,5710
+33,_Unincorporated,Total,44535
+35,Bainbridge Island,1,71
+35,Bainbridge Island,2,483
+35,Bainbridge Island,3,434
+35,Bainbridge Island,4,258
+35,Bainbridge Island,5,828
+35,Bainbridge Island,7,2063
+35,Bainbridge Island,8,383
+35,Bainbridge Island,9,870
+35,Bainbridge Island,10,910
+35,Bainbridge Island,11,1170
 35,Bainbridge Island,12,809
 35,Bainbridge Island,13,611
-35,Bainbridge Island,2,365
-35,Bainbridge Island,3,421
-35,Bainbridge Island,4,240
-35,Bainbridge Island,5,785
-35,Bainbridge Island,7,1806
-35,Bainbridge Island,8,227
-35,Bainbridge Island,9,818
-35,Bainbridge Island,Total,7866
-35,Bremerton,1,6
-35,Bremerton,10,1501
-35,Bremerton,11,846
+35,Bainbridge Island,Total,8889
+35,Bremerton,1,45
+35,Bremerton,2,759
+35,Bremerton,3,1077
+35,Bremerton,4,772
+35,Bremerton,5,2136
+35,Bremerton,7,3064
+35,Bremerton,8,166
+35,Bremerton,9,4636
+35,Bremerton,10,1588
+35,Bremerton,11,1506
 35,Bremerton,12,16149
 35,Bremerton,13,1817
-35,Bremerton,2,480
-35,Bremerton,3,1038
-35,Bremerton,4,693
-35,Bremerton,5,1936
-35,Bremerton,7,2409
-35,Bremerton,8,84
-35,Bremerton,9,4441
-35,Bremerton,Total,31401
+35,Bremerton,Total,33998
 35,Port Orchard,1,0
-35,Port Orchard,10,1039
-35,Port Orchard,11,337
+35,Port Orchard,2,374
+35,Port Orchard,3,105
+35,Port Orchard,4,384
+35,Port Orchard,5,1796
+35,Port Orchard,7,830
+35,Port Orchard,8,122
+35,Port Orchard,9,1215
+35,Port Orchard,10,1078
+35,Port Orchard,11,530
 35,Port Orchard,12,1088
 35,Port Orchard,13,581
-35,Port Orchard,2,310
-35,Port Orchard,3,93
-35,Port Orchard,4,371
-35,Port Orchard,5,1733
-35,Port Orchard,7,652
-35,Port Orchard,8,80
-35,Port Orchard,9,1156
-35,Port Orchard,Total,7439
-35,Poulsbo,1,35
-35,Poulsbo,10,822
-35,Poulsbo,11,246
+35,Port Orchard,Total,8120
+35,Poulsbo,1,45
+35,Poulsbo,2,283
+35,Poulsbo,3,127
+35,Poulsbo,4,162
+35,Poulsbo,5,1511
+35,Poulsbo,7,1322
+35,Poulsbo,8,52
+35,Poulsbo,9,1413
+35,Poulsbo,10,844
+35,Poulsbo,11,396
 35,Poulsbo,12,492
 35,Poulsbo,13,621
-35,Poulsbo,2,199
-35,Poulsbo,3,110
-35,Poulsbo,4,154
-35,Poulsbo,5,1463
-35,Poulsbo,7,1130
-35,Poulsbo,8,41
-35,Poulsbo,9,1348
-35,Poulsbo,Total,6661
-53,_Unincorporated,1,802
-53,_Unincorporated,10,5703
-53,_Unincorporated,11,3679
-53,_Unincorporated,12,12873
-53,_Unincorporated,13,8699
-53,_Unincorporated,2,8455
-53,_Unincorporated,3,4635
-53,_Unincorporated,4,3780
-53,_Unincorporated,5,6621
-53,_Unincorporated,7,8321
-53,_Unincorporated,8,1670
-53,_Unincorporated,9,5356
-53,_Unincorporated,Total,70594
+35,Poulsbo,Total,7269
+35,_Unincorporated,1,244
+35,_Unincorporated,2,3583
+35,_Unincorporated,3,1085
+35,_Unincorporated,4,1021
+35,_Unincorporated,5,5329
+35,_Unincorporated,7,6109
+35,_Unincorporated,8,417
+35,_Unincorporated,9,4517
+35,_Unincorporated,10,3319
+35,_Unincorporated,11,3024
+35,_Unincorporated,12,7139
+35,_Unincorporated,13,3440
+35,_Unincorporated,Total,39227
 53,Auburn,1,0
-53,Auburn,10,401
-53,Auburn,11,93
-53,Auburn,12,19
-53,Auburn,13,78
-53,Auburn,2,131
+53,Auburn,2,146
 53,Auburn,3,S
-53,Auburn,4,28
-53,Auburn,5,170
-53,Auburn,7,69
+53,Auburn,4,37
+53,Auburn,5,173
+53,Auburn,7,96
 53,Auburn,8,S
 53,Auburn,9,101
-53,Auburn,Total,1094
+53,Auburn,10,406
+53,Auburn,11,115
+53,Auburn,12,19
+53,Auburn,13,78
+53,Auburn,Total,1176
 53,Bonney Lake,1,0
-53,Bonney Lake,10,1056
-53,Bonney Lake,11,371
+53,Bonney Lake,2,415
+53,Bonney Lake,3,27
+53,Bonney Lake,4,117
+53,Bonney Lake,5,1432
+53,Bonney Lake,7,496
+53,Bonney Lake,8,79
+53,Bonney Lake,9,684
+53,Bonney Lake,10,1077
+53,Bonney Lake,11,542
 53,Bonney Lake,12,246
 53,Bonney Lake,13,546
-53,Bonney Lake,2,318
-53,Bonney Lake,3,17
-53,Bonney Lake,4,92
-53,Bonney Lake,5,1395
-53,Bonney Lake,7,377
-53,Bonney Lake,8,60
-53,Bonney Lake,9,634
-53,Bonney Lake,Total,5112
-53,Buckley,1,9
-53,Buckley,10,138
-53,Buckley,11,77
+53,Bonney Lake,Total,5665
+53,Buckley,1,17
+53,Buckley,2,240
+53,Buckley,3,101
+53,Buckley,4,84
+53,Buckley,5,146
+53,Buckley,7,115
+53,Buckley,8,12
+53,Buckley,9,109
+53,Buckley,10,139
+53,Buckley,11,135
 53,Buckley,12,1071
 53,Buckley,13,257
-53,Buckley,2,200
-53,Buckley,3,88
-53,Buckley,4,74
-53,Buckley,5,133
-53,Buckley,7,85
-53,Buckley,8,8
-53,Buckley,9,99
-53,Buckley,Total,2239
-53,Carbonado,11,0
-53,Carbonado,12,6
-53,Carbonado,13,38
-53,Carbonado,2,7
+53,Buckley,Total,2427
+53,Carbonado,2,9
 53,Carbonado,4,0
 53,Carbonado,5,0
 53,Carbonado,7,S
 53,Carbonado,9,S
-53,Carbonado,Total,53
+53,Carbonado,11,0
+53,Carbonado,12,6
+53,Carbonado,13,38
+53,Carbonado,Total,60
 53,DuPont,1,S
-53,DuPont,10,321
-53,DuPont,11,402
+53,DuPont,2,34
+53,DuPont,3,170
+53,DuPont,4,S
+53,DuPont,5,141
+53,DuPont,7,1671
+53,DuPont,8,46
+53,DuPont,9,189
+53,DuPont,10,331
+53,DuPont,11,521
 53,DuPont,12,81
 53,DuPont,13,205
-53,DuPont,2,11
-53,DuPont,3,163
-53,DuPont,4,S
-53,DuPont,5,118
-53,DuPont,7,1601
-53,DuPont,8,30
-53,DuPont,9,155
-53,DuPont,Total,4843
-53,Eatonville,1,12
-53,Eatonville,10,92
-53,Eatonville,11,31
+53,DuPont,Total,5158
+53,Eatonville,1,17
+53,Eatonville,2,25
+53,Eatonville,3,0
+53,Eatonville,4,11
+53,Eatonville,5,105
+53,Eatonville,7,215
+53,Eatonville,8,0
+53,Eatonville,9,71
+53,Eatonville,10,95
+53,Eatonville,11,49
 53,Eatonville,12,61
 53,Eatonville,13,246
-53,Eatonville,2,14
-53,Eatonville,3,0
-53,Eatonville,4,10
-53,Eatonville,5,99
-53,Eatonville,7,201
-53,Eatonville,8,0
-53,Eatonville,9,68
-53,Eatonville,Total,833
-53,Edgewood,1,3
-53,Edgewood,10,38
-53,Edgewood,11,110
+53,Eatonville,Total,898
+53,Edgewood,1,5
+53,Edgewood,2,578
+53,Edgewood,3,54
+53,Edgewood,4,89
+53,Edgewood,5,100
+53,Edgewood,7,338
+53,Edgewood,8,7
+53,Edgewood,9,124
+53,Edgewood,10,39
+53,Edgewood,11,159
 53,Edgewood,12,39
 53,Edgewood,13,236
-53,Edgewood,2,530
-53,Edgewood,3,50
-53,Edgewood,4,80
-53,Edgewood,5,92
-53,Edgewood,7,292
-53,Edgewood,8,4
-53,Edgewood,9,115
-53,Edgewood,Total,1588
+53,Edgewood,Total,1767
 53,Fife,1,S
-53,Fife,10,723
-53,Fife,11,605
-53,Fife,12,761
-53,Fife,13,258
-53,Fife,2,1388
-53,Fife,3,1274
-53,Fife,4,5757
-53,Fife,5,2018
-53,Fife,7,2263
+53,Fife,2,1548
+53,Fife,3,1311
+53,Fife,4,5931
+53,Fife,5,2116
+53,Fife,7,2574
 53,Fife,8,0
 53,Fife,9,S
-53,Fife,Total,15515
+53,Fife,10,753
+53,Fife,11,933
+53,Fife,12,761
+53,Fife,13,258
+53,Fife,Total,16748
 53,Fircrest,1,0
-53,Fircrest,10,105
-53,Fircrest,11,201
+53,Fircrest,2,85
+53,Fircrest,3,0
+53,Fircrest,4,15
+53,Fircrest,5,29
+53,Fircrest,7,536
+53,Fircrest,8,7
+53,Fircrest,9,158
+53,Fircrest,10,107
+53,Fircrest,11,235
 53,Fircrest,12,64
 53,Fircrest,13,97
-53,Fircrest,2,64
-53,Fircrest,3,0
-53,Fircrest,4,13
-53,Fircrest,5,25
-53,Fircrest,7,493
-53,Fircrest,8,4
-53,Fircrest,9,143
-53,Fircrest,Total,1208
-53,Gig Harbor,1,5
-53,Gig Harbor,10,1810
-53,Gig Harbor,11,961
+53,Fircrest,Total,1335
+53,Gig Harbor,1,13
+53,Gig Harbor,2,602
+53,Gig Harbor,3,334
+53,Gig Harbor,4,302
+53,Gig Harbor,5,1922
+53,Gig Harbor,7,2646
+53,Gig Harbor,8,198
+53,Gig Harbor,9,2074
+53,Gig Harbor,10,1846
+53,Gig Harbor,11,1413
 53,Gig Harbor,12,259
 53,Gig Harbor,13,396
-53,Gig Harbor,2,503
-53,Gig Harbor,3,323
-53,Gig Harbor,4,267
-53,Gig Harbor,5,1865
-53,Gig Harbor,7,2339
-53,Gig Harbor,8,158
-53,Gig Harbor,9,1938
-53,Gig Harbor,Total,10823
-53,Lakewood,1,13
-53,Lakewood,10,2936
-53,Lakewood,11,2004
+53,Gig Harbor,Total,12014
+53,Lakewood,1,30
+53,Lakewood,2,1756
+53,Lakewood,3,1096
+53,Lakewood,4,2123
+53,Lakewood,5,3139
+53,Lakewood,7,3509
+53,Lakewood,8,238
+53,Lakewood,9,4418
+53,Lakewood,10,3027
+53,Lakewood,11,2732
 53,Lakewood,12,4360
 53,Lakewood,13,2720
-53,Lakewood,2,1481
-53,Lakewood,3,1043
-53,Lakewood,4,1990
-53,Lakewood,5,2938
-53,Lakewood,7,2969
-53,Lakewood,8,190
-53,Lakewood,9,4233
-53,Lakewood,Total,26878
+53,Lakewood,Total,29576
 53,Milton,1,0
-53,Milton,10,345
-53,Milton,11,95
+53,Milton,2,358
+53,Milton,3,92
+53,Milton,4,55
+53,Milton,5,505
+53,Milton,7,164
+53,Milton,8,9
+53,Milton,9,180
+53,Milton,10,354
+53,Milton,11,172
 53,Milton,12,68
 53,Milton,13,259
-53,Milton,2,310
-53,Milton,3,88
-53,Milton,4,40
-53,Milton,5,486
-53,Milton,7,128
-53,Milton,8,3
-53,Milton,9,169
-53,Milton,Total,1991
+53,Milton,Total,2219
 53,Orting,1,0
-53,Orting,10,181
-53,Orting,11,31
+53,Orting,2,87
+53,Orting,3,S
+53,Orting,4,37
+53,Orting,5,60
+53,Orting,7,205
+53,Orting,8,S
+53,Orting,9,83
+53,Orting,10,185
+53,Orting,11,57
 53,Orting,12,252
 53,Orting,13,397
-53,Orting,2,68
-53,Orting,3,S
-53,Orting,4,31
-53,Orting,5,54
-53,Orting,7,185
-53,Orting,8,S
-53,Orting,9,75
-53,Orting,Total,1276
-53,Pacific,1,6
+53,Orting,Total,1367
+53,Pacific,1,8
+53,Pacific,2,594
+53,Pacific,3,87
+53,Pacific,4,1050
+53,Pacific,5,22
+53,Pacific,7,199
 53,Pacific,10,S
-53,Pacific,11,64
-53,Pacific,2,572
-53,Pacific,3,85
-53,Pacific,4,1043
-53,Pacific,5,21
-53,Pacific,7,195
-53,Pacific,Total,1988
-53,Puyallup,1,15
-53,Puyallup,10,3071
-53,Puyallup,11,2171
+53,Pacific,11,85
+53,Pacific,Total,2047
+53,Puyallup,1,49
+53,Puyallup,2,2121
+53,Puyallup,3,765
+53,Puyallup,4,2388
+53,Puyallup,5,5305
+53,Puyallup,7,3566
+53,Puyallup,8,580
+53,Puyallup,9,6601
+53,Puyallup,10,3156
+53,Puyallup,11,2983
 53,Puyallup,12,626
 53,Puyallup,13,1875
-53,Puyallup,2,1785
-53,Puyallup,3,709
-53,Puyallup,4,2294
-53,Puyallup,5,5131
-53,Puyallup,7,3020
-53,Puyallup,8,345
-53,Puyallup,9,6400
-53,Puyallup,Total,27443
+53,Puyallup,Total,30193
 53,Roy,1,S
-53,Roy,10,S
-53,Roy,12,36
-53,Roy,13,49
 53,Roy,2,0
 53,Roy,4,0
 53,Roy,5,S
 53,Roy,7,S
-53,Roy,9,12
-53,Roy,Total,236
-53,Ruston,10,181
-53,Ruston,11,8
-53,Ruston,12,19
+53,Roy,9,15
+53,Roy,10,S
+53,Roy,12,36
+53,Roy,13,49
+53,Roy,Total,250
 53,Ruston,2,S
 53,Ruston,3,S
 53,Ruston,4,S
-53,Ruston,5,4
-53,Ruston,7,55
+53,Ruston,5,5
+53,Ruston,7,60
 53,Ruston,8,S
 53,Ruston,9,26
-53,Ruston,Total,338
-53,South Prairie,10,S
-53,South Prairie,11,S
-53,South Prairie,12,7
+53,Ruston,10,184
+53,Ruston,11,9
+53,Ruston,12,19
+53,Ruston,Total,352
 53,South Prairie,2,S
 53,South Prairie,3,S
 53,South Prairie,4,S
 53,South Prairie,5,S
-53,South Prairie,9,4
-53,South Prairie,Total,101
+53,South Prairie,9,5
+53,South Prairie,10,S
+53,South Prairie,11,S
+53,South Prairie,12,7
+53,South Prairie,Total,105
 53,Steilacoom,1,0
-53,Steilacoom,10,100
-53,Steilacoom,11,17
+53,Steilacoom,2,70
+53,Steilacoom,3,3
+53,Steilacoom,4,37
+53,Steilacoom,5,22
+53,Steilacoom,7,60
+53,Steilacoom,8,11
+53,Steilacoom,9,62
+53,Steilacoom,10,104
+53,Steilacoom,11,36
 53,Steilacoom,12,78
 53,Steilacoom,13,220
-53,Steilacoom,2,55
-53,Steilacoom,3,2
-53,Steilacoom,4,32
-53,Steilacoom,5,15
-53,Steilacoom,7,35
-53,Steilacoom,8,5
-53,Steilacoom,9,46
-53,Steilacoom,Total,605
-53,Sumner,1,6
-53,Sumner,10,669
-53,Sumner,11,315
+53,Steilacoom,Total,704
+53,Sumner,1,15
+53,Sumner,2,2777
+53,Sumner,3,2918
+53,Sumner,4,6244
+53,Sumner,5,1587
+53,Sumner,7,982
+53,Sumner,8,100
+53,Sumner,9,443
+53,Sumner,10,700
+53,Sumner,11,639
 53,Sumner,12,198
 53,Sumner,13,603
-53,Sumner,2,2618
-53,Sumner,3,2875
-53,Sumner,4,6162
-53,Sumner,5,1514
-53,Sumner,7,708
-53,Sumner,8,59
-53,Sumner,9,378
-53,Sumner,Total,16105
-53,Tacoma,1,222
-53,Tacoma,10,9422
-53,Tacoma,11,6428
+53,Sumner,Total,17207
+53,Tacoma,1,300
+53,Tacoma,2,4729
+53,Tacoma,3,5549
+53,Tacoma,4,7625
+53,Tacoma,5,11330
+53,Tacoma,7,18777
+53,Tacoma,8,3078
+53,Tacoma,9,29866
+53,Tacoma,10,9706
+53,Tacoma,11,9215
 53,Tacoma,12,12501
 53,Tacoma,13,6365
-53,Tacoma,2,3385
-53,Tacoma,3,5318
-53,Tacoma,4,6975
-53,Tacoma,5,10741
-53,Tacoma,7,16219
-53,Tacoma,8,1897
-53,Tacoma,9,29084
-53,Tacoma,Total,108558
+53,Tacoma,Total,119710
 53,University Place,1,0
-53,University Place,10,674
-53,University Place,11,542
+53,University Place,2,507
+53,University Place,3,83
+53,University Place,4,173
+53,University Place,5,1044
+53,University Place,7,1051
+53,University Place,8,458
+53,University Place,9,1351
+53,University Place,10,696
+53,University Place,11,720
 53,University Place,12,455
 53,University Place,13,813
-53,University Place,2,414
-53,University Place,3,68
-53,University Place,4,151
-53,University Place,5,1006
-53,University Place,7,847
-53,University Place,8,276
-53,University Place,9,1295
-53,University Place,Total,6540
+53,University Place,Total,7354
 53,Wilkeson,1,S
+53,Wilkeson,3,0
+53,Wilkeson,5,S
+53,Wilkeson,9,S
 53,Wilkeson,10,11
 53,Wilkeson,11,0
 53,Wilkeson,12,8
 53,Wilkeson,13,43
-53,Wilkeson,3,0
-53,Wilkeson,5,S
-53,Wilkeson,9,S
-53,Wilkeson,Total,73
-61,_Unincorporated,1,1140
-61,_Unincorporated,10,3047
-61,_Unincorporated,11,2983
-61,_Unincorporated,12,6245
-61,_Unincorporated,13,4132
-61,_Unincorporated,2,9934
-61,_Unincorporated,3,11145
-61,_Unincorporated,4,3338
-61,_Unincorporated,5,7146
-61,_Unincorporated,7,8926
-61,_Unincorporated,8,512
-61,_Unincorporated,9,5670
-61,_Unincorporated,Total,64220
-61,Arlington,1,273
-61,Arlington,10,920
-61,Arlington,11,417
+53,Wilkeson,Total,78
+53,_Unincorporated,1,1022
+53,_Unincorporated,2,9827
+53,_Unincorporated,3,4859
+53,_Unincorporated,4,4235
+53,_Unincorporated,5,7244
+53,_Unincorporated,7,10443
+53,_Unincorporated,8,2748
+53,_Unincorporated,9,5896
+53,_Unincorporated,10,5925
+53,_Unincorporated,11,5522
+53,_Unincorporated,12,12873
+53,_Unincorporated,13,8699
+53,_Unincorporated,Total,79303
+61,Arlington,1,288
+61,Arlington,2,1429
+61,Arlington,3,2358
+61,Arlington,4,979
+61,Arlington,5,1391
+61,Arlington,7,822
+61,Arlington,8,59
+61,Arlington,9,968
+61,Arlington,10,964
+61,Arlington,11,702
 61,Arlington,12,991
 61,Arlington,13,773
-61,Arlington,2,1291
-61,Arlington,3,2291
-61,Arlington,4,909
-61,Arlington,5,1325
-61,Arlington,7,571
-61,Arlington,8,27
-61,Arlington,9,871
-61,Arlington,Total,10660
+61,Arlington,Total,11724
 61,Bothell,1,0
-61,Bothell,10,1123
-61,Bothell,11,326
+61,Bothell,2,779
+61,Bothell,3,3327
+61,Bothell,4,994
+61,Bothell,5,1161
+61,Bothell,7,6976
+61,Bothell,8,424
+61,Bothell,9,817
+61,Bothell,10,1170
+61,Bothell,11,707
 61,Bothell,12,265
 61,Bothell,13,750
-61,Bothell,2,515
-61,Bothell,3,3243
-61,Bothell,4,879
-61,Bothell,5,1000
-61,Bothell,7,5966
-61,Bothell,8,277
-61,Bothell,9,646
-61,Bothell,Total,14989
+61,Bothell,Total,17397
 61,Brier,1,0
+61,Brier,2,87
+61,Brier,3,S
+61,Brier,4,30
+61,Brier,5,8
+61,Brier,7,124
+61,Brier,8,5
+61,Brier,9,34
 61,Brier,10,S
-61,Brier,11,13
+61,Brier,11,23
 61,Brier,12,23
 61,Brier,13,167
-61,Brier,2,68
-61,Brier,3,S
-61,Brier,4,27
-61,Brier,5,5
-61,Brier,7,97
-61,Brier,8,1
-61,Brier,9,28
-61,Brier,Total,470
-61,Darrington,1,26
+61,Brier,Total,547
+61,Darrington,1,29
+61,Darrington,2,13
+61,Darrington,3,216
+61,Darrington,4,S
+61,Darrington,5,51
+61,Darrington,7,S
+61,Darrington,9,S
 61,Darrington,10,S
 61,Darrington,11,S
 61,Darrington,12,70
 61,Darrington,13,98
-61,Darrington,2,10
-61,Darrington,3,215
-61,Darrington,4,S
-61,Darrington,5,50
-61,Darrington,7,S
-61,Darrington,9,S
-61,Darrington,Total,548
-61,Edmonds,1,9
-61,Edmonds,10,1942
-61,Edmonds,11,1134
+61,Darrington,Total,567
+61,Edmonds,1,24
+61,Edmonds,2,853
+61,Edmonds,3,121
+61,Edmonds,4,296
+61,Edmonds,5,1912
+61,Edmonds,7,2545
+61,Edmonds,8,181
+61,Edmonds,9,3865
+61,Edmonds,10,2006
+61,Edmonds,11,1656
 61,Edmonds,12,398
 61,Edmonds,13,880
-61,Edmonds,2,692
-61,Edmonds,3,87
-61,Edmonds,4,224
-61,Edmonds,5,1831
-61,Edmonds,7,2077
-61,Edmonds,8,128
-61,Edmonds,9,3711
-61,Edmonds,Total,13111
+61,Edmonds,Total,14752
 61,Everett,1,S
-61,Everett,10,4255
-61,Everett,11,2944
+61,Everett,2,3792
+61,Everett,3,S
+61,Everett,4,4239
+61,Everett,5,7174
+61,Everett,7,10524
+61,Everett,8,523
+61,Everett,9,14938
+61,Everett,10,4542
+61,Everett,11,5160
 61,Everett,12,7146
 61,Everett,13,3374
-61,Everett,2,2701
-61,Everett,3,S
-61,Everett,4,3581
-61,Everett,5,6738
-61,Everett,7,8073
-61,Everett,8,285
-61,Everett,9,14230
-61,Everett,Total,85226
+61,Everett,Total,94127
 61,Gold Bar,1,S
-61,Gold Bar,10,42
-61,Gold Bar,11,3
-61,Gold Bar,12,23
-61,Gold Bar,13,49
-61,Gold Bar,2,12
+61,Gold Bar,2,18
 61,Gold Bar,3,S
 61,Gold Bar,4,S
-61,Gold Bar,5,53
-61,Gold Bar,7,18
-61,Gold Bar,9,26
-61,Gold Bar,Total,241
+61,Gold Bar,5,54
+61,Gold Bar,7,23
+61,Gold Bar,9,28
+61,Gold Bar,10,44
+61,Gold Bar,11,12
+61,Gold Bar,12,23
+61,Gold Bar,13,49
+61,Gold Bar,Total,266
 61,Granite Falls,1,0
-61,Granite Falls,10,191
-61,Granite Falls,11,37
+61,Granite Falls,2,65
+61,Granite Falls,3,104
+61,Granite Falls,4,13
+61,Granite Falls,5,114
+61,Granite Falls,7,59
+61,Granite Falls,9,66
+61,Granite Falls,10,199
+61,Granite Falls,11,73
 61,Granite Falls,12,46
 61,Granite Falls,13,321
-61,Granite Falls,2,48
-61,Granite Falls,3,92
-61,Granite Falls,4,10
-61,Granite Falls,5,107
-61,Granite Falls,7,36
-61,Granite Falls,9,58
-61,Granite Falls,Total,944
-61,Index,11,0
-61,Index,12,7
-61,Index,13,14
+61,Granite Falls,Total,1064
 61,Index,5,0
 61,Index,7,S
 61,Index,9,S
-61,Index,Total,26
-61,Lake Stevens,1,55
-61,Lake Stevens,10,691
-61,Lake Stevens,11,274
+61,Index,11,0
+61,Index,12,7
+61,Index,13,14
+61,Index,Total,29
+61,Lake Stevens,1,68
+61,Lake Stevens,2,754
+61,Lake Stevens,3,139
+61,Lake Stevens,4,259
+61,Lake Stevens,5,893
+61,Lake Stevens,7,775
+61,Lake Stevens,8,68
+61,Lake Stevens,9,527
+61,Lake Stevens,10,720
+61,Lake Stevens,11,453
 61,Lake Stevens,12,292
 61,Lake Stevens,13,1172
-61,Lake Stevens,2,647
-61,Lake Stevens,3,121
-61,Lake Stevens,4,232
-61,Lake Stevens,5,858
-61,Lake Stevens,7,604
-61,Lake Stevens,8,45
-61,Lake Stevens,9,479
-61,Lake Stevens,Total,5470
+61,Lake Stevens,Total,6121
 61,Lynnwood,1,0
-61,Lynnwood,10,3294
-61,Lynnwood,11,1518
+61,Lynnwood,2,1995
+61,Lynnwood,3,643
+61,Lynnwood,4,1212
+61,Lynnwood,5,7582
+61,Lynnwood,7,6455
+61,Lynnwood,8,226
+61,Lynnwood,9,2887
+61,Lynnwood,10,3392
+61,Lynnwood,11,2417
 61,Lynnwood,12,1069
 61,Lynnwood,13,2119
-61,Lynnwood,2,1695
-61,Lynnwood,3,580
-61,Lynnwood,4,997
-61,Lynnwood,5,7420
-61,Lynnwood,7,5586
-61,Lynnwood,8,149
-61,Lynnwood,9,2655
-61,Lynnwood,Total,27083
-61,Marysville,1,41
-61,Marysville,10,2116
-61,Marysville,11,726
+61,Lynnwood,Total,30512
+61,Marysville,1,68
+61,Marysville,2,1801
+61,Marysville,3,1606
+61,Marysville,4,644
+61,Marysville,5,2976
+61,Marysville,7,1600
+61,Marysville,8,132
+61,Marysville,9,2354
+61,Marysville,10,2185
+61,Marysville,11,1212
 61,Marysville,12,664
 61,Marysville,13,1531
-61,Marysville,2,1516
-61,Marysville,3,1534
-61,Marysville,4,551
-61,Marysville,5,2889
-61,Marysville,7,1237
-61,Marysville,8,96
-61,Marysville,9,2219
-61,Marysville,Total,15122
+61,Marysville,Total,16780
 61,Mill Creek,1,0
-61,Mill Creek,10,998
-61,Mill Creek,11,684
+61,Mill Creek,2,598
+61,Mill Creek,3,94
+61,Mill Creek,4,205
+61,Mill Creek,5,867
+61,Mill Creek,7,1223
+61,Mill Creek,8,59
+61,Mill Creek,9,1104
+61,Mill Creek,10,1027
+61,Mill Creek,11,947
 61,Mill Creek,12,437
 61,Mill Creek,13,407
-61,Mill Creek,2,541
-61,Mill Creek,3,79
-61,Mill Creek,4,183
-61,Mill Creek,5,835
-61,Mill Creek,7,985
-61,Mill Creek,8,32
-61,Mill Creek,9,1029
-61,Mill Creek,Total,6209
-61,Monroe,1,12
-61,Monroe,10,990
-61,Monroe,11,384
+61,Mill Creek,Total,6970
+61,Monroe,1,32
+61,Monroe,2,1041
+61,Monroe,3,1487
+61,Monroe,4,332
+61,Monroe,5,1442
+61,Monroe,7,805
+61,Monroe,8,172
+61,Monroe,9,1058
+61,Monroe,10,1044
+61,Monroe,11,668
 61,Monroe,12,2255
 61,Monroe,13,597
-61,Monroe,2,908
-61,Monroe,3,1443
-61,Monroe,4,292
-61,Monroe,5,1394
-61,Monroe,7,576
-61,Monroe,8,100
-61,Monroe,9,986
-61,Monroe,Total,9936
+61,Monroe,Total,10953
 61,Mountlake Terrace,1,0
-61,Mountlake Terrace,10,272
-61,Mountlake Terrace,11,433
+61,Mountlake Terrace,2,744
+61,Mountlake Terrace,3,210
+61,Mountlake Terrace,4,448
+61,Mountlake Terrace,5,513
+61,Mountlake Terrace,7,4203
+61,Mountlake Terrace,8,228
+61,Mountlake Terrace,9,1381
+61,Mountlake Terrace,10,286
+61,Mountlake Terrace,11,572
 61,Mountlake Terrace,12,372
 61,Mountlake Terrace,13,469
-61,Mountlake Terrace,2,631
-61,Mountlake Terrace,3,192
-61,Mountlake Terrace,4,401
-61,Mountlake Terrace,5,483
-61,Mountlake Terrace,7,4007
-61,Mountlake Terrace,8,136
-61,Mountlake Terrace,9,1316
-61,Mountlake Terrace,Total,8713
-61,Mukilteo,1,4
-61,Mukilteo,10,583
-61,Mukilteo,11,497
+61,Mountlake Terrace,Total,9429
+61,Mukilteo,1,9
+61,Mukilteo,2,1340
+61,Mukilteo,3,4376
+61,Mukilteo,4,963
+61,Mukilteo,5,300
+61,Mukilteo,7,1448
+61,Mukilteo,8,276
+61,Mukilteo,9,954
+61,Mukilteo,10,607
+61,Mukilteo,11,742
 61,Mukilteo,12,173
 61,Mukilteo,13,659
-61,Mukilteo,2,1229
-61,Mukilteo,3,4313
-61,Mukilteo,4,901
-61,Mukilteo,5,255
-61,Mukilteo,7,1147
-61,Mukilteo,8,190
-61,Mukilteo,9,900
-61,Mukilteo,Total,10849
+61,Mukilteo,Total,11846
 61,Snohomish,1,0
-61,Snohomish,10,872
-61,Snohomish,11,226
+61,Snohomish,2,626
+61,Snohomish,3,206
+61,Snohomish,4,161
+61,Snohomish,5,1336
+61,Snohomish,7,834
+61,Snohomish,8,94
+61,Snohomish,9,676
+61,Snohomish,10,896
+61,Snohomish,11,429
 61,Snohomish,12,362
 61,Snohomish,13,811
-61,Snohomish,2,543
-61,Snohomish,3,187
-61,Snohomish,4,142
-61,Snohomish,5,1279
-61,Snohomish,7,689
-61,Snohomish,8,78
-61,Snohomish,9,622
-61,Snohomish,Total,5812
-61,Stanwood,1,8
-61,Stanwood,10,504
-61,Stanwood,11,127
+61,Snohomish,Total,6444
+61,Stanwood,1,16
+61,Stanwood,2,132
+61,Stanwood,3,298
+61,Stanwood,4,68
+61,Stanwood,5,482
+61,Stanwood,7,364
+61,Stanwood,8,38
+61,Stanwood,9,757
+61,Stanwood,10,521
+61,Stanwood,11,241
 61,Stanwood,12,345
 61,Stanwood,13,732
-61,Stanwood,2,107
-61,Stanwood,3,285
-61,Stanwood,4,63
-61,Stanwood,5,463
-61,Stanwood,7,283
-61,Stanwood,8,26
-61,Stanwood,9,719
-61,Stanwood,Total,3663
-61,Sultan,1,5
-61,Sultan,10,63
-61,Sultan,11,54
+61,Stanwood,Total,3994
+61,Sultan,1,9
+61,Sultan,2,95
+61,Sultan,3,269
+61,Sultan,4,20
+61,Sultan,5,61
+61,Sultan,7,60
+61,Sultan,8,3
+61,Sultan,9,83
+61,Sultan,10,66
+61,Sultan,11,98
 61,Sultan,12,40
 61,Sultan,13,273
-61,Sultan,2,78
-61,Sultan,3,255
-61,Sultan,4,15
-61,Sultan,5,54
-61,Sultan,7,33
-61,Sultan,8,1
-61,Sultan,9,74
-61,Sultan,Total,946
-61,Woodway,11,S
-61,Woodway,12,21
-61,Woodway,2,8
+61,Sultan,Total,1077
+61,Woodway,2,10
 61,Woodway,3,0
 61,Woodway,4,S
-61,Woodway,7,16
+61,Woodway,7,22
 61,Woodway,9,0
-61,Woodway,Total,59
-,Region,1,5997
-,Region,10,161547
-,Region,11,122412
-,Region,12,172660
-,Region,13,129175
-,Region,2,121311
-,Region,3,178354
-,Region,4,161264
-,Region,5,231287
-,Region,7,478886
-,Region,8,32270
-,Region,9,257708
-,Region,Total,2052870
+61,Woodway,11,S
+61,Woodway,12,21
+61,Woodway,Total,78
+61,_Unincorporated,1,1398
+61,_Unincorporated,2,11188
+61,_Unincorporated,3,11362
+61,_Unincorporated,4,3658
+61,_Unincorporated,5,7431
+61,_Unincorporated,7,10351
+61,_Unincorporated,8,775
+61,_Unincorporated,9,5919
+61,_Unincorporated,10,3156
+61,_Unincorporated,11,4385
+61,_Unincorporated,12,6245
+61,_Unincorporated,13,4132
+61,_Unincorporated,Total,70079
+Region,Region,1,7971
+Region,Region,2,141117
+Region,Region,3,183416
+Region,Region,4,171540
+Region,Region,5,240322
+Region,Region,7,531650
+Region,Region,8,47684
+Region,Region,9,272250
+Region,Region,10,166619
+Region,Region,11,164324
+Region,Region,12,172660
+Region,Region,13,129175
+Region,Region,Total,2242737

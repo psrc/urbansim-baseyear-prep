@@ -111,10 +111,11 @@ if(adjust.by.qcew){
     
     # read qcew
     qcew <- fread(file.path(data.dir, "alljobs18_lum_juris.csv"))
-    qcew[juris_name == "Region", countyid := 0]
+    qcew[juris == "Region", county := 0]
+    qcew[, county := as.numeric(county)]
     qcew[unique(allcities[, .(city_name, acity_id, county_id)]), city_id := i.acity_id, 
-         on = c(juris_name = "city_name", countyid = "county_id")]
-    qcew[emp_covered == "S", emp_covered := NA][, emp_covered := as.numeric(emp_covered)]
+         on = c(juris = "city_name", county = "county_id")]
+    qcew[emp_all == "S", emp_all := NA][, emp_all := as.numeric(emp_all)]
 
     uucities <- unique(allcities[! acity_id %in% qcew[, city_id] & acity_id < 9000, 
                                  .(acity_id, county_id, city_name)])[order(county_id, acity_id)]
@@ -144,14 +145,14 @@ if(adjust.by.qcew){
     # loop over rows in qcew
     for(row in seq_len(nrow(qcew))){
         city <- qcew[row, city_id]
-        if(is.na(qcew[row, emp_covered]) || is.na(city)) next # ignore suppressed records
+        if(is.na(qcew[row, emp_all]) || is.na(city)) next # ignore suppressed records
 
         # for the relevant BGs adjust # jobs by the factor
         this.lodes <- lodesadj[census_block_group_id %in% bglist[[city]][, census_block_group_id], ]
         this.lodes[bglist[[city]], `:=`(factor = i.factor, number_of_jobs_bgadj = number_of_jobs_adj * i.factor), 
                        on = "census_block_group_id"]
 
-        sector <- qcew[row, industry_id]
+        sector <- qcew[row, industry]
         joinon <- "census_block_group_id"
         if(sector != "Total") {
             this.lodes <- this.lodes[sector_id == sector]
@@ -162,7 +163,7 @@ if(adjust.by.qcew){
         lodes.total <- this.lodes[, sum(number_of_jobs_bgadj)]
         
         # get qcew total
-        qcew.total <- qcew[row, emp_covered]
+        qcew.total <- qcew[row, emp_all]
         #if(row == 82 && sector == 1) stop('')
         # adjust if the difference is big enough
         dif <- qcew.total - lodes.total
@@ -172,16 +173,16 @@ if(adjust.by.qcew){
         } else this.lodes[, adjustment := 0]
         qcew[row, first_adjustment := this.lodes[, sum(adjustment)]]
     }
-    # record results (need to iterate again, because adjusting totals changed again the sectors
+    # Record results (need to iterate again, because adjusting totals changed again the sectors
     # that might have been already adjusted before)
     for(row in seq_len(nrow(qcew))){
         city <- qcew[row, city_id]
-        if(is.na(qcew[row, emp_covered]) || is.na(city)) next
+        if(is.na(city)) next
         this.lodes <- lodesadj[census_block_group_id %in% bglist[[city]][, census_block_group_id], ]
         this.lodes[bglist[[city]], `:=`(number_of_jobs_adj = number_of_jobs_adj * i.factor,
                                         number_of_jobs_orig = number_of_jobs * i.factor), 
                    on = "census_block_group_id"]
-        sector <- qcew[row, industry_id]
+        sector <- qcew[row, industry]
         if(sector != "Total") this.lodes <- this.lodes[sector_id == sector]
         
         qcew[row, `:=`(lodes = this.lodes[, sum(number_of_jobs_orig)], 
