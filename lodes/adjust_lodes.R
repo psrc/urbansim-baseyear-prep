@@ -111,11 +111,9 @@ if(adjust.by.qcew){
     
     # read qcew
     qcew <- fread(file.path(data.dir, "alljobs18_lum_juris.csv"))
-    qcew[juris == "Region", county := 0]
-    qcew[, county := as.numeric(county)]
     qcew[unique(allcities[, .(city_name, acity_id, county_id)]), city_id := i.acity_id, 
          on = c(juris = "city_name", county = "county_id")]
-    qcew[emp_all == "S", emp_all := NA][, emp_all := as.numeric(emp_all)]
+    qcew[is.null(emp_all), emp_all := NA]
 
     uucities <- unique(allcities[! acity_id %in% qcew[, city_id] & acity_id < 9000, 
                                  .(acity_id, county_id, city_name)])[order(county_id, acity_id)]
@@ -154,7 +152,7 @@ if(adjust.by.qcew){
 
         sector <- qcew[row, industry]
         joinon <- "census_block_group_id"
-        if(sector != "Total") {
+        if(sector != 0) {
             this.lodes <- this.lodes[sector_id == sector]
             joinon <- c(joinon, "sector_id")
         }
@@ -183,7 +181,7 @@ if(adjust.by.qcew){
                                         number_of_jobs_orig = number_of_jobs * i.factor), 
                    on = "census_block_group_id"]
         sector <- qcew[row, industry]
-        if(sector != "Total") this.lodes <- this.lodes[sector_id == sector]
+        if(sector != 0) this.lodes <- this.lodes[sector_id == sector]
         
         qcew[row, `:=`(lodes = this.lodes[, sum(number_of_jobs_orig)], 
                         lodes_adj = this.lodes[, sum(number_of_jobs_adj)])]
