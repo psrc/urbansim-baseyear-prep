@@ -3,7 +3,7 @@ library(data.table)
 
 # load data
 data.dir <- "data"
-lodes.file <- file.path(data.dir, 'Lodes18adj20210713.csv') # 2018 LODES
+lodes.file <- file.path(data.dir, 'Lodes18adj20210715.csv') # 2018 LODES
 lodes <- fread(lodes.file, colClasses=c("numeric", "character", "numeric", "numeric", "numeric", "numeric")) # set block group to character and county to numeric
 
 if(! "census_block_group_id" %in% names(lodes)) {

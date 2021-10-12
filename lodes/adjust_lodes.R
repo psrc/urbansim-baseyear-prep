@@ -92,8 +92,8 @@ if(adjust.by.qcew){
     allcities[, acity_id := city_id]
     allcities[city_id > 1000, acity_id := city_id - 1000]
     allcities <- rbind(allcities, data.table(acity_id = c(9991:9994, 9999), 
-                                             city_name = c(rep("_Unincorporated", 4), "Region"),
-                                             county_id = c(33, 35, 53, 61, 0)), fill = TRUE)
+                                             city_name = c(rep("Unincorporated", 4), "Region"),
+                                             county_id = c(33, 35, 53, 61, 99)), fill = TRUE)
     
     # create a column for adjusted counts
     lodesadj[, number_of_jobs_adj := number_of_jobs]
@@ -110,11 +110,16 @@ if(adjust.by.qcew){
     pcl[, ncity := length(unique(acity_id)), by = .(census_block_group_id)]
     
     # read qcew
-    qcew <- fread(file.path(data.dir, "alljobs18_lum_juris.csv"))
+    qcew <- fread(file.path(data.dir, "alljobs_lum_juris.csv"))
+    # order rows so that sector totals are at the end of each city, and the region is at the very end
+    qcew[county == 0, county := 99]
+    qcew[industry == 0, industry := 99]
     qcew[unique(allcities[, .(city_name, acity_id, county_id)]), city_id := i.acity_id, 
          on = c(juris = "city_name", county = "county_id")]
-    qcew[is.null(emp_all), emp_all := NA]
-
+    qcew <- qcew[order(county, city_id, industry)]
+    #qcew[is.null(emp_all), emp_all := NA]
+    qcew[, emp_all := as.numeric(emp_all)]
+    
     uucities <- unique(allcities[! acity_id %in% qcew[, city_id] & acity_id < 9000, 
                                  .(acity_id, county_id, city_name)])[order(county_id, acity_id)]
     
@@ -152,7 +157,7 @@ if(adjust.by.qcew){
 
         sector <- qcew[row, industry]
         joinon <- "census_block_group_id"
-        if(sector != 0) {
+        if(sector < 99) {
             this.lodes <- this.lodes[sector_id == sector]
             joinon <- c(joinon, "sector_id")
         }
@@ -162,7 +167,7 @@ if(adjust.by.qcew){
         
         # get qcew total
         qcew.total <- qcew[row, emp_all]
-        #if(row == 82 && sector == 1) stop('')
+
         # adjust if the difference is big enough
         dif <- qcew.total - lodes.total
         if(abs(dif) > adjutment.threshold * qcew.total) { # adjust
