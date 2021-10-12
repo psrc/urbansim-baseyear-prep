@@ -117,7 +117,7 @@ if(adjust.by.qcew){
     qcew[unique(allcities[, .(city_name, acity_id, county_id)]), city_id := i.acity_id, 
          on = c(juris = "city_name", county = "county_id")]
     qcew <- qcew[order(county, city_id, industry)]
-    #qcew[is.null(emp_all), emp_all := NA]
+    qcew[emp_all==-99, emp_all := NA]
     qcew[, emp_all := as.numeric(emp_all)]
     
     uucities <- unique(allcities[! acity_id %in% qcew[, city_id] & acity_id < 9000, 
