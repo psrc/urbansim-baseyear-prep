@@ -1,3 +1,9 @@
+# Script to re-classify non-home-based jobs into home-based
+# based on given geography x sector distribution
+# Hana Sevcikova, PSRC
+# June 26, 2018
+#
+
 library(data.table)
 
 # unrolled NHB jobs as created by unroll_lodes.R
