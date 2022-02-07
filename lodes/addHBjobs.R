@@ -2,19 +2,24 @@
 # based on given geography x sector distribution
 # Hana Sevcikova, PSRC
 # June 26, 2018
-#
+# updated February 7, 2022
+
+setwd("~/psrc/urbansim-baseyear-prep/lodes")
 
 library(data.table)
 
 # unrolled NHB jobs as created by unroll_lodes.R
-nhb.job.file <- "jobs_blodes_AJ_nohb.csv"
+#nhb.job.file <- "jobs_blodes_AJ_nohb.csv"
+nhb.job.file <- "jobs_nohb.csv"
 
 # distribution file
-hb.distr.file <- "faz_home_based.csv"
+hb.distr.file <- "faz_home_based_2017_19.csv"
 
 # block-geo distribution file
-block.lookup.file <- "block_faz.csv"
+#block.lookup.file <- "block_faz.csv"
+block.lookup.file <- "block_group_faz.csv"
 geo.lookup.id <- "faz_id"
+block.id.name <- "census_block_group_id"
 
 # read jobs table
 nhb.jobs <- fread(nhb.job.file)
@@ -29,7 +34,7 @@ hb.distr <- fread(hb.distr.file, quote = "'")
 geo.lookup <- fread(block.lookup.file)
 
 # merge jobs with geo and distr
-nhb.jobs.wrk <- merge(nhb.jobs, geo.lookup, by = "census_block_id")
+nhb.jobs.wrk <- merge(nhb.jobs, geo.lookup, by = block.id.name)
 
 sum.jobs <- nhb.jobs.wrk[, .N, by = c(geo.lookup.id, "sector_id")]
 sum.jobs <- merge(sum.jobs, hb.distr, by = c(geo.lookup.id, "sector_id"))
@@ -39,7 +44,7 @@ nhb.jobs.wrk2[is.na(home_based_jobs), home_based_jobs := 0]
 # sample home-based jobs
 hb.jobs <- nhb.jobs.wrk2[, .SD[sample(.N, min(.N, home_based_jobs))], by = c(geo.lookup.id, "sector_id")]
 nhb.jobs[job_id %in% hb.jobs$job_id, home_based_status := 1]
-nhb.jobs <- merge(nhb.jobs, geo.lookup, by = "census_block_id")
+nhb.jobs <- merge(nhb.jobs, geo.lookup, by = block.id.name)
 # put columns into the original order
 nhb.jobs <- nhb.jobs[, c(colnames.wrk, geo.lookup.id), with = FALSE]
 
