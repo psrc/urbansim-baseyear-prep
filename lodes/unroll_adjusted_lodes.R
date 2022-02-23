@@ -24,7 +24,7 @@ for(bl in ublocks) {
 jobs[,`:=`(job_id = 1:nrow(jobs), home_based_status=0, building_id=-1)]
 # reorder columns and attach type for Opus
 jobs <- jobs[, .(job_id, sector_id, home_based_status, building_id, census_block_group_id)] 
-colnames(jobs) <- c('job_id:i4', 'sector_id:i1', 'home_based_status:b1', 'building_id:i4', 'census_block_group_id:i4')
+colnames(jobs) <- c('job_id:i4', 'sector_id:i4', 'home_based_status:i1', 'building_id:i4', 'census_block_group_id:i4')
 # save to disk
 fwrite(jobs, "jobs.csv") 
 
