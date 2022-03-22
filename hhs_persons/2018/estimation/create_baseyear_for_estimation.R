@@ -1,6 +1,7 @@
 # Creates households and buildings tables needed for estimating the HLCM.
 # Hana Sevcikova, PSRC
 # Updated 02/15/2022
+# TODO: update the script to work with column names without info type
 
 library(data.table)
 setwd("~/psrc/urbansim-baseyear-prep/hhs_persons/2018/estimation")
