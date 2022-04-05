@@ -1,8 +1,15 @@
+# Script for creating a parcels dataset that have attributes residential_units,
+# number_of_buildings and x and y coordinates called "xcoord_p" and "ycoord_p".
+# It's used for filtering parcels when assigning locations of agents in HH travel survey 
+# (such as residence, work, school) to parcels.
+# Hana Sevcikova, PSRC
+# March 2021
+
 library(data.table)
 setwd("~/psrc/urbansim-baseyear-prep/hhs_persons/2018/estimation")
 
-bld <- fread("imputed_buildings_lodes_match_20210302.csv")
-pcl <- fread("parcels_coords.csv")
+bld <- fread("imputed_buildings_lodes_match_20210302.csv") # latest buildings table
+pcl <- fread("parcels_coords.csv") # parcels with attributes "parcel_id", "x_coord_sp", "y_coord_sp"
 
 pbld <- bld[, .(residential_units = sum(residential_units), number_of_buildings = .N), by = .(parcel_id)]
 
