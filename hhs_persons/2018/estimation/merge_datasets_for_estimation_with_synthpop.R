@@ -1,3 +1,14 @@
+# Post-process households and persons from the travel survey for the purpose of urbansim estimation.
+# Given parcel_id, find an appropriate building for household's current and previous location.
+# Find records in the synthetic dataset that are similar to the estimation records and replace them 
+# by the survey records.
+# As input it uses the output of Brice's python script
+# https://github.com/psrc/travel-studies/blob/master/2017/daysim_conversions/locate_parcels.py
+# (files 1_household.csv, 2_person.csv)
+#
+# Hana Sevcikova, PSRC
+# March 2021, updated March 2022
+
 library(data.table)
 library(magrittr)
 
@@ -7,14 +18,17 @@ output.dir <- "output"
 if(!file.exists(output.dir)) dir.create(output.dir)
 
 set.seed(123)
-bld <- fread("imputed_buildings_lodes_match_20210302.csv")
-hhs.rawsurvey <- fread(file.path("surveydata", "raw", "1_household.csv"))
+bld <- fread("imputed_buildings_lodes_match_20210302.csv") # latest buildings dataset
+hhs.rawsurvey <- fread(file.path("surveydata", "raw", "1_household.csv")) 
 pers.rawsurvey <- fread(file.path("surveydata", "raw", "2_person.csv"))
-hhs <- fread(file.path("..", "with_race", "output", "households.csv"))
-pers <- fread(file.path("..", "with_race", "output", "persons.csv"))
+hhs <- fread(file.path("..", "with_race", "output", "households.csv")) # non-parcelized synthetic households
+pers <- fread(file.path("..", "with_race", "output", "persons.csv")) # synthetic set of persons
+
+# remove the column types from names (if not present, skip these two lines)
 colnames(hhs) <- substr(colnames(hhs), 1, nchar(colnames(hhs))-3)
 colnames(pers) <- substr(colnames(pers), 1, nchar(colnames(pers))-3)
 
+# create the various estimation columns
 hhsest <- hhs.rawsurvey[!is.na(final_home_parcel), .(hhid = hhid, puma = final_home_puma10,
                          parcel_id = final_home_parcel,
                          previous_parcel_id = prev_home_parcel,
@@ -27,7 +41,7 @@ hhsest <- hhs.rawsurvey[!is.na(final_home_parcel), .(hhid = hhid, puma = final_h
 hhsest[tenure == 5, tenure := -1]
 hhsest[tenure > 2, tenure := 3]
 
-# set income by sampling from income of the synthetic households of the corresponding category
+# assign income by sampling from income of the synthetic households of the corresponding category
 income.categories <- c(1000, 10000, 25000, 35000, 50000, 75000, 100000, 
                       150000, 200000, 250000, max(hhs$income) + 1)
 for(icat in 1:(length(income.categories)-1)){
@@ -36,10 +50,12 @@ for(icat in 1:(length(income.categories)-1)){
 }
 hhsest[income_cat == 11, income := -1][, income_cat := NULL]
 
+# assign age of head and number of children
 hhsest[pers.rawsurvey[pernum == 1], age_of_head := i.age, on = "hhid"]
 hhsest[pers.rawsurvey[, .(children=sum(age < 18)), by = "hhid"], 
        children := i.children, on = "hhid"]
 
+# determine the set of buildings that are candidates for residential location
 resbld <- bld[residential_units > 0]
 
 hhbld <- hhsest[, .N, by = parcel_id]
@@ -68,7 +84,6 @@ hhsest[is.na(building_id), building_id := -1]
 # first for parcels with just one building
 hhbldprev <- hhsest[!is.na(previous_parcel_id) & parcel_id != previous_parcel_id, .N, by = previous_parcel_id]
 hhbldprev[resbld[, .N, by = parcel_id], nbld := i.N, on = c(previous_parcel_id="parcel_id")]
-#setnames(hhbldprev, "previous_parcel_id", "parcel_id")
 hhbld1 <- hhbldprev[nbld == 1]
 hhbld1[resbld, `:=`(building_id = i.building_id, 
                     building_type_id = i.building_type_id), 
@@ -89,12 +104,10 @@ hhsest[is.na(previous_building_id), previous_building_id := -1]
 hhsest[, is_inmigrant := ifelse(previous_building_id <= 0, 1, 0)]
 
 
-
-# replace similar households from the survey
+# identify households similar to the records in the survey within their respective census block groups
 # assign block group
-pcl <- fread("parcels.csv")
+pcl <- fread("parcels.csv") # latest parcels dataset
 hhsest[pcl, census_block_group_id := i.census_block_group_id, on = "parcel_id"]
-
 
 # iterate over hhs
 selected <- rep(FALSE, nrow(hhs))
@@ -102,14 +115,16 @@ cat("\n")
 for (i in 1:nrow(hhsest)) {
     cat("\rProcessing ", round(i/nrow(hhsest)*100), "%")
     hhbg <- hhs[census_block_group_id == hhsest[i, census_block_group_id] & !selected]
+    # First, match by HH size
     hhsel <- hhbg[persons == hhsest[i, persons]]
     if(nrow(hhsel) == 0 && hhsest[i, persons] > 6){
         hhsel <- hhbg[persons > 6]
     }
-    if(nrow(hhsel) == 0){
+    if(nrow(hhsel) == 0){ # if there is no match, take those with the minimum difference
         mindif <- hhbg[, min(abs(persons - hhsest[i, persons]))]
         hhsel <- hhbg[persons %between% c(hhsest[i, persons] - mindif, hhsest[i, persons] + mindif)]
     }
+    # Second, match by number of workers
     if(nrow(hhsel) > 1) {
         hhsel2 <- hhsel[workers == hhsest[i, workers]]
         if(nrow(hhsel2) == 0){
@@ -117,6 +132,7 @@ for (i in 1:nrow(hhsest)) {
             hhsel2 <- hhsel[workers %between% c(hhsest[i, workers] - mindif, hhsest[i, workers] + mindif)]
         }
         hhsel <- hhsel2
+        # Third, match by age of head
         if(nrow(hhsel) > 1) {
             age.dif <- hhsel[, abs(age_of_head - hhsest[i, age_of_head])]
             hhsel <- hhsel[which.min(age.dif)[1]]
@@ -124,13 +140,14 @@ for (i in 1:nrow(hhsest)) {
     }
     if(nrow(hhsel) != 1) stop('')
     selected[which(hhs$household_id == hhsel$household_id[1])] <- TRUE
+    # set household_id in the survey dataset to the one of the matched synthetic HH
     hhsest[i, household_id := hhsel$household_id[1]]
 }
 cat("\n")
 
 
-# create corresponding persons to be replaced
-# race-related atributes
+# create a dataset of survey persons to be replaced in the synthetic dataset
+# race-related attributes
 for(r in c("race_afam", "race_aiak", "race_asian", "race_hapi", "race_hisp", 
            "race_white", "race_other")) {
     pers.rawsurvey[is.na(pers.rawsurvey[[r]]) | pers.rawsurvey[[r]] > 900, (r) := 0]
@@ -246,10 +263,11 @@ for (attr in names(attr.types)) {
         colnames(persons)[colnames(persons)==attr] %<>% paste(attr.types[[attr]], sep=":")
 }
 
-#fwrite(households, file=file.path(output.dir, "households.csv"))
-#fwrite(persons, file=file.path(output.dir, "persons.csv"))
+# write output
+fwrite(households, file=file.path(output.dir, "households.csv"))
+fwrite(persons, file=file.path(output.dir, "persons.csv"))
 
-#fwrite(hhsest, file=file.path(output.dir, "households_for_estimation_raw.csv"))
+fwrite(hhsest, file=file.path(output.dir, "households_for_estimation_raw.csv"))
 fwrite(persest, file=file.path(output.dir, "persons_for_estimation_raw.csv"))
 
 
