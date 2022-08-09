@@ -176,7 +176,7 @@ prcls_flu_ptid = all_df[['PIN', 'plan_type_id']]
 #prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
 #all_df.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp'))
 
-# post-processing lockouts ----------------------------------------------------------
+#### post-processing lockouts ----------------------------------------------------------
 
 # append to development constraints
 lo_df = pd.DataFrame()
@@ -192,6 +192,8 @@ for x in range(50001, 50008):
     else:
         lo_df = pd.concat([lo_df, lockout_ptid_df])
 
+devconstr = pd.concat([devconstr, lo_df])
+
 # update plan_type_ids
 all_df.loc[all_df['plan_type_id'].isnull(), 'plan_type_id'] = 9999
 all_df.loc[all_df['lu_type'] == 23, 'plan_type_id'] = 50001 # Schools/universities
@@ -204,4 +206,6 @@ all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 50007 # Vacant undevelopab
 
 # export post-processing lockouts version
 prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id']]
-#prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_lockouts_' + str(date.today()) + '.csv'), index=False)
+
+#prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
+#devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_v2' + str(date.today()) + '.csv'), index=False)
