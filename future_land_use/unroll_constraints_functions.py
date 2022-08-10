@@ -4,8 +4,8 @@ import geopandas as gpd
 import numpy as np
 from datetime import date
 
-def check_multi_pins(prcls_flu_shp, out_dir):
-    # prcls_flu_shp is the spatial join of parcels to the FLU
+def check_multi_pins(prcls_flu, out_dir):
+    # prcls_flu is the spatial join of parcels to the FLU
 
     # count number of ptids per parcel
     pin_cnt = prcls_flu.groupby(['PIN'])['plan_type_id'].count().reset_index()

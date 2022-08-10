@@ -56,7 +56,7 @@ prcls_flu = gpd.sjoin(prcls, flu)
 
 # QC FLU shapefile------------------------------------------------------------------
 
-#check_multi_pins(prcls_flu, dir) #check code
+check_multi_pins(prcls_flu, dir) #check code
 
 # check for one-to-many records in flu overlay
 prcls_flu['PIN'].duplicated().any()
@@ -168,13 +168,12 @@ devconstr.loc[devconstr['maxht'].isnull(), 'maxht'] = 0
 devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
 
 # export files ---------------------------------------------------------------------
-#devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
-
-#f.to_csv(os.path.join(dir, r'flu\flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False) # flu imputed kitchen sink file
+devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
+f.to_csv(os.path.join(dir, r'flu\flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False) # flu imputed kitchen sink file
 
 prcls_flu_ptid = all_df[['PIN', 'plan_type_id']]
-#prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
-#all_df.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp'))
+prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
+#all_df.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp')) # Warning! Takes a long time to write!
 
 #### post-processing lockouts ----------------------------------------------------------
 
@@ -186,13 +185,16 @@ for x in range(50001, 50008):
                   'minimum': 0,
                   'maximum': 0,
                   'lc': 1,
-                  'constraint_type': list(np.repeat("units_per_acre", 2)) + list(np.repeat("far", 4)) + ["units_per_acre"]})
+                  'constraint_type': list(np.repeat("units_per_acre", 2)) + list(np.repeat("far", 4)) + ["units_per_acre"],
+                  'maxht': 0})
     if lo_df.empty:
         lo_df = lockout_ptid_df
     else:
         lo_df = pd.concat([lo_df, lockout_ptid_df])
 
-devconstr = pd.concat([devconstr, lo_df])
+dci = devconstr['development_constraint_id'].max()
+lo_df['development_constraint_id'] = list(np.arange(dci+1, dci+len(lo_df)+1))
+devconstr = pd.concat([devconstr, lo_df]) 
 
 # update plan_type_ids
 all_df.loc[all_df['plan_type_id'].isnull(), 'plan_type_id'] = 9999
@@ -206,6 +208,5 @@ all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 50007 # Vacant undevelopab
 
 # export post-processing lockouts version
 prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id']]
-
-#prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
-#devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_v2' + str(date.today()) + '.csv'), index=False)
+prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
+devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_v2_' + str(date.today()) + '.csv'), index=False)
