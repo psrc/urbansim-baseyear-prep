@@ -47,7 +47,8 @@ prcls = gpd.read_file(base_year_prcl_path)
 cache = r'N:\base_year_2018_inputs\gold_standard_inputs\2018\parcels'
 prcls_pin = np.fromfile(os.path.join(cache, 'parcel_id.li4'), np.int32)
 prcls_lu = np.fromfile(os.path.join(cache, 'land_use_type_id.li4'), np.int32)
-lu_type = pd.DataFrame({'PIN':prcls_pin, 'lu_type':prcls_lu}, index = prcls_pin)
+prcls_tod = np.fromfile(os.path.join(cache, 'tod_id.li4'), np.int32)
+lu_type = pd.DataFrame({'PIN':prcls_pin, 'lu_type':prcls_lu, 'tod_id':prcls_tod}, index = prcls_pin)
 lu_type['PIN'] = lu_type['PIN'].astype(np.int64)
 
 prcls = prcls.merge(lu_type, on = 'PIN')
@@ -62,7 +63,6 @@ check_multi_pins(prcls_flu, dir) #check code
 prcls_flu['PIN'].duplicated().any()
 duplicate = prcls_flu[prcls_flu.duplicated('PIN')][['PIN']]
 dup_df = prcls_flu[prcls_flu['PIN'].isin(duplicate['PIN'])].sort_values(by=['PIN'])
-#dup_nulls = dup_df[dup_df['plan_type_id'].isnull()]
 
 #dup_df.to_csv(os.path.join(dir, r'flu_qc\pins_dup_'+ str(date.today()) +'.csv'), index=False) 
 #dup_df.to_file(os.path.join(dir, r'flu_qc\prcls_pins_dup_'+ str(date.today()) +'.shp'))
@@ -83,7 +83,7 @@ t_null = dup_df[dup_df['plan_type_id'].isnull() & ~dup_df['PIN'].isin(triple_pin
 t_dup_pin_freq = t_null.groupby(['PIN'])['PIN'].count().reset_index(name='count')
 t_dup_pin_freq_dups = t_dup_pin_freq[t_dup_pin_freq['count']>1]
 null_dup = t_null[t_null['PIN'].isin(t_dup_pin_freq_dups['PIN'])] 
-x3 = null_dup.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates amonst nulls (take first or last)
+x3 = null_dup.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates amongst nulls (keep first)
 #len(x1) + len(x2) + len(x2a) + len(x3) + len(unjoined) # 1302434 recs
 
 # append all tables
@@ -171,7 +171,7 @@ devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
 devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
 f.to_csv(os.path.join(dir, r'flu\flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False) # flu imputed kitchen sink file
 
-prcls_flu_ptid = all_df[['PIN', 'plan_type_id']]
+prcls_flu_ptid = all_df[['PIN', 'plan_type_id', 'tod_id']]
 prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
 #all_df.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp')) # Warning! Takes a long time to write!
 
