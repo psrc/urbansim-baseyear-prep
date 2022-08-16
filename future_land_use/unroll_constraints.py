@@ -207,6 +207,6 @@ all_df.loc[all_df['lu_type'] == 1, 'plan_type_id'] = 50006 # Agriculture
 all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 50007 # Vacant undevelopable
 
 # export post-processing lockouts version
-prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id']]
+prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id', 'tod_id']]
 prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
 devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_v2_' + str(date.today()) + '.csv'), index=False)
