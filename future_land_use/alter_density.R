@@ -98,7 +98,8 @@ upd.pcl[upzone.pcl, plan_type_id := i.hct_plan_type_id, on = .(parcel_id)]
 fwrite(upd.pcl, file = file.path(dir, parcels.out.file.name))
 
 # remove unused constraints, join with the original set and export
-all.constr <- rbind(constr, constr.clone[plan_type_id %in% upd.pcl[, plan_type_id]])
+new.constr <- constr.clone[plan_type_id %in% upd.pcl[, plan_type_id]]
+all.constr <- rbind(constr, new.constr)
 fwrite(all.constr, file = file.path(dir, constraints.out.file.name))
 
 # output some info
@@ -106,6 +107,9 @@ check.pcl <- merge(upd.pcl, pcl, by = "parcel_id", all = TRUE)
 cat("\nplan_type_id updated for ", check.pcl[, sum(plan_type_id.x != plan_type_id.y)], "parcels. Stored in", 
     file.path(dir, parcels.out.file.name))
 
-cat("\n", nrow(constr.clone), "constraints added. Now", nrow(all.constr), "constraints in total. Stored in",
+cat("\n", nrow(new.constr), "constraints added. Now", nrow(all.constr), "constraints in total. Stored in",
     file.path(dir, constraints.out.file.name))
 
+cat("\nIt corresponds to", length(new.constr[, unique(plan_type_id)]), "new plan types.")
+
+cat("\n")
