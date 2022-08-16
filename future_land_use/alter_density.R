@@ -1,9 +1,10 @@
 library(data.table)
 library(RMySQL)
 
+# set your working directory
 setwd("~/psrc/urbansim-baseyear-prep/future_land_use")
 
-date <- "2022-08-10"
+date <- "2022-08-10" # date the input files were created
 
 dir <- "." # directory where the input files are. Used for output as well.
 
@@ -20,7 +21,7 @@ constraints.out.file.name <- paste0("devconstr_v2_upzoned_", date, ".csv")
 # read FLU file
 flu <- fread(file.path(dir, flu.file.name))
 
-# identify records to clone
+# identify FLU records to clone
 flu[, clone := FALSE]
 flu[(MaxFAR_Comm > 0 & MaxFAR_Comm < 1) | (MaxFAR_Office > 0 & MaxFAR_Office < 1) | 
         (MaxFAR_Indust > 0 & MaxFAR_Indust < 1) |  (MaxFAR_Mixed > 0 & MaxFAR_Mixed < 1) | 
@@ -29,10 +30,10 @@ flu[(MaxFAR_Comm > 0 & MaxFAR_Comm < 1) | (MaxFAR_Office > 0 & MaxFAR_Office < 1
 # read constraints table
 constr <- fread(file.path(dir, constraints.file.name))
 
-# create a subset for cloning
+# create a subset for cloning that correspond to the selected FLU records
 constr.clone <- constr[plan_type_id %in% flu[clone == TRUE, plan_type_id]]
 
-# set new plan_type_id and constraint_id
+# set new plan_type_id and constraint_id for these cloned records
 constr.clone[, `:=`(plan_type_id = plan_type_id + 2000, 
                     development_constraint_id = seq_len(nrow(constr.clone)) + constr[, max(development_constraint_id)])]
 
@@ -85,11 +86,11 @@ pcl <- merge(pcl, pcltod, by = "parcel_id")
 # End of the temporary block. Now pcl should have a column tod_id
 ################################### 
 
-# select HCT parcels and set an alternative PTID
+# select HCT parcels and set an alternative (theoretical) PTID
 hctpcl <- pcl[tod_id > 0 & tod_id < 6]
 hctpcl[, hct_plan_type_id := plan_type_id + 2000]
 
-# parcels where hct_plan_type_id exists in constr.clone are going to get updated maximum, therefore updated PTID
+# select parcels where the theoretical hct_plan_type_id exists in constr.clone
 upzone.pcl <- hctpcl[hct_plan_type_id %in% constr.clone[, plan_type_id]]
 
 # update plan_type_id for the parcels in upzone.pcl and export
