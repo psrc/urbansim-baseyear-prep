@@ -97,8 +97,8 @@ upd.pcl <- copy(pcl)
 upd.pcl[upzone.pcl, plan_type_id := i.hct_plan_type_id, on = .(parcel_id)]
 fwrite(upd.pcl, file = file.path(dir, parcels.out.file.name))
 
-# join the constraints and export
-all.constr <- rbind(constr, constr.clone)
+# remove unused constraints, join with the original set and export
+all.constr <- rbind(constr, constr.clone[plan_type_id %in% upd.pcl[, plan_type_id]])
 fwrite(all.constr, file = file.path(dir, constraints.out.file.name))
 
 # output some info
