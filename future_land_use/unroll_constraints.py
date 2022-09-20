@@ -179,7 +179,7 @@ prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(dat
 
 # append to development constraints
 lo_df = pd.DataFrame()
-for x in range(50001, 50008):
+for x in range(9001, 9008):
     lockout_ptid_df = pd.DataFrame({'plan_type_id': np.repeat(x, 7),
                   'generic_land_use_type_id': list(np.arange(1, 7)) + [6],
                   'minimum': 0,
@@ -198,15 +198,15 @@ devconstr = pd.concat([devconstr, lo_df])
 
 # update plan_type_ids
 all_df.loc[all_df['plan_type_id'].isnull(), 'plan_type_id'] = 9999
-all_df.loc[all_df['lu_type'] == 23, 'plan_type_id'] = 50001 # Schools/universities
-all_df.loc[all_df['lu_type'] == 7, 'plan_type_id'] = 50002 # Government
-all_df.loc[all_df['lu_type'] == 9, 'plan_type_id'] = 50003 # Hospitals, convalescent center
-all_df.loc[all_df['lu_type'] == 6, 'plan_type_id'] = 50004 # Forest, protected
-all_df.loc[all_df['lu_type'] == 5, 'plan_type_id'] = 50005 # Forest, harvestable
-all_df.loc[all_df['lu_type'] == 1, 'plan_type_id'] = 50006 # Agriculture
-all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 50007 # Vacant undevelopable
+all_df.loc[all_df['lu_type'] == 23, 'plan_type_id'] = 9001 # Schools/universities
+all_df.loc[all_df['lu_type'] == 7, 'plan_type_id'] = 9002 # Government
+all_df.loc[all_df['lu_type'] == 9, 'plan_type_id'] = 9003 # Hospitals, convalescent center
+all_df.loc[all_df['lu_type'] == 6, 'plan_type_id'] = 9004 # Forest, protected
+all_df.loc[all_df['lu_type'] == 5, 'plan_type_id'] = 9005 # Forest, harvestable
+all_df.loc[all_df['lu_type'] == 1, 'plan_type_id'] = 9006 # Agriculture
+all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 9007 # Vacant undevelopable
 
 # export post-processing lockouts version
-prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id']]
+prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id', 'tod_id']]
 prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
 devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_v2_' + str(date.today()) + '.csv'), index=False)
