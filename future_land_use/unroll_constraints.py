@@ -19,7 +19,7 @@ dir = r"J:\Staff\Christy\usim-baseyear"
 flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
 
 # imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_postprocessed_2022-05-09.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_postprocessed_2022-09-22.csv')
 
 # parcels file
 base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
