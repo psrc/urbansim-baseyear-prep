@@ -148,6 +148,16 @@ mixed_du = mixed_du.rename(columns = {'MinDU_Mixed': 'minimum', 'MaxDU_Mixed': '
 lockout_id = 9999
 devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du], sort=False)
 
+# consistency check (ptids)
+common = f.merge(devconstr,on=['plan_type_id','plan_type_id'])
+not_in_f = f[(~f.plan_type_id.isin(common.plan_type_id))]
+print('WARNING: The following ptids are in object f but not devconstr:\n')
+print(not_in_f)
+max_zero_devconstr = devconstr[(devconstr['maximum'] == 0) | (devconstr['maximum'].isna())]
+generic_lut_max_zero = max_zero_devconstr['generic_land_use_type_id'].unique()
+print('The following are non-9*** lockout plan types')
+print(generic_lut_max_zero)
+
 # create df of plan_type_id 9999
 lockout_df = pd.DataFrame({'plan_type_id': np.repeat(lockout_id, 7),
               'generic_land_use_type_id': list(np.arange(1, 7)) + [6],
