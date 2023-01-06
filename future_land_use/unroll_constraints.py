@@ -150,13 +150,16 @@ devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du], sort=False)
 
 # consistency check (ptids)
 common = f.merge(devconstr,on=['plan_type_id','plan_type_id'])
-not_in_f = f[(~f.plan_type_id.isin(common.plan_type_id))]
+not_in_f = f.loc[(~f.plan_type_id.isin(common.plan_type_id)), ['plan_type_id', 'FLU_master_ID', 'Juris_zn']]
 print('WARNING: The following ptids are in object f but not devconstr:\n')
 print(not_in_f)
-max_zero_devconstr = devconstr[(devconstr['maximum'] == 0) | (devconstr['maximum'].isna())]
-generic_lut_max_zero = max_zero_devconstr['generic_land_use_type_id'].unique()
+not_in_f.to_csv(os.path.join(dir, r'ptid_qc\ptid_consistency_qc_notinf_' + str(date.today()) + '.csv'), index=False)
+
+max_zero_devconstr = devconstr.groupby(["plan_type_id"]).maximum.sum().reset_index()
+max_zero = max_zero_devconstr[max_zero_devconstr['maximum'] == 0]
 print('The following are non-9*** lockout plan types')
-print(generic_lut_max_zero)
+print(max_zero)
+max_zero.to_csv(os.path.join(dir, r'ptid_qc\ptid_consistency_qc_maxzero_' + str(date.today()) + '.csv'), index=False)
 
 # create df of plan_type_id 9999
 lockout_df = pd.DataFrame({'plan_type_id': np.repeat(lockout_id, 7),
