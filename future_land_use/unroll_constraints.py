@@ -150,10 +150,10 @@ devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du], sort=False)
 
 # consistency check (ptids)
 common = f.merge(devconstr,on=['plan_type_id','plan_type_id'])
-not_in_f = f.loc[(~f.plan_type_id.isin(common.plan_type_id)), ['plan_type_id', 'FLU_master_ID', 'Juris_zn']]
+not_in_devconstr = f.loc[(~f.plan_type_id.isin(common.plan_type_id)), ['plan_type_id', 'FLU_master_ID', 'Juris_zn']]
 print('WARNING: The following ptids are in object f but not devconstr:\n')
-print(not_in_f)
-not_in_f.to_csv(os.path.join(dir, r'ptid_qc\ptid_consistency_qc_notinf_' + str(date.today()) + '.csv'), index=False)
+print(not_in_devconstr)
+not_in_devconstr.to_csv(os.path.join(dir, r'ptid_qc\ptid_consistency_qc_notindevconstr_' + str(date.today()) + '.csv'), index=False)
 
 max_zero_devconstr = devconstr.groupby(["plan_type_id"]).maximum.sum().reset_index()
 max_zero = max_zero_devconstr[max_zero_devconstr['maximum'] == 0]
