@@ -16,7 +16,7 @@ pd.set_option('display.width', 1000)
 dir = r"J:\Staff\Christy\usim-baseyear"
 
 # original flu shape
-flu_shp_path = r"W:\gis\projects\compplan_zoning\FLU_dissolve.shp"
+flu_shp_path = r"W:\gis\projects\compplan_zoning\flu19_reviewed.shp" 
 
 # imputed data
 flu_imp = os.path.join(dir, r'flu\final_flu_postprocessed_2022-09-22.csv')
@@ -35,7 +35,7 @@ f = f[f_col_keep]
 f['plan_type_id'] = np.arange(len(f)) + 1 # assign plan_type_id
 
 # join imputed data back to FLU shapefile
-flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left') # 1882 rows
+flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left')
 
 #flu.to_file(os.path.join(dir, r'shapes\flu_for_qc.shp')) # export flu for qc in arcgis
 
@@ -148,7 +148,7 @@ mixed_du = mixed_du.rename(columns = {'MinDU_Mixed': 'minimum', 'MaxDU_Mixed': '
 lockout_id = 9999
 devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du], sort=False)
 
-# consistency check (ptids)
+## consistency check (ptids)
 common = f.merge(devconstr,on=['plan_type_id','plan_type_id'])
 not_in_devconstr = f.loc[(~f.plan_type_id.isin(common.plan_type_id)), ['plan_type_id', 'FLU_master_ID', 'Juris_zn']]
 print('WARNING: The following ptids are in object f but not devconstr:\n')
