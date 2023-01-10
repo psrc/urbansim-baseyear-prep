@@ -19,15 +19,15 @@ dir = r"J:\Staff\Christy\usim-baseyear"
 flu_shp_path = r"W:\gis\projects\compplan_zoning\flu19_reviewed.shp" 
 
 # imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_postprocessed_2022-09-22.csv')
+flu_imp = os.path.join(dir, r'flu\final_flu_postprocessed_2023-01-10.csv') #old 09-22
 
 # parcels file
 base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
 
 # read/process files ----------------------------------------------------
 
-flu_shp = gpd.read_file(flu_shp_path) # 1882 rows
-f = pd.read_csv(flu_imp) # 1697 rows
+flu_shp = gpd.read_file(flu_shp_path)
+f = pd.read_csv(flu_imp) # 1921 rows
 
 # clean up f; remove extra/unecessary fields before join
 f_col_keep = [col for col in f.columns if col not in ['Jurisdicti', 'Key', 'Zone_adj', 'Definition'] + list(f.columns[f.columns.str.endswith("src")])]
@@ -61,8 +61,8 @@ check_multi_pins(prcls_flu, dir) #check code
 
 # check for one-to-many records in flu overlay
 prcls_flu['PIN'].duplicated().any()
-duplicate = prcls_flu[prcls_flu.duplicated('PIN')][['PIN']]
-dup_df = prcls_flu[prcls_flu['PIN'].isin(duplicate['PIN'])].sort_values(by=['PIN'])
+duplicate = prcls_flu[prcls_flu.duplicated('PIN')][['PIN']] #221
+dup_df = prcls_flu[prcls_flu['PIN'].isin(duplicate['PIN'])].sort_values(by=['PIN']) #417
 
 #dup_df.to_csv(os.path.join(dir, r'flu_qc\pins_dup_'+ str(date.today()) +'.csv'), index=False) 
 #dup_df.to_file(os.path.join(dir, r'flu_qc\prcls_pins_dup_'+ str(date.today()) +'.shp'))
@@ -73,21 +73,30 @@ triple_pin = dup_pin_freq[dup_pin_freq['counts']>2] # handle triple count pins s
 
 # re-assemble all parcels
 
-unjoined = prcls[~prcls['PIN'].isin(prcls_flu['PIN'])] # 4654 recs
+unjoined = prcls[~prcls['PIN'].isin(prcls_flu['PIN'])] # 4237 recs
 x1 = prcls_flu[~prcls_flu['PIN'].isin(dup_df['PIN'])] # no duplicates
 
 x2 = dup_df[~dup_df['plan_type_id'].isnull() & ~dup_df['PIN'].isin(triple_pin['PIN'])] # duplicates where plan_type_id is not null. Excludes triple_pin
 x2a = dup_df[dup_df['PIN'].isin(triple_pin['PIN']) & ~dup_df['plan_type_id'].isnull()] # triple_pin where plan_type_id is not null
 
-t_null = dup_df[dup_df['plan_type_id'].isnull() & ~dup_df['PIN'].isin(triple_pin['PIN'])] # duplicates amongst nulls. Excludes triple_pin
-t_dup_pin_freq = t_null.groupby(['PIN'])['PIN'].count().reset_index(name='count')
-t_dup_pin_freq_dups = t_dup_pin_freq[t_dup_pin_freq['count']>1]
-null_dup = t_null[t_null['PIN'].isin(t_dup_pin_freq_dups['PIN'])] 
-x3 = null_dup.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates amongst nulls (keep first)
-#len(x1) + len(x2) + len(x2a) + len(x3) + len(unjoined) # 1302434 recs
+x2_kp_first = x2.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates (keep first)
+x2a_kp_first = x2a.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates amongst triple pins (keep first)
+
+### works with old final flu post-processing-2022-09-22 --------------------------------------------------
+### contained duplicates of null ptids
+#t_null = dup_df[dup_df['plan_type_id'].isnull() & ~dup_df['PIN'].isin(triple_pin['PIN'])] # duplicates amongst nulls. Excludes triple_pin
+#t_dup_pin_freq = t_null.groupby(['PIN'])['PIN'].count().reset_index(name='count')
+#t_dup_pin_freq_dups = t_dup_pin_freq[t_dup_pin_freq['count']>1]
+#null_dup = t_null[t_null['PIN'].isin(t_dup_pin_freq_dups['PIN'])] 
+#x3 = null_dup.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates amongst nulls (keep first)
+##len(x1) + len(x2) + len(x2a) + len(x3) + len(unjoined) # 1302434 recs
+## append all tables
+#all_df = pd.concat([x1, x2, x2a, x3, unjoined])
+### --------------------------------------------------
 
 # append all tables
-all_df = pd.concat([x1, x2, x2a, x3, unjoined])
+len(prcls) - (len(x1) + len(unjoined) + len(x2_kp_first) + len(x2a_kp_first))
+all_df = pd.concat([x1, x2_kp_first, x2a_kp_first, unjoined])
 
 
 #### create development constraints table------------------------------------------------------------------
