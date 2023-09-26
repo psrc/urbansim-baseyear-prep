@@ -68,7 +68,7 @@ pers[, .N, by = job_id][order(N, decreasing = TRUE)] # apart from -1 should be 1
 # TODO: should jobs be modified by inconsistencies in location and home-based status?
 
 column.types <- list("i4" = c("age", "edu", "employment_status", "household_id", "job_id", "member_id", #"pernum",
-                                "person_id", "relate", "school_id", "sex"),
+                                "person_id", "relate", "school_id", "sex", "race_id"),
                      "b1" = c("is_in_school", "is_worker", "student", "work_at_home"),
                      "S50" = c("school_name")
                     )
@@ -81,4 +81,4 @@ for(tp in names(column.types)){
 }
 
 
-fwrite(pers, file = "urbansimBYestimation/persons_for_estimation.csv")
+fwrite(pers, file = "urbansimBYestimation/persons_for_estimation2.csv")
