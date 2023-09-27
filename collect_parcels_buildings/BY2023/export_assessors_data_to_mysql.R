@@ -10,10 +10,11 @@ library(RMySQL)
 # define file endings & column separators for each county
 file.info <- list(King = c("csv", ","),    
                   Kitsap = c("txt", "\t"),
-                  Pierce = c("csv", ","),
-                  Snohomish = c("csv", ",")
+                  Pierce = c("txt", "|"),
+                  Snohomish = c("txt", ",")
                 )
 overwrite.existing.tables <- FALSE # if FALSE it only exports tables not previously exported 
+chunk.size <- 500000 # number of rows to export at once
 
 # which counties should be processed
 county.dirs <- rev(names(file.info)) # all; rev function makes it run in counties' reverse order, i.e. King is last
@@ -61,8 +62,23 @@ for(county in county.dirs){ # iterate over county directories
         # load data
         dat <- fread(file.path(county, f), sep = file.info[[county]][2])
         # store into MySQL 
-        dbWriteTable(connection, short.name, dat, overwrite = overwrite.existing.tables, 
-                        row.names = FALSE) 
+        last.row <- min(chunk.size, nrow(dat)) # index of the last row to export
+        cat(" ... rows:", nrow(dat))
+        if(nrow(dat) > last.row)
+          cat(" (total); exporting ", last.row)
+        dbWriteTable(connection, short.name, dat[1:last.row], overwrite = overwrite.existing.tables, 
+                        row.names = FALSE)
+        first.row <- last.row + 1
+        last.row <- first.row + chunk.size - 1
+        while(first.row <= nrow(dat)) {
+          # we only get here if the dataset is exported in multiple chunks
+            cat(", ", last.row)
+            dbWriteTable(connection, short.name, 
+                         dat[first.row:min(nrow(dat), last.row)], overwrite = FALSE, 
+                         append = TRUE, row.names = FALSE)
+            first.row <- last.row + 1
+            last.row <- first.row + chunk.size - 1
+        }
       } else cat(" ... skipped")
     } # all files processed
     # close DB connection
