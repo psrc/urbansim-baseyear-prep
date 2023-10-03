@@ -1,6 +1,8 @@
-# Script for exporting Assessor's text files into MYSQL
+# Script for exporting Assessor's text files into MYSQL.
+# If the Pierce files don't include headers, one needs to run the script
+# fmt_assessor_Pierce.R prior to running this script.
 #
-# Hana Sevcikova, 09/25/2023
+# Hana Sevcikova, last update 09/27/2023
 #
 
 library(data.table)

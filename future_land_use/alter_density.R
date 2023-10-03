@@ -9,10 +9,10 @@ date <- "2022-08-16" # date the input files were created
 dir <- "." # directory where the input files are. Used for output as well.
 
 # upzoning parameters
-upzone.by.scaling <- TRUE # if FALSE, the upzoning is done by setting values to max(value, max.density.const) 
+upzone.by.scaling <- FALSE # if FALSE, the upzoning is done by setting values to max(value, max.density.const) 
 scaling.factor <- 2
 max.density.scaling <- list(far = 10, du = 400) # scale everything smaller than this
-max.density.const <- list(far = 1, du = 24)
+max.density.const <- list(far = 3, du = 48)
 max.density <- if(upzone.by.scaling) max.density.scaling else max.density.const
 
 # input files
@@ -21,6 +21,7 @@ parcels.file.name <- paste0("prcls_ptid_v2_", date, ".csv")
 constraints.file.name <- paste0("devconstr_v2_", date, ".csv")
 pull.tod.from.db <- TRUE # should tod_id be pulled from mysql; FALSE if the parcels.file.name already contains tod_id
 base.db <- "2018_parcel_baseyear" # only used if pull.tod.from.db is TRUE
+base.db <- "2018_parcel_baseyear_luv3_working"
 
 # output files
 file.name.part <- if(upzone.by.scaling) paste0("scale", scaling.factor, "_") else ""
