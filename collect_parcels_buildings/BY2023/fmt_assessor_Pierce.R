@@ -137,29 +137,15 @@ td <- c('parcel_number',
 headers <- list(aa, i, ib, id, la, s, ta, td)
 
 for (a in 1:length(attributes)) {
-  if (attributes[a] == 'tax_account'| attributes[a] == 'tax_description') {
-    # table <- read.table(file.path(attributes[a], paste0(attributes[a], '.txt')), 
-    table <- read.table(paste0(attributes[a], '.txt'),
-                        header = FALSE, 
-                        fill = TRUE, 
-                        sep = '|', 
-                        quote = "", 
-                        comment.char = ""#, 
-                        # row.names = NULL
-    )
-    # table <- table[,c(1:(ncol(table)-1))]
-    colnames(table) <- headers[[a]]
-  } else {
-    # table <- read.table(file.path(attributes[a], paste0(attributes[a], '.txt')), 
-    table <- read.table(paste0(attributes[a], '.txt'), 
-                        header = FALSE, 
-                        fill = TRUE, 
-                        sep = '|', 
-                        quote = "", 
-                        comment.char = "", 
-                        # row.names = NULL, 
-                        col.names = headers[[a]])
-  }
+  
+  table <- read.table(paste0(attributes[a], '.txt'), 
+                      header = FALSE, 
+                      fill = TRUE, 
+                      sep = '|', 
+                      quote = "", 
+                      comment.char = "",
+                      col.names = headers[[a]])
+  
   write.table(table, file.path(outDir, paste0(attributes[a],'.txt')), row.names = FALSE, quote = FALSE, sep = "|")
   print(paste("Exported", attributes[a]))
 }
