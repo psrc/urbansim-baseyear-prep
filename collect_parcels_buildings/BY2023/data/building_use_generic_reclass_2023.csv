@@ -1,0 +1,694 @@
+record_id,county_id,county_building_use_code,county_building_use_description,generic_building_use_1,building_type_id,building_type_name,record_count
+1,33,102,"Barn, General Purpose (102)",8,1, agriculture,1
+2,33,113,Loafing Shed (113),8,1, agriculture,6
+3,33,305,BARN (305),8,1, agriculture,35
+4,33,315,CREAMERY (315),8,1, agriculture,4
+5,33,316,DAIRY (316),8,1, agriculture,14
+6,33,378,STABLE (378),8,1, agriculture,34
+7,33,477,FARM UTILITY BUILDING (477),8,1, agriculture,41
+8,33,479,Farm Utility Storage Shed (479),8,1, agriculture,2
+9,33,Barn,COMMERCIAL,8,1, agriculture,8
+10,33,"Barn, Hog",COMMERCIAL,8,1, agriculture,1
+11,33,"Barn, Sheep",COMMERCIAL,8,1, agriculture,1
+12,33,"Cold Storage, Farm",COMMERCIAL,8,1, agriculture,2
+13,33,Farm Implement Building,COMMERCIAL,8,1, agriculture,1
+14,33,Farm Sun Shade Shelter,COMMERCIAL,8,1, agriculture,1
+15,33,Farm Utility Storage Shed,COMMERCIAL,8,1, agriculture,1
+16,33,Milkhouse,COMMERCIAL,8,1, agriculture,1
+17,33,316,Dairy Milking Parlor,8,1, agriculture,5
+18,33,378,Stable,8,1, agriculture,440
+19,33,397,Barn,8,1, agriculture,1660
+20,33,398,Shed - Hay,8,1, agriculture,2
+21,33,399,Shed - Sheep,8,1, agriculture,1
+22,33,400,Shed - Poultry,8,1, agriculture,19
+23,33,401,Shed - Equipment,8,1, agriculture,5
+24,33,402,Shed - Cattle,8,1, agriculture,1
+25,33,428,Horse Arena,8,1, agriculture,169
+26,33,430,Farm Utility Building,8,1, agriculture,8
+27,33,478,Farm Utility Loafing Shed,8,1, agriculture,9
+28,33,479,Farm Utility Storage - Loafing,8,1, agriculture,1
+29,33,959,Agricultural,8,1, agriculture,262
+30,33,1101,Barns (Two-Story) - Special Purpose,8,1, agriculture,1
+31,33,1440,Milkhouse,8,1, agriculture,2
+32,33,173,Church Educational Wing (173),7,2, civic,42
+33,33,301,ARMORY (301),7,2, civic,3
+34,33,302,AUDITORIUM (302),7,2, civic,103
+35,33,308,CHURCH WITH SUNDAY SCHOOL (308),7,2, civic,153
+36,33,309,CHURCH (309),7,2, civic,1106
+37,33,473,Material Shelter (473),7,2, civic,18
+38,33,481,MUSEUM (481),7,2, civic,44
+39,33,482,CONVENTION CENTER (482),7,2, civic,11
+40,33,514,Community Center (514),7,2, civic,36
+41,33,537,Lodge (537),7,2, civic,2
+42,33,574,VISITOR CENTER (574),7,2, civic,12
+43,33,985,Senior Center (985),7,2, civic,4
+44,33,Armory,COMMERCIAL,7,2, civic,2
+45,33,Auditorium,COMMERCIAL,7,2, civic,3
+46,33,Church,COMMERCIAL,7,2, civic,179
+47,33,Church w/ Sunday School,COMMERCIAL,7,2, civic,16
+48,33,Community Center,COMMERCIAL,7,2, civic,21
+49,33,Convention Center,COMMERCIAL,7,2, civic,3
+50,33,Fellowship Hall,COMMERCIAL,7,2, civic,4
+51,33,Field Houses,COMMERCIAL,7,2, civic,3
+52,33,Fraternal Building,COMMERCIAL,7,2, civic,7
+53,33,Library or Museum,COMMERCIAL,7,2, civic,10
+54,33,Lodge,COMMERCIAL,7,2, civic,15
+55,33,Museum,COMMERCIAL,7,2, civic,3
+56,33,Rectory,COMMERCIAL,7,2, civic,3
+57,33,Visitor Center,COMMERCIAL,7,2, civic,1
+58,33,309,Church,7,2, civic,18
+59,33,323,Fraternal Building,7,2, civic,3
+60,33,348,Rectory,7,2, civic,2
+61,33,514,Community Recreation Center,7,2, civic,4
+62,33,516,Fellowship Halls,7,2, civic,1
+63,33,954,Religious Service,7,2, civic,641
+64,33,CHURCH,Church,7,2, civic,429
+65,33,FLWSHP,Fellowship Hall,7,2, civic,8
+66,33,FRATRNL,Fraternal Building,7,2, civic,1
+67,33,MUSEUM,Museum,7,2, civic,3
+68,33,SCCLUB,Senior Clubhouse Center,7,2, civic,1
+69,33,SUNDSCHL,Church w/ Sunday School,7,2, civic,3
+70,33,VISITOR,Visitor Center,7,2, civic,2
+71,33,135,"Greenhouse, Hoop, Arch-Rib, Small (135)",4,3, commercial,3
+72,33,141,"Greenhouse, Hoop, Arch-Rib, Medium (141)",4,3, commercial,11
+73,33,303,AUTOMOBILE SHOWROOM (303),4,3, commercial,57
+74,33,304,BANK (304),4,3, commercial,330
+75,33,318,DEPARTMENT STORE (318),4,3, commercial,22
+76,33,319,DISCOUNT STORE (319),4,3, commercial,202
+77,33,320,DISPENSARY (320),4,3, commercial,3
+78,33,332,"HOTEL, LIMITED (332)",4,3, commercial,85
+79,33,336,LAUNDROMAT (336),4,3, commercial,43
+80,33,340,MARKET (340),4,3, commercial,83
+81,33,342,MORTUARY (342),4,3, commercial,44
+82,33,343,"MOTEL, LIMITED (343)",4,3, commercial,142
+83,33,349,FAST FOOD RESTAURANT (349),4,3, commercial,439
+84,33,350,"RESTAURANT, TABLE SERVICE (350)",4,3, commercial,1097
+85,33,353,RETAIL STORE (353),4,3, commercial,2799
+86,33,384,BARBER SHOP (384),4,3, commercial,70
+87,33,408,Service Station (408),4,3, commercial,5
+88,33,410,AUTOMOTIVE CENTER (410),4,3, commercial,65
+89,33,412,NEIGHBORHOOD SHOPPING CENTER (412),4,3, commercial,12
+90,33,413,COMMUNITY SHOPPING CENTER (413),4,3, commercial,10
+91,33,414,REGIONAL SHOPPING CENTER (414),4,3, commercial,9
+92,33,419,CONVENIENCE MARKET (419),4,3, commercial,215
+93,33,423,MINI-LUBE GARAGE (423),4,3, commercial,49
+94,33,434,Car Wash - Self Serve (434),4,3, commercial,34
+95,33,435,Car Wash - Drive Thru (435),4,3, commercial,37
+96,33,436,Car Wash - Automatic (436),4,3, commercial,26
+97,33,441,COCKTAIL LOUNGE (441),4,3, commercial,8
+98,33,442,BAR/TAVERN (442),4,3, commercial,112
+99,33,446,SUPERMARKET (446),4,3, commercial,138
+100,33,455,"AUTO DEALERSHIP, COMPLETE (455)",4,3, commercial,96
+101,33,458,WAREHOUSE DISCOUNT STORE (458),4,3, commercial,71
+102,33,490,KENNELS (490),4,3, commercial,13
+103,33,499,Dry Cleaners-Laundry (499),4,3, commercial,10
+104,33,508,Car Wash - Canopy (508),4,3, commercial,3
+105,33,511,Drug Store (511),4,3, commercial,18
+106,33,513,Regional Discount Shopping Center (513),4,3, commercial,2
+107,33,515,Casino (515),4,3, commercial,10
+108,33,528,"GARAGE, SERVICE REPAIR (528)",4,3, commercial,1433
+109,33,529,SNACK BAR (529),4,3, commercial,75
+110,33,530,CAFETERIA (530),4,3, commercial,29
+111,33,531,MINI-MART CONVENIENCE STORE (531),4,3, commercial,310
+112,33,532,FLORIST SHOP (532),4,3, commercial,1
+113,33,533,WAREHOUSE FOOD STORE (533),4,3, commercial,7
+114,33,534,WAREHOUSE SHOWROOM STORE (534),4,3, commercial,64
+115,33,578,Mini-Bank (578),4,3, commercial,1
+116,33,594,"Hotel, Full Service (594)",4,3, commercial,15
+117,33,595,"Hotel, Limited Service (595)",4,3, commercial,26
+118,33,841,"HOTEL, FULL SERVICE (841)",4,3, commercial,104
+119,33,842,"HOTEL, SUITE (842)",4,3, commercial,87
+120,33,843,"MOTEL, FULL SERVICE (843)",4,3, commercial,5
+121,33,844,"MOTEL, SUITE (844)",4,3, commercial,43
+122,33,846,"CONDO, RETAIL (846)",4,3, commercial,108
+123,33,853,"CONDO HOTEL, LIMITED SERVICE (853)",4,3, commercial,3
+124,33,860,LINE RETAIL (860),4,3, commercial,788
+125,33, ,COMMERCIAL,4,3, commercial,3505
+126,33,Auto Service,COMMERCIAL,4,3, commercial,61
+127,33,Auto Showroom,COMMERCIAL,4,3, commercial,19
+128,33,Bank,COMMERCIAL,4,3, commercial,61
+129,33,Bed & Breakfast Inn,COMMERCIAL,4,3, commercial,1
+130,33,Bookstore - Schools,COMMERCIAL,4,3, commercial,1
+131,33,Bowling Alley,COMMERCIAL,4,3, commercial,3
+132,33,Car Wash Auto,COMMERCIAL,4,3, commercial,5
+133,33,Car Wash Canopy,COMMERCIAL,4,3, commercial,2
+134,33,"Car Wash, Drive-Thru",COMMERCIAL,4,3, commercial,5
+135,33,"Car Wash, Self-Serve",COMMERCIAL,4,3, commercial,7
+136,33,Casino,COMMERCIAL,4,3, commercial,1
+137,33,Commercial Garage,COMMERCIAL,4,3, commercial,4
+138,33,Community Shopping Center,COMMERCIAL,4,3, commercial,16
+139,33,Complete Auto Dealership,COMMERCIAL,4,3, commercial,13
+140,33,Convenience Market,COMMERCIAL,4,3, commercial,90
+141,33,Department Store,COMMERCIAL,4,3, commercial,4
+142,33,Dining/Lounge,COMMERCIAL,4,3, commercial,1
+143,33,Discount,COMMERCIAL,4,3, commercial,26
+144,33,Drugstore,COMMERCIAL,4,3, commercial,9
+145,33,Fast Food Restaurant,COMMERCIAL,4,3, commercial,40
+146,33,Fast Food Restaurant MSBB,COMMERCIAL,4,3, commercial,9
+147,33,Fitness Center,COMMERCIAL,4,3, commercial,8
+148,33,General Commercial,COMMERCIAL,4,3, commercial,42
+149,33,General Retail,COMMERCIAL,4,3, commercial,448
+150,33,Greenhouse Shade Shelter,COMMERCIAL,4,3, commercial,10
+151,33,"Hotel, Limited Service",COMMERCIAL,4,3, commercial,1
+152,33,Hotel/Motel Service,COMMERCIAL,4,3, commercial,3
+153,33,Hotel/Motel Unit,COMMERCIAL,4,3, commercial,25
+154,33,Kennel Animal Care,COMMERCIAL,4,3, commercial,5
+155,33,Laundromat,COMMERCIAL,4,3, commercial,11
+156,33,"Lumber Storage Bldg, Vertical",COMMERCIAL,4,3, commercial,3
+157,33,"Lumber Storage Shed, Horiz.",COMMERCIAL,4,3, commercial,3
+158,33,Market,COMMERCIAL,4,3, commercial,3
+159,33,Mini-Lube Garage,COMMERCIAL,4,3, commercial,6
+160,33,Mini-Mart Convenience Store,COMMERCIAL,4,3, commercial,1
+161,33,Mortuary,COMMERCIAL,4,3, commercial,4
+162,33,"Motel Room, 1 Sty-Single Row",COMMERCIAL,4,3, commercial,4
+163,33,"Motel Room, 2 Sty-Single Row",COMMERCIAL,4,3, commercial,4
+164,33,"Motel, Extended Stay",COMMERCIAL,4,3, commercial,1
+165,33,Neighborhood Shopping Center,COMMERCIAL,4,3, commercial,39
+166,33,Regional Shopping Center,COMMERCIAL,4,3, commercial,7
+167,33,Resturant,COMMERCIAL,4,3, commercial,106
+168,33,Service Garage,COMMERCIAL,4,3, commercial,98
+169,33,Service Station with Bays,COMMERCIAL,4,3, commercial,1
+170,33,Small Shop,COMMERCIAL,4,3, commercial,49
+171,33,Snack Bar,COMMERCIAL,4,3, commercial,6
+172,33,Supermarket,COMMERCIAL,4,3, commercial,19
+173,33,Tavern/Bar,COMMERCIAL,4,3, commercial,30
+174,33,Warehouse Discount Store,COMMERCIAL,4,3, commercial,7
+175,33,Warehouse Showroom Store,COMMERCIAL,4,3, commercial,3
+176,33,227,Complete Auto Dealership,4,3, commercial,1
+177,33,228,Kennel,4,3, commercial,2
+178,33,304,Bank,4,3, commercial,167
+179,33,318,Department Store,4,3, commercial,1
+180,33,319,Discount Store,4,3, commercial,8
+181,33,325,Service Garage,4,3, commercial,16
+182,33,326,Storage Garage,4,3, commercial,4
+183,33,332,Hotel,4,3, commercial,3
+184,33,342,Mortuary,4,3, commercial,1
+185,33,343,Motel,4,3, commercial,1
+186,33,350,Restaurant,4,3, commercial,5
+187,33,408,Service Station,4,3, commercial,6
+188,33,410,Automotive Center,4,3, commercial,3
+189,33,419,Convenience Store,4,3, commercial,2
+190,33,423,Mini Lube Garage,4,3, commercial,2
+191,33,434,Car Wash - Self Service,4,3, commercial,1
+192,33,442,Bar/Tavern,4,3, commercial,2
+193,33,515,Casinos,4,3, commercial,1
+194,33,529,Snack Bar,4,3, commercial,12
+195,33,710,New Auto Dealer,4,3, commercial,110
+196,33,730,Auto Related,4,3, commercial,823
+197,33,740,Misc Services,4,3, commercial,248
+198,33,760,Restaurant,4,3, commercial,539
+199,33,761,Fast Food,4,3, commercial,169
+200,33,770,Retail Stand Alone,4,3, commercial,1661
+201,33,773,Strip/Flex,4,3, commercial,324
+202,33,774,C-Store w/Gas,4,3, commercial,541
+203,33,775,Big Box,4,3, commercial,104
+204,33,870,Motel,4,3, commercial,154
+205,33,871,Hotel Full Service,4,3, commercial,25
+206,35,ANCHOR,Mall Anchor Department Store,4,3, commercial,3
+207,35,AUTOSERV,Auto Service,4,3, commercial,168
+208,35,AUTOSHOW,Auto Showroom,4,3, commercial,44
+209,35,BANK,Bank,4,3, commercial,166
+210,35,BARBER,Barber Shop,4,3, commercial,1
+211,35,CARWASH,Car Wash Auto,4,3, commercial,16
+212,35,COMBLDG,NA,4,3, commercial,117
+213,35,COMGAR,Commercial Garage,4,3, commercial,394
+214,35,COMSHOP,Community Shopping Center,4,3, commercial,15
+215,35,CONVMRKT,Convenience Market,4,3, commercial,236
+216,35,CWSLFSRV,"Car Wash, Self-Serve",4,3, commercial,2
+217,35,DEPTSTOR,Department Store,4,3, commercial,11
+218,35,DINING,Dining/Lounge,4,3, commercial,334
+219,35,DISCOUNT,Discount,4,3, commercial,127
+220,35,DRUGS,Drugstore,4,3, commercial,15
+221,35,FASTFDMS,Fast Food Restaurant MSBB,4,3, commercial,17
+222,35,FASTFOOD,Fast Food Restaurant,4,3, commercial,70
+223,35,FUNEHOME,Funeral Home,4,3, commercial,10
+224,35,GENRET,General Retail,4,3, commercial,1821
+225,35,HOSERV,Hotel/Motel Service,4,3, commercial,32
+226,35,HOUNIT,Hotel/Motel Unit,4,3, commercial,80
+227,35,LAUNDRY,Laundromat,4,3, commercial,2
+228,35,MARKET,Market,4,3, commercial,1
+229,35,MORTUARY,NA,4,3, commercial,1
+230,35,MOTEL1SR,"Motel Room, 1 Sty-Single Row",4,3, commercial,3
+231,35,MOTELES,"Motel, Extended Stay",4,3, commercial,1
+232,35,NBHSHOP,Neighborhood Shopping Center,4,3, commercial,51
+233,35,REGDISC,Regional Discount Shopping Ctr,4,3, commercial,4
+234,35,REGSHOP,Regional Shopping Center,4,3, commercial,44
+235,35,RESTURNT,NA,4,3, commercial,7
+236,35,SERVGAR,NA,4,3, commercial,38
+237,35,SERVICE,Service Station,4,3, commercial,6
+238,35,SERVICEB,Service Station with Bays,4,3, commercial,3
+239,35,SMSHOP,Small Shop,4,3, commercial,50
+240,35,SNACK,Snack Bar,4,3, commercial,1
+241,35,SUPRMRKT,Supermarket,4,3, commercial,68
+242,35,VETHOSP,NA,4,3, commercial,3
+243,35,WHSSHOW,Warehouse Showroom Store,4,3, commercial,1
+244,35,800,Condo Res,2,4, condo_residential,2760
+245,35,Condo - Tenant,DWELLING,2,4, condo_residential,2
+246,35,114,Condo - Separate Unit,2,4, condo_residential,1182
+247,35,862,Condo Low Rise,2,4, condo_residential,3543
+248,35,863,Condo High Rise,2,4, condo_residential,1105
+249,35,864,Condo Apartment Low Rise,2,4, condo_residential,358
+250,35,865,Condo Apartment High Rise,2,4, condo_residential,298
+251,35,51,Condo - Owner,2,4, condo_residential,16150
+252,35,52,Condo - Tenant,2,4, condo_residential,545
+253,35,53,Condo - Other,2,4, condo_residential,15
+254,35,322,FIRE STATION (STAFFED) (322),7,5, government,157
+255,35,327,GOVERNMENT BUILDING (327),7,5, government,179
+256,35,335,JAIL-CORRECTIONAL FACILITY (335),7,5, government,7
+257,35,337,"LIBRARY, PUBLIC (337)",7,5, government,78
+258,35,346,Post Office,7,5, government,1
+259,35,427,FIRE STATION (VOLUNTEER) (427),7,5, government,18
+260,35,489,JAIL - POLICE STATION (489),7,5, government,5
+261,35,491,GOVERNMENT COMMUNITY SERVICE BUILDING (491),7,5, government,103
+262,35,581,POST OFFICE - MAIN(581),7,5, government,6
+263,35,582,POST OFFICE - BRANCH(582),7,5, government,27
+264,35,583,POST OFFICE - MAIL PROCESSING(583),7,5, government,3
+265,35,Fire Station Staffed,COMMERCIAL,7,5, government,32
+266,35,Fire Station Volunteer,COMMERCIAL,7,5, government,13
+267,35,Government Building,COMMERCIAL,7,5, government,10
+268,35,Jail,COMMERCIAL,7,5, government,2
+269,35,Post Office,COMMERCIAL,7,5, government,12
+270,35,"Post Office, Branch",COMMERCIAL,7,5, government,3
+271,35,School Administration,COMMERCIAL,7,5, government,7
+272,35,322,Fire Station Staffed,7,5, government,4
+273,35,327,Government Building,7,5, government,38
+274,35,427,Fire Station - Volunteer,7,5, government,1
+275,35,957,Government,7,5, government,282
+276,35,FIRESTAF,NA,7,5, government,6
+277,35,GOV CSB,Gov Community Service Bldg,7,5, government,7
+278,35,GOVTBLDG,Government Building,7,5, government,134
+279,35,JAIL PS,Jail - Police Station,7,5, government,1
+280,35,MUNIGAR,Municipal Service Garage,7,5, government,1
+281,35,POSTOFFB,"Post Office, Branch",7,5, government,1
+282,35,321,DORMITORY (321),8,6, group_quarter,90
+283,35,324,FRATERNITY HOUSE (324),8,6, group_quarter,60
+284,35,330,HOME FOR THE ELDERLY (330),8,6, group_quarter,26
+285,35,424,GROUP CARE HOME (424),8,6, group_quarter,92
+286,35,451,MULTIPLE RESIDENCE (SENIOR CITIZEN) (451),8,6, group_quarter,98
+287,35,551,ROOMING HOUSE (551),8,6, group_quarter,326
+288,35,589,MULTIPLE RESIDENCES ASSISTED LIVING (LOW RISE),8,6, group_quarter,92
+289,35,710,"MULTIPLE RESIDENCE, RETIREMENT COMMUNITY COMPLEX",8,6, group_quarter,12
+290,35,986,CONGREGATE HOUSING (982),8,6, group_quarter,30
+291,35,Fraternity House,COMMERCIAL,8,6, group_quarter,2
+292,35,Group Care Facility,COMMERCIAL,8,6, group_quarter,9
+293,35,Home For The Elderly,COMMERCIAL,8,6, group_quarter,1
+294,35,Multiple Res Senior-Low Rise,COMMERCIAL,8,6, group_quarter,7
+295,35,Multiple Res-Assisted Living,COMMERCIAL,8,6, group_quarter,5
+296,35,Rooming House,COMMERCIAL,8,6, group_quarter,20
+297,35,School Dormitory,COMMERCIAL,8,6, group_quarter,11
+298,35,Senior Care Facility,COMMERCIAL,8,6, group_quarter,7
+299,35,312,Multiple - Elderly Assisted Living,8,6, group_quarter,1
+300,35,321,Dormitory Residence Halls,8,6, group_quarter,1
+301,35,330,Home For the Elderly,8,6, group_quarter,1
+302,35,351,Multiple - Senior Citizens,8,6, group_quarter,1
+303,35,890,Geriatric Services,8,6, group_quarter,171
+304,35,1312,Multiple Residences - Retirement Complex,8,6, group_quarter,14
+305,35,MULTRESA,Multiple Res-Assisted Living,8,6, group_quarter,1
+306,35,MULTRESR,Multiple Res-Retirement Com,8,6, group_quarter,4
+307,35,NURSHOME,Nursing Home,8,6, group_quarter,63
+308,35,SCHDORM,School Dormitory,8,6, group_quarter,11
+309,35,186,Light Commercial Manufacturing Utility Bldg (186),5,8,industrial,7
+310,35,313,CONVALESCENT HOSPITAL (313),7,7, hospital,77
+311,35,331,HOSPITAL (331),7,7, hospital,63
+312,35,431,OUTPATIENT SURGICAL CENTER (431),7,7, hospital,1
+313,35,Convalescent Hospital,COMMERCIAL,7,7, hospital,20
+314,35,Hospital,COMMERCIAL,7,7, hospital,3
+315,35,392,INDUSTRIAL ENGINEERING BUILDING (392),5,8, industrial,75
+316,35,453,INDUSTRIAL FLEX BUILDINGS (453),5,8, industrial,179
+317,35,470,EQUIPMENT (SHOP) BUILDING (470),5,8, industrial,317
+318,35,494,INDUSTRIAL LIGHT MANUFACTURING (494),5,8, industrial,1385
+319,35,495,INDUSTRIAL HEAVY MANUFACTURING (495),5,8, industrial,47
+320,35,Heavy Manufacturing,COMMERCIAL,5,8, industrial,1
+321,35,Industrial Flex Mall Bldg,COMMERCIAL,5,8, industrial,7
+322,35,Industrial Office,COMMERCIAL,5,8, industrial,6
+323,35,Light Manufacturing,COMMERCIAL,5,8, industrial,43
+324,35,210,Industrial Flex Mall Building,5,8, industrial,1
+325,35,213,Light Industrial Shell Buildings,5,8, industrial,11
+326,35,333,Indust Heavy Manufacturing,5,8, industrial,5
+327,35,334,Indust Lght Manufacturing,5,8, industrial,5
+328,35,338,Loft - Industrial,5,8, industrial,2
+329,35,920,Heavy Industrial,5,8, industrial,133
+330,35,930,Light Industrial,5,8, industrial,616
+331,35,HMFG,Heavy Manufacturing,5,8, industrial,27
+332,35,INDFLEX,NA,5,8, industrial,1
+333,35,INDOFF,Industrial Office,5,8, industrial,53
+334,35,LFTMHG,Loft Manufacturing,5,8, industrial,167
+335,35,LMFG,Light Manufacturing,5,8, industrial,595
+336,35,MILLMHG,Mill - Manufacturing,5,8, industrial,32
+337,35,459,MIXED RETAIL W/RES. UNITS (459),6,10, mixed_use,467
+338,35,597,Mixed Retail w/ Office Units (597),6,10, mixed_use,9
+339,35,830,MIXED USE RETAIL (830),6,10, mixed_use,321
+340,35,840,MIXED USE OFFICE (840),6,10, mixed_use,300
+341,35,847,MIXED USE-OFFICE CONDO (847),6,10, mixed_use,25
+342,35,848,MIXED USE-RETAIL CONDO (848),6,10, mixed_use,48
+343,35,Mixed Retail w/ Office Units,COMMERCIAL,6,10, mixed_use,1
+344,35,Mixed Retail w/Residential,COMMERCIAL,6,10, mixed_use,12
+345,35,MIXEDO,Mixed Retail w/ Office Units,6,10, mixed_use,1
+346,35,MIXEDR,Mixed Retail w/Residential,6,10, mixed_use,2
+347,35,Manufactured home,DWELLING,1,11, mobile_home,7615
+348,35,110,Mobile or Manufactured Home,1,11, mobile_home,10561
+349,35,880,MH Park,1,11, mobile_home,283
+350,35,881,RV Park,1,11, mobile_home,15
+351,35,2,Two Unit Res Bldg,2,12, multi_family_residential,7179
+352,35,3,Three Unit Res Bldg,2,12, multi_family_residential,1819
+353,35,4,Four Unit Res Bldg,2,12, multi_family_residential,10
+354,35,300,APARTMENT (300),2,12, multi_family_residential,2506
+355,35,338,LOFT (338),2,12, multi_family_residential,41
+356,35,352,MULTIPLE RESIDENCE (LOW RISE) (352),2,12, multi_family_residential,8358
+357,35,4-6 family,DWELLING,2,12, multi_family_residential,174
+358,35,Apartment,COMMERCIAL,2,12, multi_family_residential,898
+359,35,Duplex,DWELLING,2,12, multi_family_residential,1652
+360,35,Multi-family,DWELLING,2,12, multi_family_residential,7
+361,35,Townhouse,DWELLING,2,12, multi_family_residential,36
+362,35,Triplex,DWELLING,2,12, multi_family_residential,97
+363,35,26,Studio Loft,2,12, multi_family_residential,1
+364,35,102,Duplex,2,12, multi_family_residential,5244
+365,35,103,Duplex Conv,2,12, multi_family_residential,663
+366,35,106,Triplex,2,12, multi_family_residential,382
+367,35,107,Triplex Conv,2,12, multi_family_residential,155
+368,35,108,Townhouse,2,12, multi_family_residential,2704
+369,35,109,Townhouse/Condo,2,12, multi_family_residential,5470
+370,35,128,Apartment w/4-8 Units,2,12, multi_family_residential,749
+371,35,129,Apartment Conv w/4-8 Units,2,12, multi_family_residential,127
+372,35,298,Apts w/4-19 Units,2,12, multi_family_residential,5
+373,35,300,Apartments (Hi-Rise),2,12, multi_family_residential,4
+374,35,352,Multiple - Residential,2,12, multi_family_residential,11
+375,35,850,Apt Low Rise up to 19 Units,2,12, multi_family_residential,1325
+376,35,851,Apt Low Rise 20 to 99 Units,2,12, multi_family_residential,1673
+377,35,852,Apt Low Rise 100 Units Plus,2,12, multi_family_residential,1658
+378,35,861,Apartment High Rise,2,12, multi_family_residential,62
+379,35,2,Duplex,2,12, multi_family_residential,3674
+380,35,3,Triplex,2,12, multi_family_residential,288
+381,53,4,4-6 family,2,12, multi_family_residential,141
+382,53,5,5,1,19,single_family_residential,363
+383,53,44,Multi-family,2,12, multi_family_residential,39
+384,53,61,Townhouse - Owner,2,12, multi_family_residential,277
+385,53,62,Townhouse - Tenant,2,12, multi_family_residential,44
+386,53,63,Townhouse - Other,2,12, multi_family_residential,45
+387,53,70,Other residential,2,12, multi_family_residential,48
+388,53,APART,Apartments,2,12, multi_family_residential,2724
+389,53,APARTHRS,"Apartment, High Rise, Shell",2,12, multi_family_residential,1
+390,53,341,MEDICAL OFFICE (341),3,13, office,673
+391,53,344,OFFICE BUILDING (344),3,13, office,4256
+392,53,381,VETERINARY HOSPITAL (381),3,13, office,112
+393,53,444,DENTAL OFFICE/CLINIC (444),3,13, office,147
+394,53,496,LABORATORIES (496),3,13, office,48
+395,53,497,COMPUTER CENTER (497),3,13, office,4
+396,53,498,BROADCAST FACILITIES (498),3,13, office,7
+397,53,600,Administrative Office (600),3,13, office,20
+398,53,820,OPEN OFFICE (820),3,13, office,567
+399,53,845,"CONDO, OFFICE (845)",3,13, office,150
+400,53,Dental Clinic,COMMERCIAL,3,13, office,22
+401,53,Laboratory,COMMERCIAL,3,13, office,3
+402,53,Medical Office,COMMERCIAL,3,13, office,102
+403,53,Office,COMMERCIAL,3,13, office,497
+404,53,Relocatable Office,COMMERCIAL,3,13, office,8
+405,53,Research/Development,COMMERCIAL,3,13, office,1
+406,53,Veterinary Hospital,COMMERCIAL,3,13, office,19
+407,53,341,Medical Offices,3,13, office,2
+408,53,344,Office Building,3,13, office,19
+409,53,382,Veterinary Office,3,13, office,1
+410,53,474,Modular Office,3,13, office,6
+411,53,544,Office-Apartment,3,13, office,2
+412,53,554,Shed Office Structure,3,13, office,159
+413,53,602,Administration Bldg,3,13, office,1
+414,53,820,Office Class C,3,13, office,1680
+415,53,821,Office Class B,3,13, office,455
+416,53,822,Office Class A,3,13, office,12
+417,53,830,Medical,3,13, office,426
+418,53,GENOFF,General Office,3,13, office,1670
+419,53,MEDOFF,Medical Office,3,13, office,410
+420,53,MOBILEO,Relocatable Office,3,13, office,4
+421,53,RESDEV,Research/Development,3,13, office,111
+422,53,133,Prefabricated Storage Shed (133),8,14, outbuilding,5
+423,53,152,Residential Garage - Detached (152),8,14, outbuilding,11
+424,53,157,Maintenance Storage Building (157),8,14, outbuilding,8
+425,53,326,"GARAGE, STORAGE (326)",8,14, outbuilding,481
+426,53,339,"LUMBER STORAGE SHED, HORIZONTAL (339)",8,14, outbuilding,48
+427,53,390,"Lumber Storage Bldg., Vert. (390)",8,14, outbuilding,1
+428,53,432,RESTROOM BUILDING (432),8,14, outbuilding,177
+429,53,456,Tool Shed (456),8,14, outbuilding,4
+430,53,466,Boat Storage Shed (466),8,14, outbuilding,2
+431,53,467,Boat Storage Building (467),8,14, outbuilding,2
+432,53,468,"SHED, MATERIAL STORAGE (468)",8,14, outbuilding,217
+433,53,472,EQUIPMENT SHED (472),8,14, outbuilding,300
+434,53,523,Golf Cart Storage Building (523),8,14, outbuilding,6
+435,53,526,Service Garage Shed (526),8,14, outbuilding,2
+436,53,527,MUNICIPAL SERVICE GARAGE (527),8,14, outbuilding,11
+437,53,Equipment Shed,COMMERCIAL,8,14, outbuilding,15
+438,53,Equipment -Shop- Building,COMMERCIAL,8,14, outbuilding,26
+439,53,Golf Cart Storage Building,COMMERCIAL,8,14, outbuilding,1
+440,53,Greenhouse Lath Shade House,COMMERCIAL,8,14, outbuilding,1
+441,53,Material Shelter,COMMERCIAL,8,14, outbuilding,3
+442,53,Material Storage Shed,COMMERCIAL,8,14, outbuilding,3
+443,53,Restroom Building,COMMERCIAL,8,14, outbuilding,65
+444,53,99,Detached Garage,8,14, outbuilding,34527
+445,53,141,Tanks  *CODE,8,14, outbuilding,2
+446,53,156,Welded Steel Water Tank,8,14, outbuilding,24
+447,53,157,Bolted Steel Water Tank,8,14, outbuilding,1
+448,53,158,Concrete Water Tank,8,14, outbuilding,26
+449,53,160,Galvanized SteelTank,8,14, outbuilding,3
+450,53,163,Fiberglass Dbl Wall Underground Fuel Tank,8,14, outbuilding,2
+451,53,167,Fiber Coated Steel Dbl Wall Underground Fuel Tank,8,14, outbuilding,1
+452,53,168,Welded Steel Fuel Tank,8,14, outbuilding,1
+453,53,175,Welded Pressure,8,14, outbuilding,1
+454,53,389,Equipment Storage,8,14, outbuilding,5
+455,53,390,Lumber Storage - Vertical,8,14, outbuilding,1
+456,53,403,Shower Building,8,14, outbuilding,7
+457,53,421,Shed - Tool,8,14, outbuilding,1
+458,53,432,Restroom Building/Concessions,8,14, outbuilding,1
+459,53,473,Equipment Building,8,14, outbuilding,3
+460,53,501,Miscellaneous OB,8,14, outbuilding,10
+461,53,502,Other OB,8,14, outbuilding,1
+462,53,587,Quonset,8,14, outbuilding,17
+463,53,958,Outbuilding,8,14, outbuilding,660
+464,53,1468,Material Storage Sheds,8,14, outbuilding,1079
+465,53,1473,Material Shelters,8,14, outbuilding,6
+466,53,EQUIPBLD,Equipment -Shop- Building,8,14, outbuilding,7
+467,53,EQUIPSHD,Equipment Shed,8,14, outbuilding,2
+468,53,GCSTG,Golf Cart Storage Building,8,14, outbuilding,1
+469,53,LMBRSTGH,"Lumber Storage Shed, Horiz.",8,14, outbuilding,3
+470,53,345,PARKING STRUCTURE (345),8,16, parking,194
+471,53,388,UNDERGROUND PARKING STRUCTURE (388),8,16, parking,17
+472,53,850,"CONDO, PARKING STRUCTURE (850)",8,16, parking,1
+473,53,851,UNDERGROUND CONDO PARKING (851),8,16, parking,1
+474,53,Parking Garage,COMMERCIAL,8,16, parking,11
+475,53,Parking Level,COMMERCIAL,8,16, parking,2
+476,53,345,Parking Structure,8,16, parking,1
+477,53,720,Parking Garage,8,16, parking,204
+478,53,725,Parking Surface Lot,8,16, parking,302
+479,53,1111,Parking Lot,8,16, parking,6
+480,53,1112,Parking Lot Income Producing,8,16, parking,1
+481,53,PARKGAR,Parking Garage,8,16, parking,26
+482,53,PARKING,Parking Garage,8,16, parking,1
+483,53,306,BOWLING ALLEY (306),8,17, recreation,14
+484,53,310,CITY CLUB (310),8,17, recreation,7
+485,53,311,CLUBHOUSE (311),8,17, recreation,296
+486,53,314,COUNTRY CLUB (314),8,17, recreation,19
+487,53,323,FRATERNAL BUILDING (323),8,17, recreation,102
+488,53,355,Fine Arts & Crafts Building (355),8,17, recreation,1
+489,53,379,"THEATER, LIVE STAGE (379)",8,17, recreation,25
+490,53,380,"THEATER, CINEMA (380)",8,17, recreation,33
+491,53,405,SKATING RINK (405),8,17, recreation,7
+492,53,416,"TENNIS CLUB, INDOOR (416)",8,17, recreation,10
+493,53,417,HANDBALL-RACQUETBALL CLUB (417),8,17, recreation,4
+494,53,418,HEALTH CLUB (418),8,17, recreation,26
+495,53,428,HORSE ARENA (428),8,17, recreation,6
+496,53,483,FITNESS CENTER (483),8,17, recreation,51
+497,53,485,NATATORIUM (485),8,17, recreation,22
+498,53,486,FIELD HOUSES (486),8,17, recreation,26
+499,53,573,ARCADE (573),8,17, recreation,7
+500,53,718,Banquet Hall (718),8,17, recreation,10
+501,53,Cinema Theater,COMMERCIAL,8,17, recreation,8
+502,53,Clubhouse,COMMERCIAL,8,17, recreation,132
+503,53,Country Club,COMMERCIAL,8,17, recreation,9
+504,53,Gymnasium - College,COMMERCIAL,8,17, recreation,3
+505,53,Health Club,COMMERCIAL,8,17, recreation,12
+506,53,Indoor Tennis Club,COMMERCIAL,8,17, recreation,2
+507,53,Natatorium-IndoorSwim Facility,COMMERCIAL,8,17, recreation,1
+508,53,Recreational Enclosure,COMMERCIAL,8,17, recreation,1
+509,53,Skating Rink,COMMERCIAL,8,17, recreation,2
+510,53,Theater-Live,COMMERCIAL,8,17, recreation,6
+511,53,95,Residential Tennis Court,8,17, recreation,4
+512,53,97,Boat House,8,17, recreation,77
+513,53,220,Recreational Pool Enclosure,8,17, recreation,55
+514,53,311,Clubhouse,8,17, recreation,9
+515,53,380,Theatre - Motion,8,17, recreation,1
+516,53,418,Health Club,8,17, recreation,1
+517,53,956,Recreational,8,17, recreation,359
+518,53,960,Marina,8,17, recreation,152
+519,53,BOWL,Bowling Alley,8,17, recreation,6
+520,53,CLUB,Country Club,8,17, recreation,295
+521,53,GYMC,Gymnasium - College,8,17, recreation,1
+522,53,HEALTH,Health Club,8,17, recreation,38
+523,53,ICERINK,Ice Rink,8,17, recreation,4
+524,53,REC ENC,Recreational Enclosure,8,17, recreation,5
+525,53,THEATRE,Theater,8,17, recreation,13
+526,53,156,Alternative School (156),7,18, school,12
+527,53,356,Classroom (356),7,18, school,90
+528,53,358,Gymnasium (School) (358),7,18, school,20
+529,53,365,ELEMENTARY SCHOOL (ENTIRE) (365),7,18, school,827
+530,53,366,JUNIOR HIGH SCHOOL (ENTIRE) (366),7,18, school,80
+531,53,368,Classroom (College) (368),7,18, school,7
+532,53,369,Commons (College) (369),7,18, school,2
+533,53,374,Multi-Purp Bldg (College) (374),7,18, school,1
+534,53,377,COLLEGE (ENTIRE) (377),7,18, school,122
+535,53,426,DAY CARE CENTER (426),7,18, school,312
+536,53,484,HIGH SCHOOL (ENTIRE) (484),7,18, school,152
+537,53,487,VOCATIONAL SCHOOLS (487),7,18, school,33
+538,53,Arts & Crafts Building College,COMMERCIAL,7,18, school,1
+539,53,Classrooms - College,COMMERCIAL,7,18, school,5
+540,53,Commons/Student Center,COMMERCIAL,7,18, school,1
+541,53,Day Care Facility,COMMERCIAL,7,18, school,19
+542,53,Elementary School - Entire,COMMERCIAL,7,18, school,19
+543,53,High School - Entire,COMMERCIAL,7,18, school,2
+544,53,Junior High School - Entire,COMMERCIAL,7,18, school,8
+545,53,Multipurpose Bldg K-12,COMMERCIAL,7,18, school,4
+546,53,Multipurpose Building-College,COMMERCIAL,7,18, school,1
+547,53,Physical Ed Bldg K-12,COMMERCIAL,7,18, school,2
+548,53,Relocatable Classroom,COMMERCIAL,7,18, school,48
+549,53,School Classrooms,COMMERCIAL,7,18, school,127
+550,53,School Dining Facility,COMMERCIAL,7,18, school,2
+551,53,School Gymnasium,COMMERCIAL,7,18, school,7
+552,53,School Shower Rooms,COMMERCIAL,7,18, school,1
+553,53,Technical Trades Bldg-College,COMMERCIAL,7,18, school,1
+554,53,Vocational School,COMMERCIAL,7,18, school,2
+555,53,356,School - Classroom,7,18, school,2
+556,53,358,School - Gymnasium,7,18, school,1
+557,53,364,School - Science Building,7,18, school,2
+558,53,365,School - Elementary/Secondary,7,18, school,5
+559,53,368,College - Classrooms,7,18, school,1
+560,53,426,Day Care Center,7,18, school,3
+561,53,610,Schools,7,18, school,1
+562,53,955,Education,7,18, school,1266
+563,53,ARTSBLDK,Fine Arts & Crafts Bldg K-12,7,18, school,1
+564,53,CLASSC,Classrooms - College,7,18, school,5
+565,53,COLLEGE,College - Entire,7,18, school,1
+566,61,COMMONK,Commons K-12,7,18, school,1
+567,61,ELEMSCH,Elementary School - Entire,7,18, school,5
+568,61,HIGHSCHL,High School - Entire,7,18, school,6
+569,61,LIBRARYC,"Library, College",7,18, school,2
+570,61,MIDDLSCH,Junior High School - Entire,7,18, school,1
+571,61,MULTPRPK,Multipurpose Bldg K-12,7,18, school,1
+572,61,SCHADMIN,School Administration,7,18, school,5
+573,61,SCHAUD,School Auditorium,7,18, school,2
+574,61,SCHCLASS,School Classrooms,7,18, school,198
+575,61,SCHDINE,School Dining Facility,7,18, school,2
+576,61,SCHGYM,School Gymnasium,7,18, school,12
+577,61,SCIENCEK,Science Classrooms K-12,7,18, school,4
+578,61,VOCSCHL,Vocational School,7,18, school,1
+579,61,1,Single Unit Res Bldg,1,19, single_family_residential,502100
+580,61,348,Residence (348),1,19, single_family_residential,871
+581,61,351,Single-Family Residence (351),1,19, single_family_residential,85
+582,61,5,DWELLING,1,19, single_family_residential,1550
+583,61,No occupancy code,DWELLING,1,19, single_family_residential,17
+584,61,Single family,DWELLING,1,19, single_family_residential,81279
+585,61,Single family - Owner,DWELLING,1,19, single_family_residential,1
+586,61,100,Single Family Residential,1,19, single_family_residential,222366
+587,61,101,Single Family Residential ,1,19, single_family_residential,34
+588,61,119,Cabin On Ag,1,19, single_family_residential,1
+589,61,131,In Home Business,1,19, single_family_residential,1
+590,61,1,Single family,1,19, single_family_residential,224173
+591,61,6,Row-type,1,19, single_family_residential,22
+592,61,11,Single family - Owner,1,19, single_family_residential,37
+593,61,12,Single family - Tenant,1,19, single_family_residential,38
+594,61,13,Single family - Other,1,19, single_family_residential,6
+595,61,185,Truck Wash (185),5,20, tcu,1
+596,61,328,"HANGAR, STORAGE (328)",5,20, tcu,104
+597,61,329,"HANGAR, MAINTENANCE & OFFICE (329)",5,20, tcu,46
+598,61,387,TRANSIT WAREHOUSE (387),5,20, tcu,46
+599,61,409,T-HANGAR (409),5,20, tcu,5
+600,61,471,LIGHT COMMERCIAL UTILITY BUILDING (471),5,20, tcu,125
+601,61,571,Passenger Terminal (571),5,20, tcu,6
+602,61,Hangar,COMMERCIAL,5,20, tcu,7
+603,61,Heavy Utility Storage,COMMERCIAL,5,20, tcu,1
+604,61,Light Utility Storage,COMMERCIAL,5,20, tcu,109
+605,61,Passenger Terminal,COMMERCIAL,5,20, tcu,2
+606,61,T-Hangar,COMMERCIAL,5,20, tcu,4
+607,61,Utility/Storage,COMMERCIAL,5,20, tcu,38
+608,61,219,Telephone Building,5,20, tcu,3
+609,61,328,Storage Hangar,5,20, tcu,115
+610,61,557,Arch-Rib Quonset Utility,5,20, tcu,1
+611,61,913,Transit Warehouse,5,20, tcu,15
+612,61,951,Utilities,5,20, tcu,168
+613,61,952,Airplane Hangar,5,20, tcu,99
+614,61,953,Marine Hangar,5,20, tcu,2
+615,61,1471,Light Commercial Utility,5,20, tcu,24
+616,61,HANGAR,Hangar,5,20, tcu,288
+617,61,HUTLSTOR,Heavy Utility Storage,5,20, tcu,54
+618,61,LUTLSTOR,Light Utility Storage,5,20, tcu,383
+619,61,TRCKWARE,Truck Terminal Warehouse,5,20, tcu,17
+620,61,UTLSTOR,Utility/Storage,5,20, tcu,364
+621,61,391,MATERIAL STORAGE BUILDING (391),5,21, warehousing,87
+622,61,406,STORAGE WAREHOUSE (406),5,21, warehousing,3040
+623,61,407,"WAREHOUSE, DISTRIBUTION (407)",5,21, warehousing,864
+624,61,447,COLD STORAGE FACILITIES (447),5,21, warehousing,35
+625,61,810,WAREHOUSE OFFICE (810),5,21, warehousing,222
+626,61,849,"CONDO, STORAGE (849)",5,21, warehousing,15
+627,61,Cold Storage Facility,COMMERCIAL,5,21, warehousing,1
+628,61,Distribution Warehouse,COMMERCIAL,5,21, warehousing,7
+629,61,Light Warehouse,COMMERCIAL,5,21, warehousing,305
+630,61,Loft Warehouse,COMMERCIAL,5,21, warehousing,7
+631,61,Storage Garage,COMMERCIAL,5,21, warehousing,42
+632,61,Storage Warehouse,COMMERCIAL,5,21, warehousing,201
+633,61,391,Storage - Material,8,14,outbuilding,6879
+634,61,406,Storage Warehouse,5,21, warehousing,24
+635,61,584,Mega Warehouse,5,21, warehousing,3
+636,61,910,"Gen Warehouse 20,000 to 199,999 SF",5,21, warehousing,617
+637,61,911,"Gen Warehouse up to 19,999 SF",5,21, warehousing,1503
+638,61,912,"Mega Warehouse 200,000 SF Plus",5,21, warehousing,77
+639,61,914,Flex Warehouse,5,21, warehousing,30
+640,61,LFTWRHSE,Loft Warehouse,5,21, warehousing,245
+641,61,LWRHSE,Light Warehouse,5,21, warehousing,631
+642,61,WHSEDIST,NA,5,21, warehousing,2
+643,61,WHSESTOR,NA,5,21, warehousing,39
+644,61,0,No Code,8,22, no_code,64
+645,61,454,"Shell, Industrial (454)",8,23, other,4
+646,61,460,"Shell, Neigh. Shop. Ctr. (460)",8,23, other,2
+647,61,465,Food Booth - Prefabricated (465),8,23, other,2
+648,61,492,"Shell, Office (492)",8,23, other,3
+649,61,587,"Shell, Multiple Residence (587)",8,23, other,1
+650,61,596,"Shell, Apartment (596)",8,23, other,3
+651,61,701,"BASEMENT, FINISHED (701)",8,23, other,3
+652,61,703,"BASEMENT, UNFINISHED (703)",8,23, other,37
+653,61,705,"BASEMENT, OFFICE (705)",8,23, other,12
+654,61,706,"BASEMENT, PARKING (706)",8,23, other,3
+655,61,708,"BASEMENT, STORAGE (708)",8,23, other,1
+656,61,"Apartment, High Rise, Shell",COMMERCIAL,8,23, other,1
+657,61,"Food Booth, Prefabricated",COMMERCIAL,8,23, other,1
+658,61,Guest Cottage,COMMERCIAL,8,23, other,34
+659,61,Lean-To,COMMERCIAL,8,23, other,1
+660,61,"Multiple Res-Low Rise, Shell",COMMERCIAL,8,23, other,3
+661,61,Shed Office Structure,COMMERCIAL,8,23, other,2
+662,61,"Shell, Office Building",COMMERCIAL,8,23, other,4
+663,61,30,Title Elim MH,8,23, other,7
+664,61,120,Imps on Res Land,8,23, other,8
+665,61,121,Imps on Vac Land,8,23, other,1
+666,61,122,Imps on Comm Land,8,23, other,2
+667,61,124,Addon Only Comm,8,23, other,937
+668,61,126,Addon Only Res,8,23, other,3713
+669,61,184,Arena Shelters,8,23, other,1
+670,61,223,Guest Cottages,8,23, other,2
+671,61,411,Self Service Booth,8,23, other,2
+672,61,521,Hoop (Arch-Rib/Quonset) Structure,8,23, other,3
+673,61,564,Dehydrator Building,8,23, other,1
+674,61,567,Poultry House - Cage,8,23, other,1
+675,61,615,Exempt Bldgs,8,23, other,4
+676,61,9997,Conversion Other Imp Summary,8,23, other,2
+677,61,0,No occupancy code,8,23, other,6589
+678,61,NHBDSHL,"NHBD Shopping Center, Shell",8,23, other,1
+679,61,386,MINI-WAREHOUSE (386),8,14,mini_storage,635
+680,61,525,"MINI WAREHOUSE, HI-RISE (525)",8,14,mini_storage,87
+681,61,Mini Warehouse,COMMERCIAL,8,14,mini_storage,285
+682,61,386,Mini Warehouse,8,14,mini_storage,16
+683,61,940,Mini Storage,8,14,mini_storage,778
+684,61,MINIWSHR,"Mini-Warehouse, High-rise",8,14,mini_storage,2
+685,61,MWRHSE,Mini Warehouse,8,14,mini_storage,318
+686,61,98,Boat House Commercial,8,17,recreation,0
+687,61,329,Maintenance Hangar,5,20,tcu,0
+688,61,209,Nursery/Greenhouse,4,3,commercial,0
+689,61,409,T-Hangar,5,20,tcu,0
+690,61, ,OTHER,8,23,other,0
+691,61,Ice Rink,COMMERCIAL,8,17,recreation,0
+692,61,Other residential,DWELLING,1,19,single_family_residential,0
+693,61,Warehouse Showroom Store,COMMERCIAL,4,3,commercial,0

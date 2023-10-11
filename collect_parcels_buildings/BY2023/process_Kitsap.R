@@ -70,18 +70,18 @@ cat("\nNumber of records in main that are not available in parcels: ",
 # check for duplicates
 cat("\nNumber of duplicates: ", nrow(prep_parcels[, .N, by = "rp_acct_id"][N > 1]), "\n")
 
-parcels_final <- prep_parcels[, .(parcel_id_fips = rp_acct_id, 
+parcels_final <- prep_parcels[, .(rp_acct_id, 
                                   parcel_id = pin, land_value, num_dwell,
                                   use_code = as.character(prop_class),
                                   exemption = tax_status != "T", 
-                                  gross_sqft = shape_area, 
+                                  gross_sqft = round(shape_area), 
                                   y_coord_sp = point_y, x_coord_sp = point_x
                                   )]
 # TODO: - Do we need the other columns of prep_parcels? 
-#.      - Does the dataset need all the other columns at this point?
+#.      - Does the dataset need all the other columns pre-populated at this point?
 
 # load land use reclass table
-lu_reclass <- fread(file.path(misc.data.dir, "land_use_generic_reclass_2018.csv"))
+lu_reclass <- fread(file.path(misc.data.dir, "land_use_generic_reclass_2023.csv"))
 
 parcels_final[lu_reclass[county_id == 35], land_use_type_id := i.land_use_type_id, 
               on = c(use_code = "county_land_use_code")]
@@ -152,14 +152,13 @@ prep_buildings[, proportion := total_sqft_tmp / total_sqft_per_account
 # ------------
 # drop buildings that do not have spatial representation in parcels
 nbld <- nrow(prep_buildings)
-prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, parcel_id_fips]]
+prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, rp_acct_id]]
 cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing parcels.")
 
 # join with parcel info 
 prep_buildings_in_pcl <- merge(prep_buildings_in_pcl, 
-                               parcels_final[, .(parcel_id_fips, parcel_id, num_dwell, land_use_type_id, use_code)],
-                               by.x = "rp_acct_id", by.y = "parcel_id_fips",
-                               all.x = TRUE)
+                               parcels_final[, .(rp_acct_id, parcel_id, num_dwell, land_use_type_id, use_code)],
+                               by = "rp_acct_id", all.x = TRUE)
 prep_buildings_in_pcl[is.na(num_dwell), num_dwell := 0]
 prep_buildings_in_pcl[improv_type == "DWELLING", residential_units := 1][, residential_units_orig := 1]
 prep_buildings_in_pcl[is.na(residential_units), `:=`(residential_units = 0, residential_units_orig = 0)]
@@ -215,20 +214,31 @@ cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residentia
     "residential units. Total number of units is", prep_buildings_in_pcl[, sum(residential_units)],
     ".")
 
-# collect attributes for the final table
+# Assign building type
+bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.csv"))
+prep_buildings_in_pcl[bt_reclass[county_id == 35], building_type_id := i.building_type_id, 
+              on = c(use_desc = "county_building_use_code")]
+cat("\nThe following building codes were not found:")
+print(prep_buildings_in_pcl[is.na(building_type_id), .N, by = "use_desc"][order(-N)])
+
+# collect attributes for the final table (here we could pre-populate other columns if needed)
 buildings_final <- prep_buildings_in_pcl[, .(building_id = id, gross_sqft = total_sqft, year_built,
-                                             parcel_id, rp_acct_id, residential_units, improvement_value,
+                                             parcel_id, rp_acct_id, residential_units, 
+                                             building_type_id, improvement_value, stories, land_area = 0, 
                                              non_residential_sqft = ifelse(residential_units > 0, 0, total_sqft),
                                              use_code, use_desc)]
 
+# remove unnecessary columns and pre-populate other columns, whatever is needed
+parcels_final[, `:=`(num_dwell = NULL, county_id = 35)]
+
 # write results
-fwrite(parcels_final, file = "parcels_urbansim.csv")
-fwrite(buildings_final, file = "buildings_urbansim.csv")
+fwrite(parcels_final, file = "urbansim_parcels.csv")
+fwrite(buildings_final, file = "urbansim_buildings.csv")
 
 if(write.result.to.mysql){
     db <- paste0(tolower(county), "_2023_parcel_baseyear")
     connection <- mysql.connection(db)
-    dbWriteTable(connection, "parcels_urbansim", parcels_final, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "buildings_urbansim", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_parcels", parcels_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
