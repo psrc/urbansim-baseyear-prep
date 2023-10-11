@@ -10,17 +10,39 @@ county <- "Kitsap"
 
 data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
 misc.data.dir <- "data" # path to the BY2023/data folder
-write.result.to.mysql <- TRUE # it will overwrite the existing tables parcels_urbansim & buildings_urbansim
+write.result.to.mysql <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result.to.mysql) source("mysql_connection.R")
+
+###############
+# Load all data
+###############
+
+# parcels tables
+parcels <- fread(file.path(data.dir, "parcels.txt"))
+parcels.23to18 <- fread(file.path(data.dir, "parcels23_kit_to_2018_parcels.csv"))
+
+# tables flatats, land & main
+tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
+land <- fread(file.path(data.dir, "land.txt")) # Land data
+main <- fread(file.path(data.dir, "main.txt")) # Real Property Information
+
+# land use and building reclass tables
+lu_reclass <- fread(file.path(misc.data.dir, "land_use_generic_reclass_2023.csv"))
+bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.csv"))
+
+# buildings
+raw_buildings <- fread(file.path(data.dir, "building.txt"))
+
+# mobile homes
+mobile_homes <- fread(file.path(data.dir, "mh_fixed.txt"))[, V15 := NULL] # remove extra column
+
+# Valuation
+valuation <- fread(file.path(data.dir, "Valuations.txt"))
 
 ###################
 # Process parcels
 ###################
-
-# load parcels tables
-parcels <- fread(file.path(data.dir, "parcels.txt"))
-parcels.23to18 <- fread(file.path(data.dir, "parcels23_kit_to_2018_parcels.csv"))
 
 # remove duplicates (just take the first record of each duplicate)
 parcels.nodupl <- parcels[!duplicated(rp_acct_id)]
@@ -32,12 +54,7 @@ parcels_allinfo <- merge(parcels.nodupl,
                         parcels.23to18.nodupl[, .(rp_acct_id, pin, point_x, point_y, shape_area)],
                         by = "rp_acct_id")
 
-# load tables flatats, land & main
-tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
-land <- fread(file.path(data.dir, "land.txt")) # Land data
-main <- fread(file.path(data.dir, "main.txt")) # Real Property Information
-
-# remove any duplicates
+# remove any duplicates from the three assessors files
 tax <- unique(tax)
 land <- unique(land)
 main <- unique(main)
@@ -78,11 +95,8 @@ parcels_final <- prep_parcels[, .(rp_acct_id,
                                   y_coord_sp = point_y, x_coord_sp = point_x
                                   )]
 # TODO: - Do we need the other columns of prep_parcels? 
-#.      - Does the dataset need all the other columns pre-populated at this point?
 
-# load land use reclass table
-lu_reclass <- fread(file.path(misc.data.dir, "land_use_generic_reclass_2023.csv"))
-
+# join with land use reclass table
 parcels_final[lu_reclass[county_id == 35], land_use_type_id := i.land_use_type_id, 
               on = c(use_code = "county_land_use_code")]
 cat("\nThe following codes were not found:")
@@ -93,10 +107,8 @@ print(parcels_final[is.na(land_use_type_id) & !is.na(use_code), .N, by = "use_co
 # Process buildings
 ###################
 
-# load assessor buildings
+# extract info from the assessors buildings table
 # ------------------------
-raw_buildings <- fread(file.path(data.dir, "building.txt"))
-
 prep_buildings <- raw_buildings[, .(id = 1:nrow(raw_buildings),
                                     improv_type = improv_typ, 
                                     rp_acct_id, total_sqft = flr_tot_sf,
@@ -104,9 +116,8 @@ prep_buildings <- raw_buildings[, .(id = 1:nrow(raw_buildings),
                                     bldg_type = bldg_typ, use_desc
                                     )]
 
-# add mobile homes
+# add mobile homes info
 # ------------------
-mobile_homes <- fread(file.path(data.dir, "mh_fixed.txt"))[, V15 := NULL] # remove extra column
 # remove duplicates
 mobile_homes.nodupl <- mobile_homes[!duplicated(mobile_homes[, c("rp_acct_id", "yr_blt", "mh_make", "mh_size"), with = FALSE])]
 cat("\nNumber of duplicates removed from mobile homes: ", nrow(mobile_homes) - nrow(mobile_homes.nodupl), "\n")
@@ -120,17 +131,15 @@ bldg_mh[prep_buildings[bldg_type == "MHOME" & rp_acct_id %in% rp],
         `:=`(id_bld = i.id, yr_blt = pmax(i.year_built, yr_blt)), on = "rp_acct_id"] # take the max of year built
 
 # For now we will ignore the 14 remaining mobile homes where there is no match to the buildings
-
 cat("\nIgnoring ", nrow(bldg_mh[is.na(id_bld)]), " mobile homes with no match to the buildings dataset.")
 
 # update total sqft and year built for mobile homes
 prep_buildings[bldg_mh, `:=`(total_sqft = i.mh_size, year_built = i.yr_blt), on = c(id = "id_bld")]
 
 
-# Calculate improvement value
+# Calculate improvement value from valuation
 # ----------------------------
 # It will be distributed to individual buildings proportionally to the sqft
-valuation <- fread(file.path(data.dir, "Valuations.txt"))
 
 year_valuation <- valuation[tax_yr == 2023]
 # if property doesn't have valuation for 2023, take the 2024 value
@@ -155,16 +164,20 @@ nbld <- nrow(prep_buildings)
 prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, rp_acct_id]]
 cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing parcels.")
 
-# join with parcel info 
+# join buildings with parcel info 
 prep_buildings_in_pcl <- merge(prep_buildings_in_pcl, 
                                parcels_final[, .(rp_acct_id, parcel_id, num_dwell, land_use_type_id, use_code)],
                                by = "rp_acct_id", all.x = TRUE)
 prep_buildings_in_pcl[is.na(num_dwell), num_dwell := 0]
+# first set all residential records to one unit and non-res to zero 
 prep_buildings_in_pcl[improv_type == "DWELLING", residential_units := 1][, residential_units_orig := 1]
 prep_buildings_in_pcl[is.na(residential_units), `:=`(residential_units = 0, residential_units_orig = 0)]
+# sum units per parcel
 prep_buildings_in_pcl[improv_type == "DWELLING", `:=`(sum_du = sum(residential_units)), by = "parcel_id"]
 
-# Correct units for multiplexes 
+# Correct units for multiplexes. 
+# Set codes and the corresponding number of units. 
+# If it is a range, it's in the format (minimum, maximum, default).
 codes_units <- list(`121` = 2,   # Duplex
                     `122` = 3,   # Triplex
                     `123` = 4,   # Fourplex
@@ -186,7 +199,7 @@ for(code in names(codes_units)){
         units <- prep_buildings_in_pcl[index, round(total_sqft/1000)] # using 1000sf per unit 
         units <- pmax(codes_units[[code]][1], pmin(units, codes_units[[code]][2])) # keep it in the given range
     } else units <- codes_units[[code]]
-    prep_buildings_in_pcl[index,  residential_units := units]
+    prep_buildings_in_pcl[index,  `:=`(residential_units = units, building_type_id = 12)]
 }
 
 # now process parcels with multiple buildings
@@ -194,7 +207,7 @@ for(code in names(codes_units)){
 for(code in names(codes_units)) {
     prep_buildings_in_pcl[improv_type == "DWELLING" & sum_du > 1 & sum_du < codes_units[[code]][1] & 
                               !is.na(use_code) & use_code == code & use_desc == "Duplex", 
-                          residential_units := 2]
+                          `:=`(residential_units = 2, building_type_id = 12)]
 }
 # now we impute units into Multi-family records 
 # recompute the number of DUs per parcel and get the number of Multi-family records
@@ -207,17 +220,27 @@ for(code in names(codes_units)) {
     if(sum(index) == 0) next # if no buildings for this code, go to the next code
     target <- if(length(codes_units[[code]]) > 1) codes_units[[code]][3] else codes_units[[code]] # number of DUs we expect according to the use code
     # add the remainder of the expectation to the MF records 
-    prep_buildings_in_pcl[index, residential_units := residential_units + round((target - sum_du2) / nmf)]
+    prep_buildings_in_pcl[index, `:=`(residential_units = residential_units + round((target - sum_du2) / nmf),
+                                      building_type_id = 12)]
 }
 
 cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residential_units_orig)], 
     "residential units. Total number of units is", prep_buildings_in_pcl[, sum(residential_units)],
     ".")
 
-# Assign building type
-bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.csv"))
-prep_buildings_in_pcl[bt_reclass[county_id == 35], building_type_id := i.building_type_id, 
+# Assign building type by joining with the building reclass table
+# first join on use_code
+prep_buildings_in_pcl[bt_reclass[county_id == 35], 
+                      building_type_id := ifelse(is.na(building_type_id), i.building_type_id, 
+                                                 building_type_id), 
+                      on = c(use_code = "county_building_use_code")]
+# now on use_desc
+prep_buildings_in_pcl[bt_reclass[county_id == 35], 
+                      building_type_id := ifelse(is.na(building_type_id), i.building_type_id, 
+                                                 building_type_id),
               on = c(use_desc = "county_building_use_code")]
+cat("\nMatched", nrow(prep_buildings_in_pcl[!is.na(building_type_id)]), "records with bulding reclass table")
+cat("\nUnmatched: ", nrow(prep_buildings_in_pcl[is.na(building_type_id)]), "records.")
 cat("\nThe following building codes were not found:")
 print(prep_buildings_in_pcl[is.na(building_type_id), .N, by = "use_desc"][order(-N)])
 
