@@ -1,7 +1,7 @@
 # Script to create parcels and buildings tables from Kitsap assessor data
 # for the use in urbansim 
 #
-# Hana Sevcikova, last update 10/10/2023
+# Hana Sevcikova, last update 10/17/2023
 #
 
 library(data.table)

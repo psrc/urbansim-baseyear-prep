@@ -1,11 +1,10 @@
 # Script to create parcels and buildings tables from Pierce assessor data
 # for the use in urbansim 
 #
-# Hana Sevcikova, last update 10/16/2023
+# Hana Sevcikova, last update 10/18/2023
 #
 
 library(data.table)
-#library(bit64)
 
 county <- "Pierce"
 
@@ -133,9 +132,7 @@ prep_buildings[is.na(units), units := 0]
 index_residential <- with(prep_buildings, building_type_id %in% c(4, 11, 12, 19))
 prep_buildings[!index_residential, units := 0]
 
-# impute units where residential & units is 0
-# TODO: check the total number of units on parcels as the units can be assigned to 
-# other building on that parcel
+# Impute units where residential & units is 0
 # SF & mobile homes
 prep_buildings[building_type_id %in% c(11, 19) & units == 0, units := 1]
 # condos & separate units
@@ -147,15 +144,33 @@ prep_buildings[building_type_id %in% c(4, 12) & units == 0 &
 prep_buildings[building_type_id == 12 & units == 0  &
                    primary_occupancy_description %in% c('Duplex Conv', 'Duplex'),
                units := 2]
-# Triplex
+
+# Triplex (I don't think this affects any records)
 prep_buildings[building_type_id == 12 & units == 0  &
                    primary_occupancy_description %in% c('Triplex'),
                units := 3]
 
+# For Apartment High Rise & Apartment w/4-8 Units use sqft 
 prep_buildings[index_residential & units == 0 & 
                    primary_occupancy_description %in% c(
                        "Apartment High Rise", "Apartment w/4-8 Units"),
                units := pmax(1, round(sqft/830))]
+
+# get sum of DU on parcels
+prep_buildings[index_residential, `:=`(sum_du = sum(units),
+                                       has_zero_units = any(units == 0),
+                                       has_nonzero_units = any(units > 0),
+                                       nbuildings = .N), 
+               by = "parcel_number"]
+
+# For Apt Low Rise 100 Units Plus impute by using sqft, but only for those records 
+# where the sum of DU on the parcel is < 50, otherwise put just one unit there
+prep_buildings[index_residential & units == 0  & 
+                   primary_occupancy_description %in% c("Apt Low Rise 100 Units Plus"),
+               units := ifelse(sum_du < 50, pmax(1, round(sqft/830)), 1)]
+
+cat("\nUnits were not imputed into building with the following occupancy description:\n")
+print(prep_buildings[index_residential & units == 0, .N, by = "primary_occupancy_description"])
 
 # assemble columns for final buildings table
 buildings_final <- prep_buildings[, .(
