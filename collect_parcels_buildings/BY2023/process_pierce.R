@@ -84,10 +84,11 @@ prep_parcels[tax.nodupl, improvemen := ifelse(
              on = "taxparceln"]
 cat("\nImputed improvement value into additional", zero_imp - nrow(prep_parcels[improvemen == 0]), "records using prior year info.\n")
 
+# assemble columns for final parcels table
 parcels_final <- prep_parcels[, .(
     parcel_id = pin, parcel_id_fips = taxparceln, land_value, use_code = as.character(use_code), 
     gross_sqft = round(poly_area),  x_coord_sp = point_x, y_coord_sp = point_y, address = site_addre,
-    zip_id = zipcode, county_id = 53)][, exemption := ifelse(exemption_ == "", 0, 1)]
+    zip_id = zipcode, exemption = ifelse(exemption_ == "", 0, 1), county_id = 53)]
     
 # join with reclass table
 parcels_final[lu_reclass[county_id == 53], land_use_type_id := i.land_use_type_id, 
@@ -111,7 +112,8 @@ prep_buildings <- merge(improvement, buildings_grouped,
                         all = TRUE)
 
 # Calculate improvement value proportionally to the sqft
-prep_buildings[prep_parcels, total_improvement_value := i.improvemen, 
+prep_buildings[prep_parcels, `:=`(total_improvement_value = i.improvemen, 
+                                  parcel_id = i.pin),
                on = c(parcel_number = "taxparceln")]
 prep_buildings[, `:=`(total_sqft = sum(sqft), count = .N), by = "parcel_number"]
 prep_buildings[, `:=`(improvement_value = round(sqft/total_sqft * total_improvement_value))]
@@ -155,13 +157,13 @@ prep_buildings[index_residential & units == 0 &
                        "Apartment High Rise", "Apartment w/4-8 Units"),
                units := pmax(1, round(sqft/830))]
 
-buildings_final <- prep_buildings[parcels_final, .(
+# assemble columns for final buildings table
+buildings_final <- prep_buildings[, .(
     building_id = 1:nrow(prep_buildings), building_id_orig = building_id,
-    parcel_id = i.parcel_id, gross_sqft = sqft, sqft_per_unit = sqft/units,
+    parcel_id, gross_sqft = sqft, sqft_per_unit = sqft/units,
     year_built, residential_units = units, improvement_value,
     use_code = primary_occupancy_code, building_type_id
-                                      ), 
-    on = c(parcel_number = "taxparceln")]
+                                      )]
 
 # TODO: Question: The mysql script has a segment processing stacked parcels.
 #                   Do we need it?
