@@ -1,0 +1,97 @@
+use_code,records,"use_desc",land_use_type_id,"land_use_type_id_desc",generic_land_use_type_id
+0,12,"na",0,"na",0
+111,79733,"111- Single family residence",24,"Single Family Residential",1
+118,2347,"118- MH - Leased land",13,"Mobile Home Park",1
+119,7497,"119- MH - Real Property",13,"Mobile Home Park",1
+121,1696,"121- Duplex",14,"Multi-Family Residential",2
+122,130,"122- Triplex",14,"Multi-Family Residential",2
+123,158,"123- Four units",14,"Multi-Family Residential",2
+131,124,"131- 5-9 units",14,"Multi-Family Residential",2
+132,29,"132- 10-14 units",14,"Multi-Family Residential",2
+133,11,"133- 15-19 units",14,"Multi-Family Residential",2
+134,30,"134- 20-29 units",14,"Multi-Family Residential",2
+135,26,"135- 30-39 units",14,"Multi-Family Residential",2
+136,23,"136- 40-49 units",14,"Multi-Family Residential",2
+137,108,"137- 50+ units",14,"Multi-Family Residential",2
+138,5,"138- Retirement apts",8,"Group Quarters",8
+141,3286,"141- Condo residential",15,"Condo Residential",2
+150,54,"150- MH community",13,"Mobile Home Park",1
+160,24,"160- Hotels and motels",3,"Commercial",4
+161,0,"161- Bed and breakfast lodging",3,"Commercial",4
+170,1,"170- Institutional lodging",3,"Commercial",4
+180,58,"180- Other residential",30,"Mixed Use",6
+183,1351,"183- Sheds and garages",20,"Parking",8
+198,235,"198- Cabins",24,"Single Family Residential",1
+390,1,"390- Misc manf",10,"Industrial",5
+410,26,"410- Railroads",10,"Industrial",5
+420,1,"420- Motor vehicle transport",10,"Industrial",5
+430,20,"430- Aircraft transport",10,"Industrial",5
+440,3,"440- Marine transport",10,"Industrial",5
+459,669,"459- Totally esmt encumbered",22,"Right-of-Way",8
+460,291,"460- Parking",20,"Parking",8
+470,49,"470- Communications",25,"Transportation Communication Utilities",5
+480,48,"480- Utilities",25,"Transportation Communication Utilities",5
+483,304,"483- Water systems",25,"Transportation Communication Utilities",5
+485,7,"485- Sanitary land fills",25,"Transportation Communication Utilities",5
+486,226,"486- Stormwater retention",25,"Transportation Communication Utilities",5
+489,154,"489- State-assessed utilities",25,"Transportation Communication Utilities",5
+490,1,"490- Other utilities",25,"Transportation Communication Utilities",5
+500,530,"500- Commercial condo or slip",3,"Commercial",4
+501,68,"501- Apartment condo",14,"Multi-Family Residential",2
+502,60,"502- Parking condo",20,"Parking",8
+503,40,"503-Warehouse condo",28,"Warehousing",5
+504,77,"504- Hangar condo",25,"Transportation Communication Utilities",5
+505,77,"505- Retail condo",3,"Commercial",4
+506,124,"506- Office condo",18,"Office",3
+507,13,"507- Medical condo",18,"Office",3
+508,5,"508- Lodging condo",3,"Commercial",4
+509,35,"509- Other comml condo",3,"Commercial",4
+530,1,"530- Retail general",3,"Commercial",4
+541,73,"541- Conv store w/gas pumps",3,"Commercial",4
+543,30,"543- Conv store w/o gas pumps",3,"Commercial",4
+545,11,"545- Chain type groceries",3,"Commercial",4
+550,38,"550- Retail automotive",3,"Commercial",4
+551,1,"551- MH Home sales lot",13,"Mobile Home Park",1
+559,11,"559- Auto wrecking yard",3,"Commercial",4
+580,94,"580- Restaurants",3,"Commercial",4
+581,63,"581- Fast food",3,"Commercial",4
+582,18,"582- Tavern",3,"Commercial",4
+590,444,"590- Other retail trade",3,"Commercial",4
+591,174,"591- Neighborhood center",21,"Recreation",8
+592,69,"592- Community center",21,"Recreation",8
+593,6,"593- Regional center",21,"Recreation",8
+611,50,"611- Banks",3,"Commercial",4
+624,58,"624- Cemeteries",2,"Civic and Quasi-Public",7
+630,103,"630- Business services",3,"Commercial",4
+637,327,"637- General warehouse",28,"Warehousing",5
+638,75,"638- Mini-warehouse",28,"Warehousing",5
+640,154,"640- Repair services",3,"Commercial",4
+651,126,"651- Medical/dental offices",18,"Office",3
+653,7,"653- Hospitals",9,"Hospital Convalescent Center",7
+656,36,"656- Convalescent centers",9,"Hospital Convalescent Center",7
+670,153,"670- Governmental services",7,"Government",7
+680,112,"680- Educational services",7,"Government",7
+690,393,"690- Misc services",3,"Commercial",4
+691,208,"691- Churches",2,"Civic and Quasi-Public",7
+710,1,"710- Cultural activities",2,"Civic and Quasi-Public",7
+720,60,"720- Public assembly",2,"Civic and Quasi-Public",7
+740,106,"740- Recreational",21,"Recreation",8
+744,33,"744- Marina",21,"Recreation",8
+750,19,"750- Resorts/group camps",21,"Recreation",8
+760,170,"760- Parks",19,"Park and Open Space",8
+790,3,"790- Other recreation",21,"Recreation",8
+810,1,"810- Agricultural (not OS)",1,"Agriculture",8
+822,21,"822- Veterinarian services",3,"Commercial",4
+830,224,"830- CU Agriculture",1,"Agriculture",8
+840,7,"840- Fishing & related svcs",1,"Agriculture",8
+850,56,"850- Mining & related svcs",12,"Mining",8
+880,1909,"880- Forest land",6,"Forest protected",8
+910,14091,"910- Undeveloped land",26,"Vacant Developable",9
+911,2509,"911- Common area",19,"Park and Open Space",8
+920,0,"920- Non-commercial forest",6,"Forest protected",8
+930,7,"930- Water areas",29,"Water",9
+939,405,"939- Tidelands",29,"Water",9
+940,357,"940- CU Open Space",19,"Park and Open Space",8
+950,330,"950- CU Timber",5,"Forest harvestable",8
+990,6,"990- Other undev land",26,"Vacant Developable",9
+999,55,"na",17,"No Land Use Code",9
