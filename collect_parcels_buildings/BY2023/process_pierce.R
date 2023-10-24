@@ -119,7 +119,7 @@ prep_buildings[, `:=`(improvement_value = round(sqft/total_sqft * total_improvem
 
 # join with building reclass table
 prep_buildings[, primary_occupancy_code := as.character(primary_occupancy_code)]
-prep_buildings[bt_reclass, building_type_id := i.building_type_id, 
+prep_buildings[bt_reclass[county_id == 53], building_type_id := i.building_type_id, 
                on = c(primary_occupancy_code = "county_building_use_code")]
 cat("\nMatched", nrow(prep_buildings[!is.na(building_type_id)]), "records with building reclass table")
 cat("\nUnmatched: ", nrow(prep_buildings[is.na(building_type_id)]), "records.")
