@@ -114,8 +114,9 @@ prep_buildings <- merge(improvement, buildings_grouped,
 prep_buildings[prep_parcels, `:=`(total_improvement_value = i.improvemen, 
                                   parcel_id = i.pin),
                on = c(parcel_number = "taxparceln")]
-prep_buildings[, `:=`(total_sqft = sum(sqft), count = .N), by = "parcel_number"]
-prep_buildings[, `:=`(improvement_value = round(sqft/total_sqft * total_improvement_value))]
+prep_buildings[, `:=`(sqft_tmp = pmax(1, sqft, na.rm = TRUE))]
+prep_buildings[, `:=`(total_sqft = sum(sqft_tmp), count = .N), by = "parcel_number"]
+prep_buildings[, `:=`(improvement_value = round(sqft_tmp/total_sqft * total_improvement_value))][, sqft_tmp := NULL]
 
 # join with building reclass table
 prep_buildings[, primary_occupancy_code := as.character(primary_occupancy_code)]
