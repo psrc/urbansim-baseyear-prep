@@ -1,7 +1,7 @@
 # Script to create parcels and buildings tables from Kitsap assessor data
 # for the use in urbansim 
 #
-# Hana Sevcikova, last update 10/17/2023
+# Hana Sevcikova, last update 11/07/2023
 #
 
 library(data.table)
@@ -9,6 +9,7 @@ library(data.table)
 county <- "Kitsap"
 
 data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+#data.dir <- "Kitsap_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 write.result.to.mysql <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
@@ -90,7 +91,7 @@ cat("\nNumber of duplicates: ", nrow(prep_parcels[, .N, by = "rp_acct_id"][N > 1
 parcels_final <- prep_parcels[, .(parcel_id = pin, rp_acct_id, 
                                   land_value, num_dwell,
                                   use_code = prop_class,
-                                  exemption = tax_status != "T", 
+                                  exemption = as.integer(tax_status != "T"), 
                                   gross_sqft = round(shape_area), 
                                   y_coord_sp = point_y, x_coord_sp = point_x
                                   )]
@@ -139,7 +140,8 @@ prep_buildings[bldg_mh, `:=`(total_sqft = i.mh_size, year_built = i.yr_blt), on 
 # drop buildings that do not have spatial representation in parcels
 nbld <- nrow(prep_buildings)
 prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, rp_acct_id]]
-cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing parcels.")
+cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing parcels.\n",
+    "Total: ", nrow(prep_buildings_in_pcl), "buildings")
 
 
 # Calculate improvement value from valuation
@@ -252,13 +254,14 @@ cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residentia
 
 # collect attributes for the final table (here we could pre-populate other columns if needed)
 buildings_final <- prep_buildings_in_pcl[, .(building_id = id, gross_sqft = total_sqft, year_built,
-                                             parcel_id, rp_acct_id, residential_units, 
+                                             parcel_id, parcel_id_fips = rp_acct_id, residential_units, 
                                              building_type_id, improvement_value, stories, land_area = 0, 
                                              non_residential_sqft = ifelse(residential_units > 0, 0, total_sqft),
                                              use_code, use_desc)]
 
 # remove unnecessary columns and pre-populate other columns, whatever is needed
 parcels_final[, `:=`(num_dwell = NULL, county_id = 35)]
+setnames(parcels_final, "rp_acct_id", "parcel_id_fips") # rename rp_acct_id column
 
 # write results
 fwrite(parcels_final, file = "urbansim_parcels.csv")

@@ -1,7 +1,7 @@
 # Script to create parcels and buildings tables from King assessor data
 # for the use in urbansim 
 #
-# Hana Sevcikova, last update 11/06/2023
+# Hana Sevcikova, last update 11/07/2023
 #
 
 library(data.table)
@@ -9,9 +9,9 @@ library(data.table)
 county <- "King"
 
 data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
-data.dir <- "King_data"
+#data.dir <- "King_data"
 misc.data.dir <- "data" # path to the BY2023/data folder
-write.result.to.mysql <- FALSE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
+write.result.to.mysql <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result.to.mysql) source("mysql_connection.R")
 
@@ -74,15 +74,6 @@ colnames(parcel) <- tolower(colnames(parcel))
 # rpacct[acctnbr %in% rpacct[duplicated(acctnbr), acctnbr]][order(acctnbr)][apprimpsval > 0 | apprlandval > 0]
 rpacct.nodupl <- rpacct[!duplicated(acctnbr)]
 
-# # construct a column (acctnbr2) that will be used for joining with parcels
-# rpacct.nodupl[, `:=`(acctnbr2 = substr(acctnbr, 1, nchar(acctnbr) - 2), # remove last two digits
-#                      exempt = taxstat != "T")][,
-#                         add0 := 10 - nchar(acctnbr2) # how many leading zeros to add
-#                 ]
-# zero_templ <- sapply(0:9, function(x) paste0(rep(0, x), collapse = ""))
-# rpacct.nodupl[, acctnbr2 := paste0(zero_templ[add0+1], acctnbr2)] # add leading zeros
-# 
-
 # construct column "pin" in the rpacct table
 rpacct.nodupl <- construct_pin_from_major_minor(rpacct.nodupl)
 
@@ -117,8 +108,8 @@ print(prep_parcels[is.na(land_use_type_id) & !is.na(use_code), .N, by = "use_cod
 
 # construct final parcels                
 parcels_final <- prep_parcels[, .(
-    parcel_id_fips = pin, land_use_type_id,
-    land_value = apprlandval, improvement_value = apprimpsval, exemption = exempt > 0,
+    parcel_id = pin_1, parcel_id_fips = pin, land_use_type_id,
+    land_value = apprlandval, improvement_value = apprimpsval, exemption = as.integer(exempt > 0),
     parcel_sqft = poly_area, y_coord_sp = point_y, x_coord_sp = point_x
     )]
 
@@ -162,49 +153,55 @@ prep_buildings_condo <- merge(prep_buildings_condo, condo_land_imp_value, by = "
 # cases where a building is in both tables, apartment and commercial
 aptcom_combo <- merge(prep_buildings_apt[, .(pin, units, sqft_per_unit_apt = sqft_per_unit)], 
                       prep_buildings_com, by = "pin")
-# set residential units for each commercial records using sqft proportions 
+# set residential units for each commercial records using sqft proportions
 aptcom_combo[, `:=`(count = .N, gross_sqft = sum(bldg_gross_sqft)), by = "pin"][
-    , proportion := bldg_gross_sqft/gross_sqft][, residential_units := units * proportion]
+    , `:=`(residential_units = round(units * bldg_gross_sqft/gross_sqft))]
 cat("\nNumber of buildings in both tables, apartment and commercial:", nrow(aptcom_combo))
 
 # insert the derived residential units into the commercial buildings
-prep_buildings_com[aptcom_combo, residential_units := i.residential_units, on = c("pin", "building_number")]
+prep_buildings_com[aptcom_combo, `:=`(residential_units = i.residential_units), 
+                   on = c("pin", "building_number")]
 
 # cases when a record is in both, condo and commercial (adjust the same way as above)
 condocom_combo <- merge(prep_buildings_condo[, .(pin, units, sqft_per_unit_apt = sqft_per_unit)], 
                       prep_buildings_com, by = "pin")[!pin %in% aptcom_combo[, pin]] # only if it is not in the appartment table
 # set residential units for each commercial records using sqft proportions 
 condocom_combo[, `:=`(count = .N, gross_sqft = sum(bldg_gross_sqft)), by = "pin"][
-    , proportion := bldg_gross_sqft/gross_sqft][, residential_units := units * proportion]
-cat("\nNumber of buildings in both tables, condo and commercial:", nrow(aptcom_combo))
+    , `:=`(residential_units = round(units * bldg_gross_sqft/gross_sqft))]
+cat("\nNumber of buildings in both tables, condo and commercial:", nrow(condocom_combo))
 
 # insert the derived residential units into the commercial buildings
-prep_buildings_com[condocom_combo, residential_units := i.residential_units, on = c("pin", "building_number")]
+prep_buildings_com[condocom_combo, `:=`(residential_units = i.residential_units),
+                   on = c("pin", "building_number")]
 
 # construct remaining residential buildings
 prep_buildings_res <- construct_pin_from_major_minor(resbldg[
     , .(major, minor, bldgnbr, nbrlivingunits, address, stories, sqfttotliving,
         yrbuilt, building_quality_id = condition)])
+cat("\nNumber of other residential buildings:", nrow(prep_buildings_res))
 
-# set use_code depending on number of units
-for (units_code in c(1:6, 9, 20))
-    prep_buildings_res[nbrlivingunits == units_code, use_code := units_code]
+# set building_type_id depending on number of units
+# TODO: this needs to be revised
+prep_buildings_res[nbrlivingunits == 1, building_type_id := 19] # SF
+prep_buildings_res[nbrlivingunits > 1, building_type_id := 12]
 
 # put everything together
 prep_buildings <- rbind(
     prep_buildings_res[
         , .(pin, stories, residential_units = nbrlivingunits, year_built = yrbuilt,
             gross_sqft = sqfttotliving, sqft_per_unit = ceiling(sqfttotliving/nbrlivingunits), 
-            building_quality_id, use_code, non_residential_sqft = 0)],
+            building_quality_id, non_residential_sqft = 0, building_type_id)],
     prep_buildings_condo[
         ! pin %in% condocom_combo[, pin],
         .(pin, stories, residential_units = units, year_built, sqft_per_unit, 
-          building_quality_id = building_quality, use_code = 800, non_residential_sqft = 0)
+          building_quality_id = building_quality, non_residential_sqft = 0,
+          building_type_id = 4)
                          ],
     prep_buildings_apt[
         ! pin %in% aptcom_combo[, pin],
         .(pin, stories, residential_units = units, year_built, sqft_per_unit, 
-          building_quality_id = building_quality, use_code = 300, non_residential_sqft = 0)
+          building_quality_id = building_quality, non_residential_sqft = 0,
+          building_type_id = 12)
                         ], 
     prep_buildings_com[
         , .(pin, stories, residential_units, year_built,
@@ -213,22 +210,68 @@ prep_buildings <- rbind(
     fill = TRUE
     )
 
+# remove buildings that do not have any match in the parcels table
+nbld <- nrow(prep_buildings)
+prep_buildings <- prep_buildings[pin %in% parcels_final[, parcel_id_fips]]
+cat("\n", nbld - nrow(prep_buildings), "buildings removed due to missing parcels.\n",
+    "Total: ", nrow(prep_buildings), "buildings")
+
 # calculate improvement value
 prep_buildings[parcels_final, `:=`(total_improvement_value = i.improvement_value), 
                on = c(pin = "parcel_id_fips")]
-prep_buildings[, total_sqft := sum(gross_sqft), by = "pin"]
+prep_buildings[, sqft_tmp := pmax(1, gross_sqft, na.rm = TRUE)][
+    , total_sqft := sum(sqft_tmp), by = "pin"][
+        , improvement_value := round(sqft_tmp/total_sqft * total_improvement_value)][
+           , `:=`(sqft_tmp = NULL, total_sqft = NULL)
+        ]
+# update improvement values for condos that were not included in the previous call
+prep_buildings[prep_buildings_condo,  
+               improvement_value := ifelse(is.na(improvement_value), i.improvement_value, improvement_value),
+               on = "pin"]
                
+# update the parcels' land_value where improvement value is missing based on condo valuation info
+parcels_final[prep_buildings_condo,  
+              land_value := ifelse(is.na(land_value), i.land_value, land_value),
+              on = c(parcel_id_fips = "pin")][, improvement_value := NULL]
+
+# join with reclass table
+prep_buildings[, use_code_char := as.character(use_code)][
+    bt_reclass[county_id == 33], building_type_id := ifelse(is.na(building_type_id), i.building_type_id, building_type_id),
+               on = c(use_code_char = "county_building_use_code")]
+cat("\nMatched", nrow(prep_buildings[!is.na(building_type_id)]), "records with building reclass table")
+cat("\nUnmatched: ", nrow(prep_buildings[is.na(building_type_id)]), "records.")
+cat("\nThe following building codes were not found:\n")
+print(prep_buildings[is.na(building_type_id), .N, by = "use_code"][order(-N)])
+
+# For buildings that were included in both, commercial as well as apartment or condo, change
+# non_residential_sqft and sqft_per_unit depending on the building_type_id
+# TODO: check that this step make sense!
+prep_buildings[(pin %in% aptcom_combo[, pin] | pin %in% condocom_combo[, pin]) & residential_units > 0 &
+                   building_type_id %in% c(19, 12, 4),
+               `:=`(sqft_per_unit = ceiling(non_residential_sqft/residential_units),
+                    non_residential_sqft = 0) 
+               ]
+
+# add parcel_id to buildings
+prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(pin = "parcel_id_fips")]
+
+# create final buildings table
+buildings_final <- prep_buildings[, .(building_id = 1:nrow(prep_buildings),
+                                      parcel_id, gross_sqft, non_residential_sqft, sqft_per_unit,
+                                      year_built, parcel_id_fips = pin, 
+                                      residential_units, improvement_value,
+                                      building_type_id, use_code, stories)]
 
 ###############
 # write results
 ################
 fwrite(parcels_final, file = "urbansim_parcels.csv")
-#fwrite(buildings_final, file = "urbansim_buildings.csv")
+fwrite(buildings_final, file = "urbansim_buildings.csv")
 
 if(write.result.to.mysql){
     db <- paste0(tolower(county), "_2023_parcel_baseyear")
     connection <- mysql.connection(db)
     dbWriteTable(connection, "urbansim_parcels", parcels_final, overwrite = TRUE, row.names = FALSE)
-    #dbWriteTable(connection, "urbansim_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }

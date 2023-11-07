@@ -1,7 +1,7 @@
 # Script to create parcels and buildings tables from Snohomish assessor data
 # for the use in urbansim 
 #
-# Hana Sevcikova, last update 10/24/2023
+# Hana Sevcikova, last update 11/07/2023
 #
 
 library(data.table)
@@ -9,6 +9,7 @@ library(data.table)
 county <- "Snohomish"
 
 data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+#data.dir <- "Snohomish_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 write.result.to.mysql <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
@@ -85,10 +86,6 @@ prep_buildings <- raw_buildings[, .(building_id = 1:nrow(raw_buildings),
 # join with building reclass table
 prep_buildings[bt_reclass[county_id == 61], building_type_id := i.building_type_id, 
                on = c(usecode = "county_building_use_code")]
-cat("\nMatched", nrow(prep_buildings[!is.na(building_type_id)]), "records with building reclass table")
-cat("\nUnmatched: ", nrow(prep_buildings[is.na(building_type_id)]), "records.")
-cat("\nThe following building codes were not found:\n")
-print(prep_buildings[is.na(building_type_id), .N, by = "usecode"][order(-N)])
 
 # Calculate improvement value proportionally to the sqft
 prep_buildings[prep_parcels, `:=`(total_improvement_value = i.improvement_value, 
@@ -128,18 +125,24 @@ prep_buildings[residential_units == 0 & usecode %in% c(44, 63, 70, 'APART'),
 prep_buildings[usecode %in% c(44, 63, 70, 'APART')  & is.na(building_type_id),
                     building_type_id := 12]
 
+cat("\nMatched", nrow(prep_buildings[!is.na(building_type_id)]), "records with building reclass table")
+cat("\nUnmatched: ", nrow(prep_buildings[is.na(building_type_id)]), "records.")
+cat("\nThe following building codes were not found:\n")
+print(prep_buildings[is.na(building_type_id), .N, by = "usecode"][order(-N)])
+
 # TODO: there are no mobile homes in the reclass table
 
 # assemble columns for final buildings table by joining residential and non-res part
 # TODO: for non-res buildings is gross_sqft the same as non_residential_sqft?
 buildings_final <- rbind(
     prep_buildings[building_type_id %in% c(4, 12, 19)
-    , .(building_id, parcel_number, gross_sqft = finsize, 
+    , .(building_id, parcel_number, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = round(finsize/residential_units),
         year_built = yrbuilt, residential_units, non_residential_sqft = 0,
-        improvement_value, use_code = usecode, stories, parcel_lrsn = lrsn)],
+        improvement_value, use_code = usecode, stories, parcel_lrsn = lrsn
+        )],
     prep_buildings[! building_type_id %in% c(4, 12, 19)
-    , .(building_id, parcel_number, gross_sqft = finsize, 
+    , .(building_id, parcel_number, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = 1, year_built = yrbuilt, residential_units = 0,
         non_residential_sqft = finsize, improvement_value, use_code = usecode, 
         stories, parcel_lrsn = lrsn
@@ -147,8 +150,21 @@ buildings_final <- rbind(
 # add urbansim parcel_id
 buildings_final[parcels_final, parcel_id := i.parcel_id, on = "parcel_number"]
 
+# remove buildings that cannot be assigned to parcels
+nbld <- nrow(buildings_final)
+buildings_final <- buildings_final[!is.na(parcel_id)]
+cat("\nDropped ", nbld - nrow(buildings_final), " buildings due to missing parcels.\n",
+    "Total: ", nrow(buildings_final), "buildings")
+
+# rename parcel_number column
+setnames(buildings_final, "parcel_number", "parcel_id_fips") 
 # column order
-setcolorder(buildings_final, c("building_id", "parcel_id", "parcel_number", "parcel_lrsn"))
+setcolorder(buildings_final, c("building_id", "parcel_id", "parcel_id_fips", "parcel_lrsn"))
+
+# remove columns from parcels_final and rename parcel_number
+parcels_final[, `:=`(improvement_value = NULL, total_value = NULL)]
+setnames(parcels_final, "parcel_number", "parcel_id_fips") 
+
 
 # write results
 fwrite(parcels_final, file = "urbansim_parcels.csv")
