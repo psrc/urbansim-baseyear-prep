@@ -1,238 +1,239 @@
-record_id,bldg_typ, improv_typ, use_desc, records, building_type_id,building_type_name
-1,BARN,COMMERCIAL,Barn <Obsolete>,7,1,agriculture
-2,BARNHOG,COMMERCIAL,Hog Barn <Obsolete>,1,1,agriculture
-3,BARNSHP,COMMERCIAL,Sheep Barn,1,1,agriculture
-4,FARMIMP,COMMERCIAL,Farm Implement Building,1,1,agriculture
-5,FMIMPSHD,COMMERCIAL,Farm Implement Shed,1,1,agriculture
-6,FMUTSHD,COMMERCIAL,Farm Utility Storage Shed,1,1,agriculture
-7,MILKHS,COMMERCIAL,Milkhouse,1,1,agriculture
-8,SUNSHLTR,COMMERCIAL,Farm Sun Shade Shelter,1,1,agriculture
-9,ARMORY,COMMERCIAL,Armory,2,2,civic
-10,AUDITORM,COMMERCIAL,Auditorium,4,2,civic
-11,CHURCH,COMMERCIAL,Church,191,2,civic
-12,COMMCTR,COMMERCIAL,Community Center,25,2,civic
-13,CONVENTN,COMMERCIAL,Convention Center,3,2,civic
-14,FIELDHS,COMMERCIAL,Fieldhouse,2,2,civic
-15,FLWSHP,COMMERCIAL,Fellowship Hall,7,2,civic
-16,FRATRNL,COMMERCIAL,Fraternal Building,11,2,civic
-17,LIBRARY,COMMERCIAL,"Library, Public",12,2,civic
-18,LODGE,COMMERCIAL,Lodge,23,2,civic
-19,MUSEUM,COMMERCIAL,Museum,3,2,civic
-20,RECTORY,COMMERCIAL,Rectory,4,2,civic
-21,SUNDSCHL,COMMERCIAL,Church w/ Sunday School,21,2,civic
-22,VISITOR,COMMERCIAL,Visitor Center,1,2,civic
-23,ANCHOR,COMMERCIAL,Mall Anchor Department Store,73,3,commercial
-24,AUTOSERV,COMMERCIAL,Automotive Center,77,3,commercial
-25,AUTOSHOW,COMMERCIAL,Automobile Showroom,24,3,commercial
-26,BANK,COMMERCIAL,Bank,78,3,commercial
-27,BKSTRSCH,COMMERCIAL,Bookstore <School>,2,3,commercial
-28,BOWL,COMMERCIAL,Bowling Center,6,3,commercial
-29,CAFETRIA,COMMERCIAL,Cafeteria,3,3,commercial
-30,CARWASH,COMMERCIAL,Car Wash - Automatic,13,3,commercial
-31,CASINO,COMMERCIAL,Casino,1,3,commercial
-32,COMBLDG,COMMERCIAL,Commercial Building,18,3,commercial
-33,COMPAUTO,COMMERCIAL,"Auto Dealership, Complete",16,3,commercial
-34,COMSHOP,COMMERCIAL,Community Shopping Center,38,3,commercial
-35,CONVMRKT,COMMERCIAL,Convenience Market,117,3,commercial
-36,CWCNPY,COMMERCIAL,Car Wash - Canopy,2,3,commercial
-37,CWDRVTH,COMMERCIAL,Car Wash - Drive Thru,5,3,commercial
-38,CWSLFSRV,COMMERCIAL,Car Wash - Self Serve,10,3,commercial
-39,DEPTSTOR,COMMERCIAL,Department Store,4,3,commercial
-40,DINING,COMMERCIAL,Cocktail Lounge,1,3,commercial
-41,DISCOUNT,COMMERCIAL,Discount Store,39,3,commercial
-42,DRUGS,COMMERCIAL,Drug Store,11,3,commercial
-43,FASTFDMS,COMMERCIAL,Fast Food Restaurant,75,3,commercial
-44,FITNESS,COMMERCIAL,Fitness Center,13,3,commercial
-45,GENRET,COMMERCIAL,Retail Store,576,3,commercial
-46,HEALTH,COMMERCIAL,Health Club,12,3,commercial
-47,HOSERV,COMMERCIAL,"Hotel, Full Service",10,3,commercial
-48,HOTELLS,COMMERCIAL,"Hotel, Limited Service",1,3,commercial
-49,HOUNIT,COMMERCIAL,Motel,44,3,commercial
-50,INTENNIS,COMMERCIAL,Indoor Tennis Club,2,3,commercial
-51,KENNEL,COMMERCIAL,Kennels,7,3,commercial
-52,LAUNDRY,COMMERCIAL,Laundromat,14,3,commercial
-53,LMBRSTGH,COMMERCIAL,"Lumber Storage Shed, Horz.",9,3,commercial
-54,LMBRSTGV,COMMERCIAL,"Lumber Storage Bldg., Vert.",2,3,commercial
-55,LUTLSTOR,COMMERCIAL,Lt. Commercial Utility Build.,127,3,commercial
-56,MARKET,COMMERCIAL,Market,3,3,commercial
-57,MINILUBE,COMMERCIAL,Mini-Lube Garage,6,3,commercial
-58,MINIMART,COMMERCIAL,Mini-Mart Convenience Store,2,3,commercial
-59,MORTUARY,COMMERCIAL,Mortuary,7,3,commercial
-60,MOTEL1SR,COMMERCIAL,"Motel Room, 1 Sty., Sgl. Row",4,3,commercial
-61,MOTEL2SR,COMMERCIAL,"Motel Room, 2 Sty., Sgl. Row",4,3,commercial
-62,MOTELES,COMMERCIAL,Extended Stay Motel,1,3,commercial
-63,NBHSHOP,COMMERCIAL,Neighborhood Shopping Ctr,86,3,commercial
-64,REGSHOP,COMMERCIAL,Regional Shopping Center,7,3,commercial
-65,RESTURNT,COMMERCIAL,Restaurant,145,3,commercial
-66,SCHADMIN,COMMERCIAL,Administrative Office,9,3,commercial
-67,SERVGAR,COMMERCIAL,Service Repair Garage,116,3,commercial
-68,SERVSTA,COMMERCIAL,Service Station,2,3,commercial
-69,SNACK,COMMERCIAL,Snack Bar,11,3,commercial
-70,SUPRMRKT,COMMERCIAL,Supermarket,26,3,commercial
-71,TAVERN,COMMERCIAL,Bar/Tavern,29,3,commercial
-72,WHSEFOOD,COMMERCIAL,Warehouse Food Store,1,3,commercial
-73,WHSSHOW,COMMERCIAL,Warehouse Showroom Store,4,3,commercial
-74,,COMMERCIAL,Commercial Building,11,3,commercial
-75,FIRESTAF,COMMERCIAL,Fire Station <Staff>,34,5,government
-76,FIREVOL,COMMERCIAL,Fire Station <Volunteer>,13,5,government
-77,GOVTBLDG,COMMERCIAL,Governmental Building,11,5,government
-78,POSTOFF,COMMERCIAL,"Post Office, Main",14,5,government
-79,POSTOFFB,COMMERCIAL,"Post Office, Branch",4,5,government
-80,FRATHSE,COMMERCIAL,Fraternity House,1,6,group_quarter
-81,GRPCARE,COMMERCIAL,Group Care Home,11,6,group_quarter
-82,HOMEELDY,COMMERCIAL,Home For The Elderly,1,6,group_quarter
-83,JAIL,COMMERCIAL,Jail - Correctional Facility,2,6,group_quarter
-84,MULTRESA,COMMERCIAL,Elderly Assist. Multi. Res.,15,6,group_quarter
-85,MULTRESH,COMMERCIAL,"Shell, Multiple Residence",5,6,group_quarter
-86,MULTRESS,COMMERCIAL,Multiple Res. <Sen. Citizen>,19,6,group_quarter
-87,ROOMHSE,COMMERCIAL,Rooming House,36,6,group_quarter
-88,SCHDORM,COMMERCIAL,Dormitory,9,6,group_quarter
-89,CONVHOSP,COMMERCIAL,Convalescent Hospital,25,7,hospital
-90,HOSPITAL,COMMERCIAL,Hospital,7,7,hospital
-91,HMFG,COMMERCIAL,"Industrials, Heavy Mftg.",1,8,industrial
-92,INDFLEX,COMMERCIAL,Industrial Flex Building,42,8,industrial
-93,INDOFF,COMMERCIAL,"Int. Space, Industrial",5,8,industrial
-94,ISNHBD,COMMERCIAL,"Int. Space, Neigh. Shop Ctr",44,8,industrial
-95,LMFG,COMMERCIAL,"Industrials, Light Mftg.",123,8,industrial
-96,RESDEV,COMMERCIAL,Industrial Engineering,1,8,industrial
-97,MIXEDO,COMMERCIAL,Mixed Retail w/ Office Units,6,10,mixed_use
-98,MIXEDR,COMMERCIAL,Mixed Retail w/ Resid. Units,47,10,mixed_use
-99,APART,COMMERCIAL,Apartment,240,12,multi_family_residential
-100,APARTRES,COMMERCIAL,Multiple Res <Low Rise>,949,12,multi_family_residential
-101,DENTAL,COMMERCIAL,Dental Office/Clinic,22,13,office
-102,GENOFF,COMMERCIAL,Office Building,747,13,office
-103,ISOFFICE,COMMERCIAL,Interior Space Office,6,13,office
-104,LAB,COMMERCIAL,Laboratory,2,13,office
-105,MEDOFF,COMMERCIAL,Medical Office,121,13,office
-106,MOBILEO,COMMERCIAL,Relocatable Office,21,13,office
-107,SHDOFF,COMMERCIAL,Shed Office Structure,6,13,office
-108,VETHOSP,COMMERCIAL,Veterinary Hospital,21,13,office
-109,EQUIPBLD,COMMERCIAL,Equipment <Shop> Building,64,14,outbuilding
-110,EQUIPSHD,COMMERCIAL,Equipment Shed,31,14,outbuilding
-111,GCSTG,COMMERCIAL,Golf Cart Storage Building,4,14,outbuilding
-112,GRNHSLA,COMMERCIAL,"Greenhouse, Lath Shade House",1,14,outbuilding
-113,GRNHSSH,COMMERCIAL,"Greenhouse, Shade Shelter",13,14,outbuilding
-114,LEANTO,COMMERCIAL,Equestrian Lean-To,1,14,outbuilding
-115,MTRLSHD,COMMERCIAL,Material Storage Shed,12,14,outbuilding
-116,MTRLSHEL,COMMERCIAL,Material Shelter,5,14,outbuilding
-117,MWRHSE,COMMERCIAL,Mini-Warehouse,448,14,mini_storage
-118,STORGAR,COMMERCIAL,Storage Garage,62,14,outbuilding
-119,PARKGAR,COMMERCIAL,Parking Structure,14,16,parking
-120,PARKLVL,COMMERCIAL,Parking Level,5,16,parking
-121,CINEMA,COMMERCIAL,Theater - Cinema,10,17,recreation
-122,CLUB,COMMERCIAL,Country Club,12,17,recreation
-123,CLUBHSE,COMMERCIAL,Clubhouse,176,17,recreation
-124,GYMC,COMMERCIAL,Gymnasium <College>,4,17,recreation
-125,ICERINK,COMMERCIAL,Skating Rink,1,17,recreation
-126,RECENC,COMMERCIAL,Recreational Enclosure,1,17,recreation
-127,SCHGYM,COMMERCIAL,Gymnasium <School>,12,17,recreation
-128,SKATING,COMMERCIAL,"Skating Rink, Roller",1,17,recreation
-129,THEATRE,COMMERCIAL,Theater - Live Stage,9,17,recreation
-130,ARTSBLDC,COMMERCIAL,Arts & Crafts Bldg <Coll>,1,18,school
-131,CLASSC,COMMERCIAL,Classroom <College>,7,18,school
-132,COMMONS,COMMERCIAL,Commons <College>,1,18,school
-133,DAYCARE,COMMERCIAL,Day Care Center,19,18,school
-134,ELEMSCH,COMMERCIAL,Elementary School <Entire>,23,18,school
-135,HIGHSCHL,COMMERCIAL,High School <Entire>,2,18,school
-136,MIDDLSCH,COMMERCIAL,Junior High School <Entire>,10,18,school
-137,MOBILEC,COMMERCIAL,Relocatable Classroom,86,18,school
-138,MULTPRPC,COMMERCIAL,Multi-Purp Bldg <College>,1,18,school
-139,MULTPRPK,COMMERCIAL,Multi-Purpose Bldg <School>,9,18,school
-140,PEBLDGK,COMMERCIAL,Physical Education Building,2,18,school
-141,SCHCLASS,COMMERCIAL,Classroom,180,18,school
-142,SCHSHWR,COMMERCIAL,Shower Building,2,18,school
-143,TECHBLDC,COMMERCIAL,Technical Trades Bldg.,1,18,school
-144,VOCSCHL,COMMERCIAL,Vocational School,4,18,school
-145,HANGAR,COMMERCIAL,"Hangar, Maint & Office",82,20,tcu
-146,HANGARS,COMMERCIAL,Storage Hangar,2,20,tcu
-147,HANGART,COMMERCIAL,T-Hangar,11,20,tcu
-148,PASSENGR,COMMERCIAL,Passenger Terminal,2,20,tcu
-149,COLDSTOR,COMMERCIAL,Cold Storage Facility,2,21,warehousing
-150,LFTWRHSE,COMMERCIAL,Loft,5,21,warehousing
-151,WHSEDISC,COMMERCIAL,Discount Warehouse Store,12,21,warehousing
-152,WHSEDIST,COMMERCIAL,Distribution Warehouse,12,21,warehousing
-153,WHSESTOR,COMMERCIAL,Storage Warehouse,701,21,warehousing
-154,GUEST,COMMERCIAL,Guest Cottage,52,23,other
-155,OFFSHELL,COMMERCIAL,"Shell, Office",6,23,other
-156,RESTROOM,COMMERCIAL,Restroom Building,75,23,other
-157,DWELL,DWELLING,Condominium,2781,4,condo_residential
-158,DWELL,DWELLING,Manufactured home,2,11,mobile_home
-159,MH,DWELLING,Manufactured home,1,11,mobile_home
-160,MHOME,DWELLING,Manufactured home,13473,11,mobile_home
-161,MHOME,DWELLING,One story,1,11,mobile_home
-162,MHOME,DWELLING,,4,11,mobile_home
-163,DWELL,DWELLING,Duplex,1782,12,multi_family_residential
-164,DWELL,DWELLING,Multi-family,458,12,multi_family_residential
-165,DWELL,DWELLING,Townhouse,1425,12,multi_family_residential
-166,DWELL,DWELLING,1.5 story,9306,19,single_family_residential
-167,DWELL,DWELLING,Multi-story,26640,19,single_family_residential
-168,DWELL,DWELLING,One story,43420,19,single_family_residential
-169,DWELL,DWELLING,Split entry,6204,19,single_family_residential
-170,DWELL,DWELLING,Split level,2845,19,single_family_residential
-171,DWELL,DWELLING,,18,19,single_family_residential
-172,DWELL,DWELLING,Dome,57,19,single_family_residential
-173,COMPOOL,OTHER,,1,2,civic
-174,CARWASHA,OTHER,,1,3,commercial
-175,CARWASHG,OTHER,,1,3,commercial
-176,MHPARK2,OTHER,,37,11,mobile_home
-177,ATTGAR,OTHER,,4,14,outbuilding
-178,BLKHDWLL,OTHER,,204,14,outbuilding
-179,CGRNHSE,OTHER,,6,14,outbuilding
-180,COMCNPYG,OTHER,,8,14,outbuilding
-181,DETGAR,OTHER,,1794,14,outbuilding
-182,DETGAR,OTHER,Multi-story,1,14,outbuilding
-183,FLATCP,OTHER,,206,14,outbuilding
-184,LEANTO,OTHER,,4,14,outbuilding
-185,POLEBLDG,OTHER,,573,14,outbuilding
-186,RESTRM,OTHER,,5,14,outbuilding
-187,SHED,OTHER,,4,14,outbuilding
-188,SHEDGP,OTHER,,261,14,outbuilding
-189,SMALL,OTHER,,132,14,outbuilding
-190,STEELUTL,OTHER,,109,14,outbuilding
-191,UTLSHED,OTHER,,10,14,outbuilding
-192,PAV,OTHER,,5,16,parking
-193,PAVING,OTHER,,229,16,parking
-194,ARENA,OTHER,,18,17,recreation
-195,BOATD,OTHER,,19,17,recreation
-196,BOATHSE,OTHER,,8,17,recreation
-197,GOLFCRSE,OTHER,,26,17,recreation
-198,MINGOLF,OTHER,,5,17,recreation
-199,PIER,OTHER,,15,17,recreation
-200,STABLE,OTHER,,16,17,recreation
-201,TENNIS,OTHER,,10,17,recreation
-202,TENNISD,OTHER,,2,17,recreation
-203,TENNISS,OTHER,,6,17,recreation
-204,CABIN,OTHER,,397,19,single_family_residential
-205,CABIN,OTHER,One story,2,19,single_family_residential
-206,BIN,OTHER,,1,23,other
-207,BLEACHER,OTHER,,2,23,other
-208,BRIDGEP,OTHER,,1,23,other
-209,BSMT,OTHER,,12,23,other
-210,COMCNPYA,OTHER,,13,23,other
-211,COMCNPYH,OTHER,,2,23,other
-212,COMCNPYL,OTHER,,12,23,other
-213,CONCTANK,OTHER,,43,23,other
-214,ELEVTANK,OTHER,,2,23,other
-215,FENCECL,OTHER,,3,23,other
-216,GRNHSEFS,OTHER,,11,23,other
-217,ICP,OTHER,,14,23,other
-218,INCINER,OTHER,,1,23,other
-219,JACUZZI,OTHER,,2,23,other
-220,MHHOOKUP,OTHER,,2,23,other
-221,MISC,OTHER,,1067,23,other
-222,MISC,OTHER,One story,1,23,other
-223,NOSTRUCT,OTHER,,2,23,other
-224,PAVAG,OTHER,,3,23,other
-225,PIPE,OTHER,,48,23,other
-226,POOL,OTHER,,16,23,other
-227,PRESTANK,OTHER,,16,23,other
-228,QUONSET,OTHER,,10,23,other
-229,RESEVOIR,OTHER,,11,23,other
-230,RESTROOM,OTHER,,19,23,other
-231,RIPRAP,OTHER,,1,23,other
-232,SITEPREP,OTHER,,1,23,other
-233,SLIP,OTHER,,1,23,other
-234,STANDS,OTHER,,1,23,other
-235,STORGAR,OTHER,,2,23,other
-236,UTLSTOR,OTHER,,1,23,other
-237,WHPOOL,OTHER,,1,23,other
+record_id,"bldg_typ","improv_typ","use_desc",records,building_type_id,"building_type_name"
+1,"BARN","COMMERCIAL","Barn <Obsolete>",7,1,"agriculture"
+2,"BARNHOG","COMMERCIAL","Hog Barn <Obsolete>",1,1,"agriculture"
+3,"BARNSHP","COMMERCIAL","Sheep Barn",1,1,"agriculture"
+4,"FARMIMP","COMMERCIAL","Farm Implement Building",1,1,"agriculture"
+5,"FMIMPSHD","COMMERCIAL","Farm Implement Shed",1,1,"agriculture"
+6,"FMUTSHD","COMMERCIAL","Farm Utility Storage Shed",1,1,"agriculture"
+7,"MILKHS","COMMERCIAL","Milkhouse",1,1,"agriculture"
+8,"SUNSHLTR","COMMERCIAL","Farm Sun Shade Shelter",1,1,"agriculture"
+9,"ARMORY","COMMERCIAL","Armory",2,2,"civic"
+10,"AUDITORM","COMMERCIAL","Auditorium",4,2,"civic"
+11,"CHURCH","COMMERCIAL","Church",191,2,"civic"
+12,"COMMCTR","COMMERCIAL","Community Center",25,2,"civic"
+13,"CONVENTN","COMMERCIAL","Convention Center",3,2,"civic"
+14,"FIELDHS","COMMERCIAL","Fieldhouse",2,2,"civic"
+15,"FLWSHP","COMMERCIAL","Fellowship Hall",7,2,"civic"
+16,"FRATRNL","COMMERCIAL","Fraternal Building",11,2,"civic"
+17,"LIBRARY","COMMERCIAL","Library, Public",12,2,"civic"
+18,"LODGE","COMMERCIAL","Lodge",23,2,"civic"
+19,"MUSEUM","COMMERCIAL","Museum",3,2,"civic"
+20,"RECTORY","COMMERCIAL","Rectory",4,2,"civic"
+21,"SUNDSCHL","COMMERCIAL","Church w/ Sunday School",21,2,"civic"
+22,"VISITOR","COMMERCIAL","Visitor Center",1,2,"civic"
+23,"ANCHOR","COMMERCIAL","Mall Anchor Department Store",73,3,"commercial"
+24,"AUTOSERV","COMMERCIAL","Automotive Center",77,3,"commercial"
+25,"AUTOSHOW","COMMERCIAL","Automobile Showroom",24,3,"commercial"
+26,"BANK","COMMERCIAL","Bank",78,3,"commercial"
+27,"BKSTRSCH","COMMERCIAL","Bookstore <School>",2,3,"commercial"
+28,"BOWL","COMMERCIAL","Bowling Center",6,3,"commercial"
+29,"CAFETRIA","COMMERCIAL","Cafeteria",3,3,"commercial"
+30,"CARWASH","COMMERCIAL","Car Wash - Automatic",13,3,"commercial"
+31,"CASINO","COMMERCIAL","Casino",1,3,"commercial"
+32,"COMBLDG","COMMERCIAL","Commercial Building",18,3,"commercial"
+33,"COMPAUTO","COMMERCIAL","Auto Dealership, Complete",16,3,"commercial"
+34,"COMSHOP","COMMERCIAL","Community Shopping Center",38,3,"commercial"
+35,"CONVMRKT","COMMERCIAL","Convenience Market",117,3,"commercial"
+36,"CWCNPY","COMMERCIAL","Car Wash - Canopy",2,3,"commercial"
+37,"CWDRVTH","COMMERCIAL","Car Wash - Drive Thru",5,3,"commercial"
+38,"CWSLFSRV","COMMERCIAL","Car Wash - Self Serve",10,3,"commercial"
+39,"DEPTSTOR","COMMERCIAL","Department Store",4,3,"commercial"
+40,"DINING","COMMERCIAL","Cocktail Lounge",1,3,"commercial"
+41,"DISCOUNT","COMMERCIAL","Discount Store",39,3,"commercial"
+42,"DRUGS","COMMERCIAL","Drug Store",11,3,"commercial"
+43,"FASTFDMS","COMMERCIAL","Fast Food Restaurant",75,3,"commercial"
+44,"FITNESS","COMMERCIAL","Fitness Center",13,3,"commercial"
+45,"GENRET","COMMERCIAL","Retail Store",576,3,"commercial"
+46,"HEALTH","COMMERCIAL","Health Club",12,3,"commercial"
+47,"HOSERV","COMMERCIAL","Hotel, Full Service",10,3,"commercial"
+48,"HOTELLS","COMMERCIAL","Hotel, Limited Service",1,3,"commercial"
+49,"HOUNIT","COMMERCIAL","Motel",44,3,"commercial"
+50,"INTENNIS","COMMERCIAL","Indoor Tennis Club",2,3,"commercial"
+51,"KENNEL","COMMERCIAL","Kennels",7,3,"commercial"
+52,"LAUNDRY","COMMERCIAL","Laundromat",14,3,"commercial"
+53,"LMBRSTGH","COMMERCIAL","Lumber Storage Shed, Horz.",9,3,"commercial"
+54,"LMBRSTGV","COMMERCIAL","Lumber Storage Bldg., Vert.",2,3,"commercial"
+55,"LUTLSTOR","COMMERCIAL","Lt. Commercial Utility Build.",127,3,"commercial"
+56,"MARKET","COMMERCIAL","Market",3,3,"commercial"
+57,"MINILUBE","COMMERCIAL","Mini-Lube Garage",6,3,"commercial"
+58,"MINIMART","COMMERCIAL","Mini-Mart Convenience Store",2,3,"commercial"
+59,"MORTUARY","COMMERCIAL","Mortuary",7,3,"commercial"
+60,"MOTEL1SR","COMMERCIAL","Motel Room, 1 Sty., Sgl. Row",4,3,"commercial"
+61,"MOTEL2SR","COMMERCIAL","Motel Room, 2 Sty., Sgl. Row",4,3,"commercial"
+62,"MOTELES","COMMERCIAL","Extended Stay Motel",1,3,"commercial"
+63,"NBHSHOP","COMMERCIAL","Neighborhood Shopping Ctr",86,3,"commercial"
+64,"REGSHOP","COMMERCIAL","Regional Shopping Center",7,3,"commercial"
+65,"RESTURNT","COMMERCIAL","Restaurant",145,3,"commercial"
+66,"SCHADMIN","COMMERCIAL","Administrative Office",9,3,"commercial"
+67,"SERVGAR","COMMERCIAL","Service Repair Garage",116,3,"commercial"
+68,"SERVSTA","COMMERCIAL","Service Station",2,3,"commercial"
+69,"SNACK","COMMERCIAL","Snack Bar",11,3,"commercial"
+70,"SUPRMRKT","COMMERCIAL","Supermarket",26,3,"commercial"
+71,"TAVERN","COMMERCIAL","Bar/Tavern",29,3,"commercial"
+72,"WHSEFOOD","COMMERCIAL","Warehouse Food Store",1,3,"commercial"
+73,"WHSSHOW","COMMERCIAL","Warehouse Showroom Store",4,3,"commercial"
+74,"","COMMERCIAL","Commercial Building",11,3,"commercial"
+75,"FIRESTAF","COMMERCIAL","Fire Station <Staff>",34,5,"government"
+76,"FIREVOL","COMMERCIAL","Fire Station <Volunteer>",13,5,"government"
+77,"GOVTBLDG","COMMERCIAL","Governmental Building",11,5,"government"
+78,"POSTOFF","COMMERCIAL","Post Office, Main",14,5,"government"
+79,"POSTOFFB","COMMERCIAL","Post Office, Branch",4,5,"government"
+80,"FRATHSE","COMMERCIAL","Fraternity House",1,6,"group_quarter"
+81,"GRPCARE","COMMERCIAL","Group Care Home",11,6,"group_quarter"
+82,"HOMEELDY","COMMERCIAL","Home For The Elderly",1,6,"group_quarter"
+83,"JAIL","COMMERCIAL","Jail - Correctional Facility",2,6,"group_quarter"
+84,"MULTRESA","COMMERCIAL","Elderly Assist. Multi. Res.",15,6,"group_quarter"
+85,"MULTRESH","COMMERCIAL","Shell, Multiple Residence",5,6,"group_quarter"
+86,"MULTRESS","COMMERCIAL","Multiple Res. <Sen. Citizen>",19,6,"group_quarter"
+87,"ROOMHSE","COMMERCIAL","Rooming House",36,6,"group_quarter"
+88,"SCHDORM","COMMERCIAL","Dormitory",9,6,"group_quarter"
+89,"CONVHOSP","COMMERCIAL","Convalescent Hospital",25,7,"hospital"
+90,"HOSPITAL","COMMERCIAL","Hospital",7,7,"hospital"
+91,"HMFG","COMMERCIAL","Industrials, Heavy Mftg.",1,8,"industrial"
+92,"INDFLEX","COMMERCIAL","Industrial Flex Building",42,8,"industrial"
+93,"INDOFF","COMMERCIAL","Int. Space, Industrial",5,8,"industrial"
+94,"ISNHBD","COMMERCIAL","Int. Space, Neigh. Shop Ctr",44,8,"industrial"
+95,"LMFG","COMMERCIAL","Industrials, Light Mftg.",123,8,"industrial"
+96,"RESDEV","COMMERCIAL","Industrial Engineering",1,8,"industrial"
+97,"MIXEDO","COMMERCIAL","Mixed Retail w/ Office Units",6,10,"mixed_use"
+98,"MIXEDR","COMMERCIAL","Mixed Retail w/ Resid. Units",47,10,"mixed_use"
+99,"APART","COMMERCIAL","Apartment",240,12,"multi_family_residential"
+100,"APARTRES","COMMERCIAL","Multiple Res <Low Rise>",949,12,"multi_family_residential"
+101,"DENTAL","COMMERCIAL","Dental Office/Clinic",22,13,"office"
+102,"GENOFF","COMMERCIAL","Office Building",747,13,"office"
+103,"ISOFFICE","COMMERCIAL","Interior Space Office",6,13,"office"
+104,"LAB","COMMERCIAL","Laboratory",2,13,"office"
+105,"MEDOFF","COMMERCIAL","Medical Office",121,13,"office"
+106,"MOBILEO","COMMERCIAL","Relocatable Office",21,13,"office"
+107,"SHDOFF","COMMERCIAL","Shed Office Structure",6,13,"office"
+108,"VETHOSP","COMMERCIAL","Veterinary Hospital",21,13,"office"
+109,"EQUIPBLD","COMMERCIAL","Equipment <Shop> Building",64,14,"outbuilding"
+110,"EQUIPSHD","COMMERCIAL","Equipment Shed",31,14,"outbuilding"
+111,"GCSTG","COMMERCIAL","Golf Cart Storage Building",4,14,"outbuilding"
+112,"GRNHSLA","COMMERCIAL","Greenhouse, Lath Shade House",1,14,"outbuilding"
+113,"GRNHSSH","COMMERCIAL","Greenhouse, Shade Shelter",13,14,"outbuilding"
+114,"LEANTO","COMMERCIAL","Equestrian Lean-To",1,14,"outbuilding"
+115,"MTRLSHD","COMMERCIAL","Material Storage Shed",12,14,"outbuilding"
+116,"MTRLSHEL","COMMERCIAL","Material Shelter",5,14,"outbuilding"
+117,"MWRHSE","COMMERCIAL","Mini-Warehouse",448,14,"mini_storage"
+118,"STORGAR","COMMERCIAL","Storage Garage",62,14,"outbuilding"
+119,"PARKGAR","COMMERCIAL","Parking Structure",14,16,"parking"
+120,"PARKLVL","COMMERCIAL","Parking Level",5,16,"parking"
+121,"CINEMA","COMMERCIAL","Theater - Cinema",10,17,"recreation"
+122,"CLUB","COMMERCIAL","Country Club",12,17,"recreation"
+123,"CLUBHSE","COMMERCIAL","Clubhouse",176,17,"recreation"
+124,"GYMC","COMMERCIAL","Gymnasium <College>",4,17,"recreation"
+125,"ICERINK","COMMERCIAL","Skating Rink",1,17,"recreation"
+126,"RECENC","COMMERCIAL","Recreational Enclosure",1,17,"recreation"
+127,"SCHGYM","COMMERCIAL","Gymnasium <School>",12,17,"recreation"
+128,"SKATING","COMMERCIAL","Skating Rink, Roller",1,17,"recreation"
+129,"THEATRE","COMMERCIAL","Theater - Live Stage",9,17,"recreation"
+130,"ARTSBLDC","COMMERCIAL","Arts & Crafts Bldg <Coll>",1,18,"school"
+131,"CLASSC","COMMERCIAL","Classroom <College>",7,18,"school"
+132,"COMMONS","COMMERCIAL","Commons <College>",1,18,"school"
+133,"DAYCARE","COMMERCIAL","Day Care Center",19,18,"school"
+134,"ELEMSCH","COMMERCIAL","Elementary School <Entire>",23,18,"school"
+135,"HIGHSCHL","COMMERCIAL","High School <Entire>",2,18,"school"
+136,"MIDDLSCH","COMMERCIAL","Junior High School <Entire>",10,18,"school"
+137,"MOBILEC","COMMERCIAL","Relocatable Classroom",86,18,"school"
+138,"MULTPRPC","COMMERCIAL","Multi-Purp Bldg <College>",1,18,"school"
+139,"MULTPRPK","COMMERCIAL","Multi-Purpose Bldg <School>",9,18,"school"
+140,"PEBLDGK","COMMERCIAL","Physical Education Building",2,18,"school"
+141,"SCHCLASS","COMMERCIAL","Classroom",180,18,"school"
+142,"SCHSHWR","COMMERCIAL","Shower Building",2,18,"school"
+143,"TECHBLDC","COMMERCIAL","Technical Trades Bldg.",1,18,"school"
+144,"VOCSCHL","COMMERCIAL","Vocational School",4,18,"school"
+145,"HANGAR","COMMERCIAL","Hangar, Maint & Office",82,20,"tcu"
+146,"HANGARS","COMMERCIAL","Storage Hangar",2,20,"tcu"
+147,"HANGART","COMMERCIAL","T-Hangar",11,20,"tcu"
+148,"PASSENGR","COMMERCIAL","Passenger Terminal",2,20,"tcu"
+149,"COLDSTOR","COMMERCIAL","Cold Storage Facility",2,21,"warehousing"
+150,"LFTWRHSE","COMMERCIAL","Loft",5,21,"warehousing"
+151,"WHSEDISC","COMMERCIAL","Discount Warehouse Store",12,21,"warehousing"
+152,"WHSEDIST","COMMERCIAL","Distribution Warehouse",12,21,"warehousing"
+153,"WHSESTOR","COMMERCIAL","Storage Warehouse",701,21,"warehousing"
+154,"GUEST","COMMERCIAL","Guest Cottage",52,23,"other"
+155,"OFFSHELL","COMMERCIAL","Shell, Office",6,23,"other"
+156,"RESTROOM","COMMERCIAL","Restroom Building",75,23,"other"
+157,"DWELL","DWELLING","Condominium",2781,4,"condo_residential"
+158,"DWELL","DWELLING","Manufactured home",2,11,"mobile_home"
+159,"MH","DWELLING","Manufactured home",1,11,"mobile_home"
+160,"MHOME","DWELLING","Manufactured home",13473,11,"mobile_home"
+161,"MHOME","DWELLING","One story",1,11,"mobile_home"
+162,"MHOME","DWELLING","",4,11,"mobile_home"
+163,"DWELL","DWELLING","Duplex",1782,12,"multi_family_residential"
+164,"DWELL","DWELLING","Multi-family",458,12,"multi_family_residential"
+165,"DWELL","DWELLING","Townhouse",1425,12,"multi_family_residential"
+166,"DWELL","DWELLING","1.5 story",9306,19,"single_family_residential"
+167,"DWELL","DWELLING","Multi-story",26640,19,"single_family_residential"
+168,"DWELL","DWELLING","One story",43420,19,"single_family_residential"
+169,"DWELL","DWELLING","Split entry",6204,19,"single_family_residential"
+170,"DWELL","DWELLING","Split level",2845,19,"single_family_residential"
+171,"DWELL","DWELLING","",18,19,"single_family_residential"
+172,"DWELL","DWELLING","Dome",57,19,"single_family_residential"
+173,"COMPOOL","OTHER","",1,2,"civic"
+174,"CARWASHA","OTHER","",1,3,"commercial"
+175,"CARWASHG","OTHER","",1,3,"commercial"
+176,"MHPARK2","OTHER","",37,11,"mobile_home"
+177,"ATTGAR","OTHER","",4,14,"outbuilding"
+178,"BLKHDWLL","OTHER","",204,14,"outbuilding"
+179,"CGRNHSE","OTHER","",6,14,"outbuilding"
+180,"COMCNPYG","OTHER","",8,14,"outbuilding"
+181,"DETGAR","OTHER","",1794,14,"outbuilding"
+182,"DETGAR","OTHER","Multi-story",1,14,"outbuilding"
+183,"FLATCP","OTHER","",206,14,"outbuilding"
+184,"LEANTO","OTHER","",4,14,"outbuilding"
+185,"POLEBLDG","OTHER","",573,14,"outbuilding"
+186,"RESTRM","OTHER","",5,14,"outbuilding"
+187,"SHED","OTHER","",4,14,"outbuilding"
+188,"SHEDGP","OTHER","",261,14,"outbuilding"
+189,"SMALL","OTHER","",132,14,"outbuilding"
+190,"STEELUTL","OTHER","",109,14,"outbuilding"
+191,"UTLSHED","OTHER","",10,14,"outbuilding"
+192,"PAV","OTHER","",5,16,"parking"
+193,"PAVING","OTHER","",229,16,"parking"
+194,"ARENA","OTHER","",18,17,"recreation"
+195,"BOATD","OTHER","",19,17,"recreation"
+196,"BOATHSE","OTHER","",8,17,"recreation"
+197,"GOLFCRSE","OTHER","",26,17,"recreation"
+198,"MINGOLF","OTHER","",5,17,"recreation"
+199,"PIER","OTHER","",15,17,"recreation"
+200,"STABLE","OTHER","",16,17,"recreation"
+201,"TENNIS","OTHER","",10,17,"recreation"
+202,"TENNISD","OTHER","",2,17,"recreation"
+203,"TENNISS","OTHER","",6,17,"recreation"
+204,"CABIN","OTHER","",397,19,"single_family_residential"
+205,"CABIN","OTHER","One story",2,19,"single_family_residential"
+206,"BIN","OTHER","",1,23,"other"
+207,"BLEACHER","OTHER","",2,23,"other"
+208,"BRIDGEP","OTHER","",1,23,"other"
+209,"BSMT","OTHER","",12,23,"other"
+210,"COMCNPYA","OTHER","",13,23,"other"
+211,"COMCNPYH","OTHER","",2,23,"other"
+212,"COMCNPYL","OTHER","",12,23,"other"
+213,"CONCTANK","OTHER","",43,23,"other"
+214,"ELEVTANK","OTHER","",2,23,"other"
+215,"FENCECL","OTHER","",3,23,"other"
+216,"GRNHSEFS","OTHER","",11,23,"other"
+217,"ICP","OTHER","",14,23,"other"
+218,"INCINER","OTHER","",1,23,"other"
+219,"JACUZZI","OTHER","",2,23,"other"
+220,"MHHOOKUP","OTHER","",2,23,"other"
+221,"MISC","OTHER","",1067,23,"other"
+222,"MISC","OTHER","One story",1,23,"other"
+223,"NOSTRUCT","OTHER","",2,23,"other"
+224,"PAVAG","OTHER","",3,23,"other"
+225,"PIPE","OTHER","",48,23,"other"
+226,"POOL","OTHER","",16,23,"other"
+227,"PRESTANK","OTHER","",16,23,"other"
+228,"QUONSET","OTHER","",10,23,"other"
+229,"RESEVOIR","OTHER","",11,23,"other"
+230,"RESTROOM","OTHER","",19,23,"other"
+231,"RIPRAP","OTHER","",1,23,"other"
+232,"SITEPREP","OTHER","",1,23,"other"
+233,"SLIP","OTHER","",1,23,"other"
+234,"STANDS","OTHER","",1,23,"other"
+235,"STORGAR","OTHER","",2,23,"other"
+236,"UTLSTOR","OTHER","",1,23,"other"
+237,"WHPOOL","OTHER","",1,23,"other"
+125,"ICERINK","COMMERCIAL","Skating Rink, Ice",1,17,"recreation"

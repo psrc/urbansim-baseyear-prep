@@ -1,19 +1,23 @@
 # Script to create parcels and buildings tables from Snohomish assessor data
 # for the use in urbansim 
+# It generates 4 tables: 
+#    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
+#.   urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 11/07/2023
+# Hana Sevcikova, last update 11/15/2023
 #
 
 library(data.table)
 
 county <- "Snohomish"
+county.id <- 61
 
 data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
 #data.dir <- "Snohomish_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
-write.result.to.mysql <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
+write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
-if(write.result.to.mysql) source("mysql_connection.R")
+if(write.result) source("mysql_connection.R")
 
 ###############
 # Load all data
@@ -39,14 +43,20 @@ raw_buildings <- fread(file.path(data.dir, "improvement.txt"))
 ###################
 # Process parcels
 ###################
+
+# Snohomish ID: parcel_id
+# urbansim ID: pin
+
+cat("\nProcessing Snohomish parcels\n=========================\n")
+
 # make column names lowercase
 colnames(parcels.23to18) <- tolower(colnames(parcels.23to18))
 #colnames(main_data) <- tolower(colnames(main_data))
 
-# remove duplicates (if any) and records with parcel_id = NA
+# remove duplicates (if any) and records with parcel_id = NA (this are duplicates of the Snohomish specific ID!)
 parcels.nodupl <- parcels.23to18[!is.na(parcel_id)][!duplicated(parcel_id)]
 cat("\nNumber of records removed from parcels (either NA or duplicates): ", 
-    nrow(parcels.23to18) - nrow(parcels.nodupl), "\n")
+    nrow(parcels.23to18) - nrow(parcels.nodupl))
 
 prep_parcels <- parcels.nodupl[, .(parcel_id = pin, parcel_number = parcel_id, 
                                    parcel_lrsn = lrsn,
@@ -57,22 +67,33 @@ prep_parcels <- parcels.nodupl[, .(parcel_id = pin, parcel_number = parcel_id,
                                    usecode, 
                                    exemption = as.integer(parcel_id %in% exemptions[, parcel_number]))]
 
+# TODO: extract the value info directly from Snohomish parcel datasets instead of the 23to18 dataset
+
 # join with reclass table
-prep_parcels[lu_reclass[county_id == 61], land_use_type_id := i.land_use_type_id, 
+prep_parcels[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
               on = c(usecode = "county_land_use_description")]
 
 cat("\nMatched", nrow(prep_parcels[!is.na(land_use_type_id)]), "records with land use reclass table")
 cat("\nUnmatched: ", nrow(prep_parcels[is.na(land_use_type_id)]), "records.")
-cat("\nThe following codes were not found:\n")
-print(prep_parcels[is.na(land_use_type_id) & !is.na(usecode), .N, by = "usecode"][order(usecode)])
+if(nrow(misslu <- prep_parcels[is.na(land_use_type_id) & !is.na(usecode), .N, by = "usecode"]) > 0){
+    cat("\nThe following land use codes were not found:\n")
+    print(misslu[order(usecode)])
+} else cat("\nAll land use codes matched.")
 
 # construct final parcels 
 # (if no additional columns or other cleaning needed then it's just a copy of prep_parcels)
 parcels_final <- copy(prep_parcels)
 
+cat("\nTotal all:", nrow(parcels_final), "parcels")
+cat("\nAssigned to 2018:", nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]), "parcels")
+cat("\nDifference:", nrow(parcels_final) - nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]))
+
 ###################
 # Process buildings
 ###################
+
+cat("\n\nProcessing Snohomish buildings\n=========================\n")
+
 # make column names lowercase
 colnames(raw_buildings) <- tolower(colnames(raw_buildings))
 
@@ -82,9 +103,8 @@ prep_buildings <- raw_buildings[, .(building_id = 1:nrow(raw_buildings),
                                     bldgtype, stories, yrbuilt, finsize,
                                     numberrooms, numbedrms, propext)]
 
-
 # join with building reclass table
-prep_buildings[bt_reclass[county_id == 61], building_type_id := i.building_type_id, 
+prep_buildings[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
                on = c(usecode = "county_building_use_code")]
 
 # Calculate improvement value proportionally to the sqft
@@ -127,8 +147,10 @@ prep_buildings[usecode %in% c(44, 63, 70, 'APART')  & is.na(building_type_id),
 
 cat("\nMatched", nrow(prep_buildings[!is.na(building_type_id)]), "records with building reclass table")
 cat("\nUnmatched: ", nrow(prep_buildings[is.na(building_type_id)]), "records.")
-cat("\nThe following building codes were not found:\n")
-print(prep_buildings[is.na(building_type_id), .N, by = "usecode"][order(-N)])
+if(nrow(missbt <- prep_buildings[is.na(building_type_id), .N, by = c("usecode", "usedesc")]) > 0){
+    cat("\nThe following building codes were not found:\n")
+    print(missbt[order(-N)])
+} else cat("\nAll building use codes matched.")
 
 # TODO: there are no mobile homes in the reclass table
 
@@ -152,9 +174,8 @@ buildings_final[parcels_final, parcel_id := i.parcel_id, on = "parcel_number"]
 
 # remove buildings that cannot be assigned to parcels
 nbld <- nrow(buildings_final)
-buildings_final <- buildings_final[!is.na(parcel_id)]
-cat("\nDropped ", nbld - nrow(buildings_final), " buildings due to missing parcels.\n",
-    "Total: ", nrow(buildings_final), "buildings")
+buildings_final <- buildings_final[parcel_number %in% parcels_final[, parcel_number]]
+cat("\nDropped ", nbld - nrow(buildings_final), " buildings due to missing parcels.")
 
 # rename parcel_number column
 setnames(buildings_final, "parcel_number", "parcel_id_fips") 
@@ -165,15 +186,22 @@ setcolorder(buildings_final, c("building_id", "parcel_id", "parcel_id_fips", "pa
 parcels_final[, `:=`(improvement_value = NULL, total_value = NULL)]
 setnames(parcels_final, "parcel_number", "parcel_id_fips") 
 
+cat("\nTotal all: ", nrow(buildings_final), "buildings")
+cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings")
+cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "\n")
 
-# write results
-fwrite(parcels_final, file = "urbansim_parcels.csv")
-fwrite(buildings_final, file = "urbansim_buildings.csv")
 
-if(write.result.to.mysql){
+if(write.result){
+    # write results
+    fwrite(parcels_final, file = "urbansim_parcels_all_snohomish.csv")
+    fwrite(buildings_final, file = "urbansim_buildings_all_snohomish.csv")
+    fwrite(parcels_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_parcels_snohomish.csv")
+    fwrite(buildings_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_buildings_snohomish.csv")
     db <- paste0(tolower(county), "_2023_parcel_baseyear")
     connection <- mysql.connection(db)
-    dbWriteTable(connection, "urbansim_parcels", parcels_final, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "urbansim_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_parcels", parcels_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings", buildings_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_parcels_all", parcels_all, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
