@@ -164,6 +164,9 @@ prep_buildings[is.na(units), units := 0]
 index_residential <- with(prep_buildings, building_type_id %in% c(4, 11, 12, 19))
 prep_buildings[!index_residential, units := 0]
 
+# set non_residential_sqft
+prep_buildings[, non_residential_sqft := square_feet][index_residential, non_residential_sqft := 0]
+
 # Impute units where residential & units is 0
 # SF & mobile homes
 prep_buildings[building_type_id %in% c(11, 19) & units == 0, units := 1]
@@ -208,7 +211,7 @@ print(prep_buildings[index_residential & units == 0, .N, by = "primary_occupancy
 buildings_final <- prep_buildings[, .(
     building_id = 1:nrow(prep_buildings), building_id_orig = building_id,
     parcel_id, parcel_id_fips = parcel_number, gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
-    year_built, residential_units = units, improvement_value,
+    year_built, residential_units = units, non_residential_sqft, improvement_value,
     use_code = primary_occupancy_code, building_type_id
 )]
 
