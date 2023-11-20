@@ -101,9 +101,10 @@ cat("\nImputed improvement value into additional", zero_imp - nrow(prep_parcels[
 
 # assemble columns for final parcels table
 parcels_final <- prep_parcels[, .(
-    parcel_id = pin, parcel_id_fips = taxparceln, land_value, use_code = as.character(use_code), 
-    gross_sqft = round(poly_area),  x_coord_sp = point_x, y_coord_sp = point_y, address = site_addre,
-    zip_id = zipcode, exemption = ifelse(exemption_ == "", 0, 1), county_id = county.id)]
+    parcel_id = pin, parcel_id_fips = as.character(taxparceln), land_value, use_code = as.character(use_code), 
+    gross_sqft = round(poly_area),  x_coord_sp = point_x, y_coord_sp = point_y, #address = site_addre,
+    #zip_id = zipcode, 
+    exemption = ifelse(exemption_ == "", 0, 1), county_id = county.id)]
     
 # join with reclass table
 parcels_final[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
@@ -210,7 +211,7 @@ print(prep_buildings[index_residential & units == 0, .N, by = "primary_occupancy
 # assemble columns for final buildings table
 buildings_final <- prep_buildings[, .(
     building_id = 1:nrow(prep_buildings), building_id_orig = building_id,
-    parcel_id, parcel_id_fips = parcel_number, gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
+    parcel_id, parcel_id_fips = as.character(parcel_number), gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
     year_built, residential_units = units, non_residential_sqft, improvement_value,
     use_code = primary_occupancy_code, building_type_id
 )]
@@ -223,7 +224,6 @@ cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_
 #                   Do we need it?
 
 if(write.result){
-    # write results
     fwrite(parcels_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_parcels_pierce.csv")
     fwrite(buildings_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_buildings_pierce.csv")
     fwrite(parcels_final, file = "urbansim_parcels_all_pierce.csv")
