@@ -82,7 +82,7 @@ if(nrow(misslu <- prep_parcels[is.na(land_use_type_id) & !is.na(usecode), .N, by
 
 # construct final parcels 
 # (if no additional columns or other cleaning needed then it's just a copy of prep_parcels)
-parcels_final <- copy(prep_parcels)
+parcels_final <- copy(prep_parcels)[, county_id := county.id]
 
 cat("\nTotal all:", nrow(parcels_final), "parcels")
 cat("\nAssigned to 2018:", nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]), "parcels")

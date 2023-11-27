@@ -116,7 +116,7 @@ if(nrow(notfoundlu <- prep_parcels[is.na(land_use_type_id) & !is.na(use_code), .
 parcels_final <- prep_parcels[, .(
     parcel_id = pin_1, parcel_id_fips = pin, land_use_type_id,
     land_value = apprlandval, improvement_value = apprimpsval, exemption = as.integer(exempt > 0),
-    parcel_sqft = poly_area, y_coord_sp = point_y, x_coord_sp = point_x
+    parcel_sqft = poly_area, y_coord_sp = point_y, x_coord_sp = point_x, county_id = county.id
     )]
 
 cat("\nTotal all:", nrow(parcels_final), "parcels")
@@ -178,9 +178,10 @@ prep_buildings_com[aptcom_combo, `:=`(residential_units = i.residential_units),
 # cases when a record is in both, condo and commercial (adjust the same way as above)
 condocom_combo <- merge(prep_buildings_condo[, .(pin, units, sqft_per_unit_apt = sqft_per_unit)], 
                       prep_buildings_com, by = "pin")[!pin %in% aptcom_combo[, pin]] # only if it is not in the appartment table
-# set residential units for each commercial records using sqft proportions 
-condocom_combo[, `:=`(count = .N, gross_sqft = sum(bldg_gross_sqft)), by = "pin"][
-    , `:=`(residential_units = round(units * bldg_gross_sqft/gross_sqft))]
+# set residential units for each commercial records using sqft proportions
+condocom_combo[, bldg_gross_sqft_tmp := pmax(1, bldg_gross_sqft)]
+condocom_combo[, `:=`(count = .N, gross_sqft = sum(bldg_gross_sqft_tmp)), by = "pin"][
+    , `:=`(residential_units = round(units * bldg_gross_sqft_tmp/gross_sqft))]
 cat("\nNumber of buildings in both tables, condo and commercial:", nrow(condocom_combo))
 
 # insert the derived residential units into the commercial buildings
