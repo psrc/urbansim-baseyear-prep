@@ -201,7 +201,7 @@ if(write.result){
     connection <- mysql.connection(db)
     dbWriteTable(connection, "urbansim_parcels", parcels_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_buildings", buildings_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "urbansim_parcels_all", parcels_all, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_parcels_all", parcels_final, overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }

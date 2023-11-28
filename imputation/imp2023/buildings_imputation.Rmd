@@ -1,8 +1,8 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "11/27/2023"
-output: html_document
+date: "11/28/2023"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -25,17 +25,18 @@ Input files should be placed in the [imputation/data2023]( https://github.com/ps
 * parcels_4counties.csv (name configurable)
 * imputation/data2018/parcels.csv (optionally)
 
-The output is written into imputation/data2023/imputed_buildings.csv. The name of the file can be configured in the Settings section.
+The output is written into imputation/data2023/imputed_buildings_{date}.csv. The name of the file can be configured in the Settings section.
 
 #### Settings
 
-Set the name of the buildings file (`bld.file.name`) and parcels file (`pcl.file.name`), if the resulting dataset should be written into a file (`save.as.csv`), the name of the resulting file (`out.file.name`) and if parcels should be joined with 2018 parcels to impute missing land use type (`join.with.2018parcels`):
+Set the name of the buildings file (`bld.file.name`) and parcels file (`pcl.file.name`), if the resulting dataset should be written into a file (`save.as.csv`) or/and mysql (`save.into.mysql`), the name of the resulting buildings dataset (`out.buildings.name`) and if parcels should be joined with 2018 parcels to impute missing land use type (`join.with.2018parcels`):
 
 ```{r, echo=TRUE}
 bld.file.name <- 'buildings_4counties.csv'
 pcl.file.name <- 'parcels_4counties.csv'
 save.as.csv <- TRUE
-out.file.name <- "imputed_buildings_20231127.csv"
+save.into.mysql <- FALSE
+out.buildings.name <- paste0("buildings_imputed_phase1_", format(Sys.Date(), '%Y%m%d'))
 join.with.2018parcels <- TRUE
 ```
 
@@ -689,8 +690,8 @@ There are still `r  nrow(bld[is.nonres & is.na(non_residential_sqft)])` missing 
 
 #### Save results
 
-```{r echo = FALSE}
-file.out <- file.path(data.dir, out.file.name)
+```{r echo = FALSE, results=FALSE}
+file.out <- file.path(data.dir, paste0(out.buildings.name, ".csv"))
 if(save.as.csv) {
   # convert logical to integer
   logical.cols <- colnames(bld)[sapply(bld, is.logical)]
@@ -699,9 +700,20 @@ if(save.as.csv) {
   # write out resulting buildings
   fwrite(bld, file=file.out)
 }
+if(save.into.mysql) {
+    source("../../collect_parcels_buildings/BY2023/mysql_connection.R")
+    db <- "psrc_2023_parcel_baseyear"
+    connection <- mysql.connection(db)
+    dbWriteTable(connection, out.buildings.name, bld, overwrite = TRUE, row.names = FALSE)
+    DBI::dbDisconnect(connection)
+}
 ```
 
-If `save.as.csv` is `TRUE`, the resulting file is written into `r  file.out`. Currently, `save.as.csv` is `r save.as.csv`.
+`r if(save.as.csv){paste("The resulting buildings were written into", file.out, ".")}`
+
+`r if(save.into.mysql){paste("The resulting buildings were written into the database", db, "table", out.buildings.name, ".")}`
+
+
 
 
 

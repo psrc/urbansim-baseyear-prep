@@ -9,7 +9,7 @@
 
 library(data.table)
 
-write.result <- FALSE # it will overwrite the existing tables parcels & buildings
+write.result <- TRUE # it will overwrite the existing tables parcels & buildings
 
 if(write.result) source("mysql_connection.R")
 
