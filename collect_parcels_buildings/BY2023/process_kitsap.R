@@ -29,6 +29,9 @@ if(write.result) source("mysql_connection.R")
 parcels <- fread(file.path(data.dir, "parcels.txt"))
 parcels.23to18 <- fread(file.path(data.dir, "parcels23_kit_to_2018_parcels.csv"))
 
+if(! "gis_sqft" %in% colnames(parcels.23to18))
+    setnames(parcels.23to18, "shape_area", "gis_sqft")
+
 # tables flatats, land & main
 tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
 land <- fread(file.path(data.dir, "land.txt")) # Land data
@@ -61,7 +64,7 @@ cat("\nNumber of duplicates removed from Kitsap parcels: ", nrow(parcels) - nrow
 
 # merge Kitsap and urbansim parcels
 parcels_allinfo <- merge(parcels.nodupl, 
-                        parcels.23to18.nodupl[, .(rp_acct_id, pin, point_x, point_y, shape_area)],
+                        parcels.23to18.nodupl[, .(rp_acct_id, pin, point_x, point_y, gis_sqft)],
                         all = TRUE, by = "rp_acct_id")
 
 cat("\n", nrow(parcels_allinfo[is.na(pin)]), "Kitsap parcels not found in urbansim dataset.")
@@ -108,7 +111,7 @@ parcels_final <- prep_parcels[, .(parcel_id = pin, rp_acct_id,
                                   land_value, num_dwell,
                                   use_code = prop_class,
                                   exemption = as.integer(tax_status != "T"), 
-                                  gross_sqft = round(shape_area), 
+                                  gross_sqft = round(gis_sqft), 
                                   x_coord_sp = point_x, y_coord_sp = point_y
                                   )]
 # TODO: - Do we need the other columns of prep_parcels? 

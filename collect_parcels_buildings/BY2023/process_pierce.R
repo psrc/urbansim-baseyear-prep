@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 11/15/2023
+# Hana Sevcikova, last update 12/05/2023
 #
 
 library(data.table)
@@ -58,7 +58,7 @@ cat("\nNumber of duplicates removed from 23to18 parcels: ", nrow(parcels.23to18)
 
 # extract a subset of columns (not all of these are actually needed)
 prep_parcels <- parcels.nodupl[, .(taxparceln, taxparcelt, taxparcell, taxparcelu,
-                                   pin, taxable_va, point_x, point_y, poly_area,
+                                   pin, taxable_va, point_x, point_y, shape_area,
                                    site_addre, zipcode, land_acres, land_value,
                                    improvemen, use_code, landuse_de, exemption_)
                                 ]
@@ -102,7 +102,7 @@ cat("\nImputed improvement value into additional", zero_imp - nrow(prep_parcels[
 # assemble columns for final parcels table
 parcels_final <- prep_parcels[, .(
     parcel_id = pin, parcel_id_fips = as.character(taxparceln), land_value, use_code = as.character(use_code), 
-    gross_sqft = round(poly_area),  x_coord_sp = point_x, y_coord_sp = point_y, #address = site_addre,
+    gross_sqft = round(shape_area),  x_coord_sp = point_x, y_coord_sp = point_y, #address = site_addre,
     #zip_id = zipcode, 
     exemption = ifelse(exemption_ == "", 0, 1), county_id = county.id)]
     
@@ -126,16 +126,43 @@ cat("\nDifference:", nrow(parcels_final) - nrow(parcels_final[!is.na(parcel_id) 
 
 cat("\n\nProcessing Pierce buildings\n=========================\n")
 
+# join with improvement table
+buildings_tmp <- merge(improvement, raw_buildings, 
+                       by = c("building_id", "parcel_number"),
+                       all = TRUE)
+
 # group buildings since there were duplicate building_id values per parcel
-buildings_grouped <- raw_buildings[, .(
-    sqft = sum(built_as_square_feet), units = sum(units), bedrooms = sum(bedrooms),
-    year_built = min(year_built), count = .N), 
-    by = .(building_id, parcel_number)]
+buildings_all <- buildings_tmp[, .(
+    sqft = sum(built_as_square_feet, na.rm = TRUE), units = sum(units, na.rm = TRUE), 
+    bedrooms = sum(bedrooms, na.rm = TRUE),
+    year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
+    net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
+    by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, parcel_number)]
+buildings_all[, count:= .N, by = "parcel_number"]
+
+# preliminary join with building reclass table
+buildings_all[, `:=`(primary_occupancy_code = as.character(primary_occupancy_code), 
+                      built_as_id = as.character(built_as_id))]
+buildings_all[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
+               on = c(primary_occupancy_code = "county_building_use_code")]
+buildings_all[bt_reclass[county_id == county.id], built_as_building_type_id := i.building_type_id, 
+               on = c(built_as_id = "county_building_use_code")]
+
+# reclass some non-res types that appear in residential buildings
+# check types via 
+# prep_buildings[count > 1 & building_type_id %in% c(4, 12, 19, 11) & ! is.na(built_as_building_type_id) & ! built_as_building_type_id %in% c(4, 12, 19, 11), .N, by = c("built_as_id", "built_as_description")][order(built_as_description)]
+buildings_all[count > 1 & building_type_id %in% c(4, 12, 19, 11) & 
+                   ! is.na(built_as_building_type_id) & ! built_as_building_type_id %in% c(4, 12, 19, 11) & !built_as_id == 124,
+               `:=`(primary_occupancy_code = built_as_id, units = 0)]
+
+# rerun the join on reclass table as the occupancy code might have changed
+buildings_all[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
+              on = c(primary_occupancy_code = "county_building_use_code")]
 
 # join with improvement table
-buildings_all <- merge(improvement, buildings_grouped, 
-                        by = c("building_id", "parcel_number"),
-                        all = TRUE)
+#buildings_all <- merge(improvement, buildings_grouped, 
+#                        by = c("building_id", "parcel_number"),
+#                        all = TRUE)
 
 prep_buildings <- buildings_all[parcel_number %in% parcels_final[, parcel_id_fips]]
 cat("\nDropped", nrow(buildings_all) - nrow(prep_buildings), "buildings due to missing representation in the parcels dataset.")
@@ -210,7 +237,7 @@ print(prep_buildings[index_residential & units == 0, .N, by = "primary_occupancy
 
 # assemble columns for final buildings table
 buildings_final <- prep_buildings[, .(
-    building_id = 1:nrow(prep_buildings), building_id_orig = building_id,
+    building_id = 1:nrow(prep_buildings), 
     parcel_id, parcel_id_fips = as.character(parcel_number), gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
     year_built, residential_units = units, non_residential_sqft, improvement_value,
     use_code = primary_occupancy_code, building_type_id

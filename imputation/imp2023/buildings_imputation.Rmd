@@ -1,7 +1,7 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "11/28/2023"
+date: "12/05/2023"
 output: pdf_document
 ---
 
@@ -35,7 +35,7 @@ Set the name of the buildings file (`bld.file.name`) and parcels file (`pcl.file
 bld.file.name <- 'buildings_4counties.csv'
 pcl.file.name <- 'parcels_4counties.csv'
 save.as.csv <- TRUE
-save.into.mysql <- FALSE
+save.into.mysql <- TRUE
 out.buildings.name <- paste0("buildings_imputed_phase1_", format(Sys.Date(), '%Y%m%d'))
 join.with.2018parcels <- TRUE
 ```
@@ -107,12 +107,15 @@ normalizePath(data.dir)
 
 ```{r, echo=FALSE}
 # read buildings table
-bld.raw <- fread(file.path(data.dir, bld.file.name))
+bld.raw <- fread(file.path(data.dir, bld.file.name), 
+                 colClasses = c(parcel_id_fips = "character"))
 
 # read parcels table and join required attributes with buildings
-pcl <- fread(file.path(data.dir, pcl.file.name))
-bld.raw[pcl, `:=`(land_use_type_id = i.land_use_type_id, parcel_sqft = i.parcel_sqft, 
-        land_value = i.land_value, county_id = i.county_id), on = "parcel_id"]
+pcl <- fread(file.path(data.dir, pcl.file.name), 
+                 colClasses = c(parcel_id_fips = "character"))
+bld.raw[pcl, `:=`(land_use_type_id = i.land_use_type_id, parcel_sqft = i.gross_sqft, 
+              land_value = i.land_value, county_id = i.county_id), 
+    on = "parcel_id_fips"]
 
 if(join.with.2018parcels) {
     # read 2018 parcels table
@@ -156,7 +159,7 @@ if(sum(impute) > 0) {
   pcl[impute, `:=`(imp_land_use_type_id = TRUE, land_use_type_id = land_use_type_id_2018)]
   pcl[is.na(imp_land_use_type_id), imp_land_use_type_id := FALSE]
   orig.lut <- copy(bld$land_use_type_id)
-  bld[pcl, `:=`(land_use_type_id_2018 = i.land_use_type_id_2018, land_use_type_id = i.land_use_type_id), on = "parcel_id"]
+  bld[pcl, `:=`(land_use_type_id_2018 = i.land_use_type_id_2018, land_use_type_id = i.land_use_type_id), on = "parcel_id_fips"]
 }
 ```
 
@@ -181,9 +184,9 @@ tmp.cnty[order(county_id)]
 ```
 
 ```{r, echo=FALSE}
-bld[, DUpcl := sum(residential_units), by = parcel_id]
+bld[, DUpcl := sum(residential_units), by = parcel_id_fips]
 bld[building_type_id %in% no.unit.types.if.parcel.allows, DUpcl_notypes := sum(residential_units), 
-    by = parcel_id][is.na(DUpcl_notypes), DUpcl_notypes := 0]
+    by = parcel_id_fips][is.na(DUpcl_notypes), DUpcl_notypes := 0]
 tmp <- bld[building_type_id %in% no.unit.types.if.parcel.allows & DUpcl > DUpcl_notypes, .(removed = sum(residential_units)), by = building_type_id]
 tmp.cnty <- bld[building_type_id %in% no.unit.types.if.parcel.allows & DUpcl > DUpcl_notypes, .(removed = sum(residential_units)), by = county_id]
 bld[building_type_id %in% no.unit.types.if.parcel.allows & residential_units > 0 & DUpcl > DUpcl_notypes, residential_units := 0]
@@ -208,17 +211,17 @@ bld[, is_non_residential := non_residential_sqft > 0 & !is_mixuse]
 
 #### Consolidate MF buildings 
 
-There seem to be multiple copies of the same MF buildings, or buildings where one record was split into several records with the total number of residential units appearing in all records, but other attributes (e.g. `sqft_per_unit` and `improvement value`) was split across the records.
+For Pierce and Snohomish, there seem to be multiple copies of the same MF buildings, or buildings where one record was split into several records with the total number of residential units appearing in all records, but other attributes (e.g. `sqft_per_unit` and `improvement value`) was split across the records.
 
 ```{r, echo=FALSE}
-consider <- with(bld, is_residential & building_type_id %in% c(12, 4) & !is.na(sqft_per_unit) & sqft_per_unit > 1 & residential_units > 1)
-bld[consider, max_du := max(residential_units), by = parcel_id]
+consider <- with(bld, county_id %in% c(53, 61) & is_residential & building_type_id %in% c(12, 4) & !is.na(sqft_per_unit) & sqft_per_unit > 1 & residential_units > 1)
+bld[consider, max_du := max(residential_units), by = parcel_id_fips]
 bld[consider, is_max_du := residential_units == max_du]
-bld[consider, Nmf := .N, by = parcel_id]
-bld[consider, Nmf_max := sum(is_max_du), by = parcel_id]
+bld[consider, Nmf := .N, by = parcel_id_fips]
+bld[consider, Nmf_max := sum(is_max_du), by = parcel_id_fips]
 bld[consider, Perc_mf_max := Nmf_max/Nmf * 100]
 bld[consider & is_max_du, has_small_spu := any(sqft_per_unit < spu_threshold_for_consolidation), 
-    by = parcel_id][is.na(has_small_spu), has_small_spu := FALSE]
+    by = parcel_id_fips][is.na(has_small_spu), has_small_spu := FALSE]
 consolidate <- consider & with(bld, Perc_mf_max > 49 & Nmf_max > 1 & has_small_spu == TRUE & residential_units >= Nmf_max)
 ```
 
@@ -240,15 +243,15 @@ bld[, `:=`(max_du = NULL, is_max_du = NULL, Nmf = NULL, Nmf_max = NULL, Perc_mf_
 du.before <- sum(bld[, residential_units])
 du.before.county <- bld[, .(DU=sum(residential_units)), by = county_id]
 
-selected <- bld[consolidate, .SD[which.max(residential_units)], by = parcel_id]
+selected <- bld[consolidate, .SD[which.max(residential_units)], by = parcel_id_fips]
 # sum attributes for new buildings
 new_bld <- bld[consolidate, .(gross_sqft = sum(gross_sqft), 
                               non_residential_sqft = sum(non_residential_sqft),
                               improvement_value = sum(improvement_value)), 
-               by = parcel_id]
+               by = c("parcel_id_fips", "parcel_id")]
 # delete the original attributes
 for(attr in colnames(new_bld))
-  if(attr != "parcel_id") selected[[attr]] <- NULL
+  if(! attr %in%  c("parcel_id", "parcel_id_fips")) selected[[attr]] <- NULL
 # merge selected buildings with the summed attributes
 new_bld <- merge(selected, new_bld)
 # compute new sqft_per_unit
@@ -281,23 +284,23 @@ du.dif[order(county_id)]
 Pierce county has lots of small buildings, often outbuildings with just one or a few sqft and very small improvement value. Thus, we will merge all non-residential buildings of the same building type on a parcel into one building. The sqft and improvement value is summed up.
 
 ```{r, echo=FALSE}
-bld[is_non_residential & county_id == 53, Nbt := .N, by = .(parcel_id, building_type_id)]
+bld[is_non_residential & county_id == 53, Nbt := .N, by = .(parcel_id_fips, building_type_id)]
 consolidate <- with(bld, is_non_residential & !is.na(Nbt) & Nbt > 1)
 bld[,Nbt := NULL]
 # select one building per parcel and building type which will represent the consolidated buildings
-selected <- bld[consolidate, .SD[which.max(non_residential_sqft )], by = .(parcel_id, building_type_id)]
+selected <- bld[consolidate, .SD[which.max(non_residential_sqft )], by = .(parcel_id_fips, building_type_id)]
 # sum attributes for new buildings
 new_bld <- bld[consolidate, .(gross_sqft = sum(gross_sqft), 
                               non_residential_sqft = sum(non_residential_sqft),
                               improvement_value = sum(improvement_value),
                               residential_units = sum(residential_units),
                               residential_units_orig = sum(residential_units_orig)), 
-               by = .(parcel_id, building_type_id)]
+               by = .(parcel_id_fips, parcel_id, building_type_id)]
 # delete the original attributes
 for(attr in colnames(new_bld))
-    if(!attr %in% c("parcel_id", "building_type_id")) selected[[attr]] <- NULL
+    if(!attr %in% c("parcel_id_fips", "parcel_id", "building_type_id")) selected[[attr]] <- NULL
 # merge selected buildings with the summed attributes
-new_bld <- merge(selected, new_bld, by = c("parcel_id", "building_type_id"))
+new_bld <- merge(selected, new_bld, by = c("parcel_id_fips", "parcel_id", "building_type_id"))
 # remove consolidated buildings from the original dataset and add new buildings
 nbld.before <- nrow(bld)
 bld <- bld[!consolidate]
@@ -310,12 +313,12 @@ Result: `r format(sum(consolidate), big.mark=",")` buildings were collapsed into
 
 #### Impute building types
 
-There are `r nrow(bld[building_type_id %in% to.impute.bts])` buildings with missing building type (`r paste(to.impute.bts, collapse = ", ")`). Groupping them depending if they have residential units, non-residential sqft or both, we get the following table:
+There are `r nrow(bld[building_type_id %in% to.impute.bts])` buildings with missing building type (`r paste(to.impute.bts, collapse = ", ")`). Grouping them depending if they have residential units, non-residential sqft or both, we get the following table:
 ```{r, echo=FALSE}
 bld[building_type_id %in% to.impute.bts, .(Nres = sum(is_residential), Nnonres = sum(is_non_residential),
                               Nmix = sum(is_mixuse))]
 ```
-The remaining buildings of this type have no units and therefore cannot be groupped.
+The remaining buildings of this type have no units and therefore cannot be grouped.
 
 ##### Step 1 
 
@@ -401,7 +404,14 @@ impute <- with(bld, building_type_id %in% c(residential.bts) & is_non_residentia
 bld[impute, building_type_id := 3]
 ```
 
-* Reclassify buildings of residential building type that only have non-residential sqft into commercial (type 3).  `r sum(impute)` records changed.
+* Reclassify buildings of residential building type that only have non-residential sqft into commercial (type 3).  `r sum(impute, na.rm = TRUE)` records changed.
+
+```{r, echo=FALSE}
+impute <- with(bld, building_type_id == 0 & is_mixuse)
+bld[impute, building_type_id := 10]
+```
+
+* For buildings with missing building type that have DUs as well as non-res sqft, set the building type to 10 (mix-use). `r sum(impute)` records changed.
 
 
 ##### Results

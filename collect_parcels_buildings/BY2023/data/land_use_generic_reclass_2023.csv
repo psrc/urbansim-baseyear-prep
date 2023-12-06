@@ -127,6 +127,8 @@ ID,county_id,"county_land_use_code","county_land_use_description","land_use_type
 126,33,"340","Bed & Breakfast","14","multi_family_residential","Multi-Family Residential","2"
 127,33,"341","Rooming House","8","group_quarters","Group Quarters","8"
 128,33,"342","Fraternity/Sorority House","8","group_quarters","Group Quarters","8"
+391,53,"9167","VAC LND MAJOR PROBLEM","27","vacant","Vacant Undevelopable","9"
+0,53,"8600","MARIJUANA GROW OPERATIONS","1","agriculture","Agriculture","8"
 133,33,"343","Gas station","NULL","NULL","NULL","NULL"
 134,33,"NULL","No Land Use Code","NULL","NULL","NULL","NULL"
 135,35,"111","111- Single family residence  ","24","single_family_residential","Single Family Residential","1"

@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 11/15/2023
+# Hana Sevcikova, last update 12/04/2023
 #
 
 library(data.table)
@@ -114,9 +114,9 @@ if(nrow(notfoundlu <- prep_parcels[is.na(land_use_type_id) & !is.na(use_code), .
 
 # construct final parcels                
 parcels_final <- prep_parcels[, .(
-    parcel_id = pin_1, parcel_id_fips = pin, land_use_type_id,
+    parcel_id = pin_1, parcel_id_fips = pin, land_use_type_id, gross_sqft,
     land_value = apprlandval, improvement_value = apprimpsval, exemption = as.integer(exempt > 0),
-    parcel_sqft = poly_area, y_coord_sp = point_y, x_coord_sp = point_x, county_id = county.id
+    y_coord_sp = point_y, x_coord_sp = point_x, county_id = county.id
     )]
 
 cat("\nTotal all:", nrow(parcels_final), "parcels")
@@ -230,7 +230,8 @@ prep_buildings <- prep_buildings[pin %in% parcels_final[, parcel_id_fips]]
 cat("\n", nbld - nrow(prep_buildings), "buildings removed due to missing parcels.")
 
 # calculate improvement value
-prep_buildings[parcels_final, `:=`(total_improvement_value = i.improvement_value), 
+prep_buildings[parcels_final, `:=`(total_improvement_value = i.improvement_value,
+                                   land_use_type_id = i.land_use_type_id), 
                on = c(pin = "parcel_id_fips")]
 prep_buildings[, sqft_tmp := pmax(1, gross_sqft, na.rm = TRUE)][
     , total_sqft := sum(sqft_tmp), by = "pin"][

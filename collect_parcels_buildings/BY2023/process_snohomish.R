@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #.   urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 11/15/2023
+# Hana Sevcikova, last update 12/04/2023
 #
 
 library(data.table)
@@ -62,7 +62,7 @@ prep_parcels <- parcels.nodupl[, .(parcel_id = pin, parcel_number = parcel_id,
                                    parcel_lrsn = lrsn,
                                    land_value = mklnd, improvement_value = mkimp,
                                    total_value = mkttl,
-                                   gross_sqft = round(poly_area),
+                                   gross_sqft = round(gis_sq_ft),
                                    x_coord_sp = point_x, y_coord_sp = point_y,
                                    usecode, 
                                    exemption = as.integer(parcel_id %in% exemptions[, parcel_number]))]
@@ -109,15 +109,21 @@ prep_buildings[bt_reclass[county_id == county.id], building_type_id := i.buildin
 
 # Calculate improvement value proportionally to the sqft
 prep_buildings[prep_parcels, `:=`(total_improvement_value = i.improvement_value, 
-                                  parcel_id = i.parcel_id),
+                                  parcel_id = i.parcel_id, land_use_type_id = i.land_use_type_id),
                on = "parcel_number"]
 prep_buildings[, `:=`(sqft_tmp = pmax(1, finsize, na.rm = TRUE))]
 prep_buildings[, `:=`(total_sqft = sum(sqft_tmp), count = .N), by = "parcel_number"]
 prep_buildings[, `:=`(improvement_value = round(sqft_tmp/total_sqft * total_improvement_value))]
 
+# As there are no mobile homes in the reclass table,
+# set building type to mobile home if on mobile home land use type and if residential use code
+prep_buildings[land_use_type_id == 13 & 
+                   usecode %in% c("1", "", "5", "2", "3", "APART", "0", "70", "11"), 
+               building_type_id := 11]
+
 # impute residential units
 prep_buildings[, residential_units := 0]
-prep_buildings[building_type_id == 19, residential_units := 1] # SF
+prep_buildings[building_type_id %in% c(19, 11), residential_units := 1] # SF, MH
 prep_buildings[usecode == 2, residential_units := 2]
 prep_buildings[usecode == 3, residential_units := 3]
 # for usecode 4 set it between 4 and 6 depending on sqft, using 800sf/DU
@@ -152,18 +158,17 @@ if(nrow(missbt <- prep_buildings[is.na(building_type_id), .N, by = c("usecode", 
     print(missbt[order(-N)])
 } else cat("\nAll building use codes matched.")
 
-# TODO: there are no mobile homes in the reclass table
 
 # assemble columns for final buildings table by joining residential and non-res part
 # TODO: for non-res buildings is gross_sqft the same as non_residential_sqft?
 buildings_final <- rbind(
-    prep_buildings[building_type_id %in% c(4, 12, 19)
+    prep_buildings[building_type_id %in% c(4, 12, 19, 11)
     , .(building_id, parcel_number, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = round(finsize/residential_units),
         year_built = yrbuilt, residential_units, non_residential_sqft = 0,
         improvement_value, use_code = usecode, stories, parcel_lrsn = lrsn
         )],
-    prep_buildings[! building_type_id %in% c(4, 12, 19)
+    prep_buildings[! building_type_id %in% c(4, 12, 19, 11)
     , .(building_id, parcel_number, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = 1, year_built = yrbuilt, residential_units = 0,
         non_residential_sqft = finsize, improvement_value, use_code = usecode, 

@@ -18,20 +18,20 @@ all_parcels <- parcels <- NULL
 all_buildings <- buildings <- NULL
 
 for(county in c("king", "kitsap", "pierce", "snohomish")){
-    pcl <- fread(paste0("urbansim_parcels_all_", county, ".csv"))
-    pcl[, `:=`(parcel_id_fips = as.character(parcel_id_fips), 
-               land_use_type_id = as.integer(land_use_type_id))]
+    pcl <- fread(paste0("urbansim_parcels_all_", county, ".csv"), 
+                 colClasses = c(parcel_id_fips = "character"))
+    pcl[, `:=`(land_use_type_id = as.integer(land_use_type_id))]
     all_parcels <- rbind(all_parcels, pcl, fill = TRUE)
-    pcl <- fread(paste0("urbansim_parcels_", county, ".csv"))
-    pcl[, `:=`(parcel_id_fips = as.character(parcel_id_fips), 
-               land_use_type_id = as.integer(land_use_type_id))]
+    pcl <- fread(paste0("urbansim_parcels_", county, ".csv"), 
+                 colClasses = c(parcel_id_fips = "character"))
+    pcl[, `:=`(land_use_type_id = as.integer(land_use_type_id))]
     parcels <- rbind(parcels, pcl, fill = TRUE)
     
-    bld <- fread(paste0("urbansim_buildings_all_", county, ".csv"))
-    bld[, parcel_id_fips := as.character(parcel_id_fips)]
+    bld <- fread(paste0("urbansim_buildings_all_", county, ".csv"), 
+                 colClasses = c(parcel_id_fips = "character"))
     all_buildings <- rbind(all_buildings, bld, fill = TRUE)
-    bld <- fread(paste0("urbansim_buildings_", county, ".csv"))
-    bld[, parcel_id_fips := as.character(parcel_id_fips)]
+    bld <- fread(paste0("urbansim_buildings_", county, ".csv"), 
+                 colClasses = c(parcel_id_fips = "character"))
     buildings <- rbind(buildings, bld, fill = TRUE)
 }
 

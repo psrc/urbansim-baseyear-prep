@@ -586,10 +586,10 @@ record_id,county_id,"county_building_use_code","county_building_use_description"
 586,53,"100","Single Family Residential",1,19,"single_family_residential",222366
 348,53,"110","Mobile or Manufactured Home",1,11,"mobile_home",10561
 587,53,"101","Single Family Residential",1,19,"single_family_residential",34
-364,53,"102","Duplex",2,12,"multi_family_residential",5244
-365,53,"103","Duplex Conv",2,12,"multi_family_residential",663
-366,53,"106","Triplex",2,12,"multi_family_residential",382
-367,53,"107","Triplex Conv",2,12,"multi_family_residential",155
+364,53,"102","Duplex",1,19,"single_family_residential",5244
+365,53,"103","Duplex Conv",1,19,"single_family_residential",663
+366,53,"106","Triplex",1,19,"single_family_residential",382
+367,53,"107","Triplex Conv",1,19,"single_family_residential",155
 368,53,"108","Townhouse",2,12,"multi_family_residential",2704
 369,53,"109","Townhouse/Condo",2,12,"multi_family_residential",5470
 30,53,"1101","Barns (Two-Story) - Special Purpose",8,1,"agriculture",1
@@ -665,5 +665,10 @@ record_id,county_id,"county_building_use_code","county_building_use_description"
 637,53,"911","Gen Warehouse up to 19,999 SF",5,21,"warehousing",1503
 329,53,"920","Heavy Industrial",5,8,"industrial",133
 330,53,"930","Light Industrial",5,8,"industrial",616
+0,53,"1459","Mixed Retail w Res Units",6,10,"mixed_use",1
+0,53,"586","Roadside Markets",4,3,"commercial",1
+462,53,"437","Quonset",8,14,"outbuilding",17
 275,53,"957","Government",7,5,"government",282
 29,53,"959","Agricultural",8,1,"agriculture",262
+518,53,"961","Marina Slip Condos",8,17,"recreation",152
+683,53,"941","Mini Storage Condo",8,14,"mini_storage",778
