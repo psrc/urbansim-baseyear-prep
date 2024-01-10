@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 01/09/2024
+# Hana Sevcikova, last update 01/10/2024
 #
 
 library(data.table)
@@ -177,8 +177,8 @@ buildings_all <- buildings_tmp[, .(
     bedrooms = sum(bedrooms, na.rm = TRUE),
     year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
     net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
-    by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, parcel_number)]
-buildings_all[, count:= .N, by = "parcel_number"]
+    by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, parcel_number, parcel_number_orig)]
+buildings_all[, count:= .N, by = "parcel_number_orig"]
 
 # preliminary join with building reclass table
 buildings_all[, `:=`(primary_occupancy_code = as.character(primary_occupancy_code), 
