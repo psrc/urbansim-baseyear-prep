@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 12/05/2023
+# Hana Sevcikova, last update 01/09/2024
 #
 
 library(data.table)
@@ -12,8 +12,9 @@ library(data.table)
 county <- "Pierce"
 county.id <- 53
 
-data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
-#data.dir <- "Pierce_data" # Hana's local path
+#data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+#data.dir <- "~/J/UrbanSIM\\ Data/Projects/2023_Baseyear/Assessor/Extracts/Pierce/Urbansim_Processing"
+data.dir <- "Pierce_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
@@ -27,7 +28,9 @@ if(write.result) source("mysql_connection.R")
 ###############
 
 # parcels & tax accounts
-parcels.23to18 <- fread(file.path(data.dir, "parcels23_pie_to_2018_parcels_short.txt"))
+parcels.23to18 <- fread(file.path(data.dir, "parcels23_pie_to_2018_parcels.csv"))
+full.parcels <- fread(file.path(data.dir, "parcels23_pie_to_2018_parcels_short.txt")) # file with all attributes
+dissolve <- fread(file.path(data.dir, "parcels23_pierce_condo_dissolve_pt_to_base_dissolve_overlay.csv"))
 tax <- fread(file.path(data.dir, "tax_account.txt"), sep = "|", quote = "") # 
 
 # reclass tables
@@ -37,7 +40,7 @@ bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.
 # buildings
 raw_buildings <- fread(file.path(data.dir, "improvement_builtas.txt"))
 improvement <- fread(file.path(data.dir, "improvement.txt"))
-improvement_detail <- fread(file.path(data.dir, "improvement_detail.txt"))
+#improvement_detail <- fread(file.path(data.dir, "improvement_detail.txt"))
 
 ###################
 # Process parcels
@@ -49,21 +52,23 @@ cat("\nProcessing Pierce parcels\n=========================\n")
 
 # make column names lowercase
 colnames(parcels.23to18) <- tolower(colnames(parcels.23to18))
+colnames(full.parcels) <- tolower(colnames(full.parcels))
 
 # remove duplicates (just take the first record of each duplicate)
-parcels.23to18[, taxparceln := as.double(taxparceln)]
+parcels.23to18[, `:=`(taxparceln = as.double(taxparceln), 
+                      taxparceln_orig = as.double(taxparceln_orig))]
+full.parcels[, `:=`(taxparceln = as.double(taxparceln))]
+dissolve[, `:=`(taxparce_1 = as.double(taxparce_1),
+                taxparceln = as.double(taxparceln))]
 
 parcels.nodupl <- parcels.23to18[!duplicated(taxparceln)]
+full.parcels <- full.parcels[!duplicated(taxparceln)]
 cat("\nNumber of duplicates removed from 23to18 parcels: ", nrow(parcels.23to18) - nrow(parcels.nodupl))
 
-# extract a subset of columns (not all of these are actually needed)
-prep_parcels <- parcels.nodupl[, .(taxparceln, taxparcelt, taxparcell, taxparcelu,
-                                   pin, taxable_va, point_x, point_y, shape_area,
-                                   site_addre, zipcode, land_acres, land_value,
-                                   improvemen, use_code, landuse_de, exemption_)
-                                ]
-# TODO: Q: should the records be filtered for taxparcelt %in% c('Base Parcel', 'Tax Purpose Only') ?
-# TODO: extract the value info directly from Pierce parcel datasets instead of 23to18 dataset
+# aggregate attributes in full.parcels for stacked parcels
+full.parcels[dissolve, base_parcel := i.taxparce_1, on = "taxparceln"]
+full.parcels[is.na(base_parcel), base_parcel := taxparceln]
+prep_parcels <- full.parcels[!duplicated(taxparceln)]
 
 tax[, taxparceln := as.double(parcel_number)]
 tax.nodupl <- tax[!duplicated(taxparceln)]
@@ -72,14 +77,14 @@ cat("\nNumber of duplicates removed from Pierce parcels: ", nrow(tax) - nrow(tax
 # if land value is zero, try to get the current year info in the tax dataset 
 zero_lv <- nrow(prep_parcels[land_value== 0])
 prep_parcels[tax.nodupl, land_value := ifelse(land_value == 0 & !is.na(i.land_value_current_year) & i.land_value_current_year > 0, 
-                                  i.land_value_current_year, land_value),
+                                              i.land_value_current_year, land_value),
              on = "taxparceln"]
 cat("\nImputed land value into", zero_lv - nrow(prep_parcels[land_value== 0]), "records.")
 
 # the same for improvement value
 zero_imp <- nrow(prep_parcels[improvemen == 0])
 prep_parcels[tax.nodupl, improvemen := ifelse(improvemen == 0 & !is.na(i.improvement_value_current_year) & i.improvement_value_current_year > 0, 
-                                       i.improvement_value_current_year, improvemen),
+                                              i.improvement_value_current_year, improvemen),
              on = "taxparceln"]
 cat("\nImputed improvement value into", zero_imp - nrow(prep_parcels[improvemen == 0]), "records.")
 
@@ -88,7 +93,7 @@ zero_lv <- nrow(prep_parcels[land_value== 0])
 prep_parcels[tax.nodupl, land_value := ifelse(
     land_value == 0 & !is.na(i.land_value_prior_year) & i.land_value_prior_year > 0, 
     i.land_value_prior_year * 1.1, land_value),
-             on = "taxparceln"]
+    on = "taxparceln"]
 cat("\nImputed land value into additional", zero_lv - nrow(prep_parcels[land_value== 0]), "records using prior year info.")
 
 # do the same for improvement value
@@ -96,15 +101,40 @@ zero_imp <- nrow(prep_parcels[improvemen == 0])
 prep_parcels[tax.nodupl, improvemen := ifelse(
     improvemen == 0 & !is.na(i.improvement_value_prior_year) & i.improvement_value_prior_year > 0, 
     i.improvement_value_prior_year * 1.1, improvemen),
-             on = "taxparceln"]
+    on = "taxparceln"]
 cat("\nImputed improvement value into additional", zero_imp - nrow(prep_parcels[improvemen == 0]), "records using prior year info.")
 
+# assign the use code of the base parcel
+prep_parcels[prep_parcels[taxparcelt == "Base Parcel"], use_code_base_parcel := i.use_code, on = "base_parcel"]
+prep_parcels[is.na(use_code_base_parcel), use_code_base_parcel := ifelse(is.na(use_code), 0, use_code)]
+prep_parcels[, `:=`(N = .N, has_valid_use_code = any(use_code_base_parcel > 0)), by = "base_parcel"]
+prep_parcels[use_code_base_parcel == 0 & N > 1, use_code_base_parcel := ifelse(has_valid_use_code, NA, use_code)]
+
+aggr_prep_parcels <- prep_parcels[
+    , .(land_value = sum(land_value), improvement_value = sum(improvemen),
+        exemption_ = all(ifelse(exemption_ == "", 0, 1)==0),
+        use_code = max(use_code_base_parcel, na.rm = TRUE), 
+        use_code_dif = any(use_code_base_parcel != max(use_code_base_parcel, na.rm = TRUE)),
+        N = .N), by = "base_parcel"]
+# TODO: set the use_code to a predominant use 
+aggr_prep_parcels[N > 1 & use_code_dif, use_code := NA]
+
+cat("\nSet use_code to NA for", nrow(aggr_prep_parcels[N > 1 & use_code_dif]), "base parcels.")
+
+# extract a subset of columns from the final set of parcels
+prep_parcels2 <- parcels.nodupl[, .(taxparceln, taxparceln_orig, pin, point_x, point_y, gis_sqft)]
+
+# join with aggregated full parcels
+prep_parcels2[aggr_prep_parcels,
+             `:=`(use_code = i.use_code, exemption_ = i.exemption_, land_value = i.land_value,
+                  improvemen = i.improvement_value),
+             on = c(taxparceln = "base_parcel")]
+
 # assemble columns for final parcels table
-parcels_final <- prep_parcels[, .(
+parcels_final <- prep_parcels2[, .(
     parcel_id = pin, parcel_id_fips = as.character(taxparceln), land_value, use_code = as.character(use_code), 
-    gross_sqft = round(shape_area),  x_coord_sp = point_x, y_coord_sp = point_y, #address = site_addre,
-    #zip_id = zipcode, 
-    exemption = ifelse(exemption_ == "", 0, 1), county_id = county.id)]
+    gross_sqft = round(gis_sqft),  x_coord_sp = point_x, y_coord_sp = point_y, 
+    exemption = as.integer(exemption_), county_id = county.id)]
     
 # join with reclass table
 parcels_final[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
@@ -130,6 +160,16 @@ cat("\n\nProcessing Pierce buildings\n=========================\n")
 buildings_tmp <- merge(improvement, raw_buildings, 
                        by = c("building_id", "parcel_number"),
                        all = TRUE)
+setnames(buildings_tmp, "parcel_number", "parcel_number_orig")
+
+# load lookup table
+# TODO: this Xwalk table should be taken directly from parcels
+impXwalk <- fread(file.path(data.dir, "improvement_builtas_pin_lookup.csv"))
+impXwalk <- unique(impXwalk)
+
+# join with dissolved parcels
+buildings_tmp <- merge(buildings_tmp, impXwalk, by = "parcel_number_orig", all.x = TRUE)
+                       
 
 # group buildings since there were duplicate building_id values per parcel
 buildings_all <- buildings_tmp[, .(
@@ -247,8 +287,6 @@ cat("\nTotal all: ", nrow(buildings_final), "buildings")
 cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings")
 cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "\n")
 
-# TODO: Question: The mysql script has a segment processing stacked parcels.
-#                   Do we need it?
 
 if(write.result){
     fwrite(parcels_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_parcels_pierce.csv")
