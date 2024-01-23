@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #.   urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 12/04/2023
+# Hana Sevcikova, last update 01/22/2024
 #
 
 library(data.table)
@@ -12,10 +12,10 @@ library(data.table)
 county <- "Snohomish"
 county.id <- 61
 
-data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
-#data.dir <- "Snohomish_data" # Hana's local path
+#data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+data.dir <- "Snohomish_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
-write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
+write.result <- FALSE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -24,8 +24,8 @@ if(write.result) source("mysql_connection.R")
 ###############
 
 # parcels & tax accounts
-#parcels.23to18 <- fread(file.path(data.dir, "allparcels23_snoh_to_2018_parcels.txt"))
-parcels.23to18 <- fread(file.path(data.dir, "parcels23_snoh_to_2018_parcels_short.txt"))
+parcels.23to18 <- fread(file.path(data.dir, "parcels23_snoh_to_2018_parcels.csv")) # contains assignments of stacked parcels
+full.parcels <- fread(file.path(data.dir, "parcels23_snoh_to_2018_parcels_short.txt")) # contains all parcels attributes
 
 # main data (do we need it?)
 #main_data <- fread(file.path(data.dir, "MainData.txt"))
@@ -38,47 +38,74 @@ lu_reclass <- fread(file.path(misc.data.dir, "land_use_generic_reclass_2023.csv"
 bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.csv"))
 
 # buildings
-raw_buildings <- fread(file.path(data.dir, "improvement.txt"))
+raw_buildings <- fread(file.path(data.dir, "improvement.csv"))
 
 ###################
 # Process parcels
 ###################
 
-# Snohomish ID: parcel_id
+# Snohomish ID: 
+#  - pin23 (base parcel), pin23_orig (all parcels)
+#  - full.parcels: parcel_id (all parcels)
 # urbansim ID: pin
 
 cat("\nProcessing Snohomish parcels\n=========================\n")
 
 # make column names lowercase
 colnames(parcels.23to18) <- tolower(colnames(parcels.23to18))
+colnames(full.parcels) <- tolower(colnames(full.parcels))
 #colnames(main_data) <- tolower(colnames(main_data))
 
-# remove duplicates (if any) and records with parcel_id = NA (this are duplicates of the Snohomish specific ID!)
-parcels.nodupl <- parcels.23to18[!is.na(parcel_id)][!duplicated(parcel_id)]
-cat("\nNumber of records removed from parcels (either NA or duplicates): ", 
-    nrow(parcels.23to18) - nrow(parcels.nodupl))
+parcels.23to18[, `:=`(new_parcel_id = as.character(pin23), parcel_id = as.character(pin23_orig))]
+full.parcels[, parcel_id := as.character(parcel_id)]
+exemptions[, parcel_id := as.character(parcel_number)]
 
-prep_parcels <- parcels.nodupl[, .(parcel_id = pin, parcel_number = parcel_id, 
-                                   parcel_lrsn = lrsn,
-                                   land_value = mklnd, improvement_value = mkimp,
-                                   total_value = mkttl,
-                                   gross_sqft = round(gis_sq_ft),
-                                   x_coord_sp = point_x, y_coord_sp = point_y,
-                                   usecode, 
-                                   exemption = as.integer(parcel_id %in% exemptions[, parcel_number]))]
+# set base_pin_flag for all records
+parcels.23to18[, `:=`(Npcl = .N, Nbase = sum(base_pin_flag)), by = "new_parcel_id"]
+parcels.23to18[Npcl == 1 & Nbase == 0, `:=`(base_pin_flag = 1, Nbase = 1)]
+parcels.23to18[Nbase == 0 & new_parcel_id > 0, base_pin_flag := c(1, base_pin_flag[-1]), by = "new_parcel_id"] # set the flag to one for each first row in the group
 
-# TODO: extract the value info directly from Snohomish parcel datasets instead of the 23to18 dataset
+full.parcels[parcels.23to18, `:=`(new_parcel_id = i.new_parcel_id), on = "parcel_id"]
+exemptions[parcels.23to18, base_parcel := i.base_parcel, on = "parcel_id"]
+full.parcels[, exemption := parcel_id %in% exemptions[, parcel_id]]
 
 # join with reclass table
-prep_parcels[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
-              on = c(usecode = "county_land_use_description")]
+full.parcels[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
+             on = c(usecode = "county_land_use_description")]
 
-cat("\nMatched", nrow(prep_parcels[!is.na(land_use_type_id)]), "records with land use reclass table")
-cat("\nUnmatched: ", nrow(prep_parcels[is.na(land_use_type_id)]), "records.")
-if(nrow(misslu <- prep_parcels[is.na(land_use_type_id) & !is.na(usecode), .N, by = "usecode"]) > 0){
+cat("\nMatched", nrow(full.parcels[!is.na(land_use_type_id)]), "records with land use reclass table")
+cat("\nUnmatched: ", nrow(full.parcels[is.na(land_use_type_id)]), "records.")
+if(nrow(misslu <- full.parcels[is.na(land_use_type_id) & !is.na(usecode), .N, by = "usecode"]) > 0){
     cat("\nThe following land use codes were not found:\n")
     print(misslu[order(usecode)])
 } else cat("\nAll land use codes matched.")
+
+full.parcels[is.na(land_use_type_id), land_use_type_id := 0]
+full.parcels[parcels.23to18[base_pin_flag == 1], `:=`(base_land_use_type_id = i.land_use_type_id), 
+             on = "new_parcel_id"]
+full.parcels[, `:=`(N = .N, has_valid_land_use_type = any(land_use_type_id > 0)), by = "base_parcel"]
+full.parcels[base_land_use_type_id == 0 & N > 1, use_code_base_parcel := ifelse(has_valid_use_code, NA, use_code)]
+
+
+# aggregate land value
+prep_parcels <- full.parcels[!is.na(parcel_id), .(land_value = sum(mklnd), 
+                                                    improvement_value = sum(mkimp),
+                                                    total_value = sum(mkttl),
+                                                    exemption = as.integer(any(exemption)),
+                                                    land_use_type_id = land_use_type_id[1]
+                                                    ), by = "base_parcel"] 
+prep_parcels[is.na(land_use_type_id), land_use_type_id := 0]
+
+# prep_parcels <- parcels.nodupl[, .(parcel_id = pin, parcel_number = parcel_id, 
+#                                    parcel_lrsn = lrsn,
+#                                    land_value = mklnd, improvement_value = mkimp,
+#                                    total_value = mkttl,
+#                                    gross_sqft = round(gis_sq_ft),
+#                                    x_coord_sp = point_x, y_coord_sp = point_y,
+#                                    usecode, 
+#                                    exemption = as.integer(parcel_id %in% exemptions[, parcel_number]))]
+
+
 
 # construct final parcels 
 # (if no additional columns or other cleaning needed then it's just a copy of prep_parcels)
