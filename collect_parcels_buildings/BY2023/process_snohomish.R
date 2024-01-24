@@ -223,16 +223,32 @@ if(nrow(missbt <- prep_buildings[is.na(building_type_id), .N, by = c("usecode", 
     print(missbt[order(-N)])
 } else cat("\nAll building use codes matched.")
 
+# aggregate DUs for Condo buildings on the same parcel
+prep_buildings_condo <- NULL
+for(bt in c(4)){
+    prep_buildings_condo <- rbind(prep_buildings_condo,
+                               prep_buildings[building_type_id == bt,
+                                    .(building_id = building_id[1], building_type_id = bt, gross_sqft = sum(finsize),
+                                      sqft_per_unit = round(sum(finsize)/sum(residential_units)),
+                                      year_built = round(mean(yrbuilt)),
+                                      residential_units = sum(residential_units),
+                                      non_residential_sqft = 0,
+                                      improvement_value = sum(improvement_value), use_code = usecode[1],
+                                      stories = NA), by = "new_parcel_id"]
+                        )
+}
+setnames(prep_buildings_condo, "new_parcel_id", "parcel_number")
 
 # assemble columns for final buildings table by joining residential and non-res part
 # TODO: for non-res buildings is gross_sqft the same as non_residential_sqft?
 buildings_final <- rbind(
-    prep_buildings[building_type_id %in% c(4, 12, 19, 11)
+    prep_buildings[building_type_id %in% c(12, 19, 11)
     , .(building_id, parcel_number = new_parcel_id, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = round(finsize/residential_units),
         year_built = yrbuilt, residential_units, non_residential_sqft = 0,
         improvement_value, use_code = usecode, stories
         )],
+    prep_buildings_condo,
     prep_buildings[! building_type_id %in% c(4, 12, 19, 11)
     , .(building_id, parcel_number = new_parcel_id, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = 1, year_built = yrbuilt, residential_units = 0,
