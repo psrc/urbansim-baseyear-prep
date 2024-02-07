@@ -117,7 +117,7 @@ prep_parcels[!is.na(new_parcel_id) & new_parcel_id > 0 & N > 1 & use_code_dif ==
 
 # get sqft and x & y coordinates
 prep_parcels[parcels.23to18[base_pin_flag == 1], `:=`(pin = i.pin, 
-        gross_sqft = i.gis_sqft, x_coord_sp = i.point_x_int, y_coord_sp = i.point_y_int),
+        gross_sqft = i.gis_sqft, x_coord_sp = i.point_x, y_coord_sp = i.point_y),
              on = "new_parcel_id"]
 
 # prep_parcels <- parcels.nodupl[, .(parcel_id = pin, parcel_number = parcel_id, 
@@ -239,6 +239,16 @@ for(bt in c(4)){
 }
 setnames(prep_buildings_condo, "new_parcel_id", "parcel_number")
 
+# there are a few apartment records with one record for each floor, but the sqft is from the whole building
+apa_floor <- prep_buildings[residential_units > 0 & usecode == "APART", 
+                      .(N = .N, DU = sum(residential_units), same_sqft = all(finsize == finsize[1])), 
+                      by = "new_parcel_id"][, DUpb := DU/N]
+fix_apa_floor <- apa_floor[N > 3 & same_sqft == TRUE & DUpb > 50, new_parcel_id]
+remove_bld <- prep_buildings[new_parcel_id %in% fix_apa_floor, 
+                        .(building_id = building_id[-1]), by = c("new_parcel_id", "building_type_id")] # this will also remove multiple records for garages
+prep_buildings <- prep_buildings[!building_id %in% remove_bld[, building_id]]
+
+
 # assemble columns for final buildings table by joining residential and non-res part
 # TODO: for non-res buildings is gross_sqft the same as non_residential_sqft?
 buildings_final <- rbind(
@@ -303,3 +313,7 @@ if(write.result){
     dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
+
+tmp <- prep_buildings[residential_units > 0 & usecode == "APART", 
+                      .(N = .N, DU = sum(residential_units), same_sqft = all(finsize == finsize[1])), 
+                      by = "new_parcel_id"][, DUpb := DU/N]

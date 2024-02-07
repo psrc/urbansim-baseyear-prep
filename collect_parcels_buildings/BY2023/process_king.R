@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 12/04/2023
+# Hana Sevcikova, last update 02/05/2024
 #
 
 library(data.table)
@@ -12,8 +12,8 @@ library(data.table)
 county <- "King"
 county.id <- 33
 
-data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
-#data.dir <- "King_data"
+#data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+data.dir <- "King_data"
 misc.data.dir <- "data" # path to the BY2023/data folder
 write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
@@ -43,6 +43,7 @@ construct_pin_from_major_minor <- function(dt){
 # parcels & tax accounts
 parcels.23to18 <- fread(file.path(data.dir, "parcels23_kin_to_2018_parcels.csv"))
 parcel <- fread(file.path(data.dir, "extr_parcel.csv"))
+parcelsX <- fread(file.path(data.dir, "parcels23_kin_dissolve_to_2018_parcels.csv")) # solves stacked parcels
 
 rpacct <- fread(file.path(data.dir, "EXTR_RPAcct_NoName.csv"))
 
@@ -65,8 +66,13 @@ resbldg <- fread(file.path(data.dir, "EXTR_ResBldg.csv"))
 
 cat("\nProcessing King parcels\n=========================\n")
 # remove duplicates
-parcels.nodupl <- parcels.23to18[!duplicated(pin)]
-cat("\nNumber of duplicates removed from 23to18 parcels: ", nrow(parcels.23to18) - nrow(parcels.nodupl))
+#parcels.nodupl <- parcels.23to18[!duplicated(pin)]
+#cat("\nNumber of duplicates removed from 23to18 parcels: ", nrow(parcels.23to18) - nrow(parcels.nodupl))
+
+# set base_pin_flag for all records
+parcelsX[, new_parcel_id := pin]
+parcelsX[, `:=`(Npcl = .N, Nbase = sum(base_pin_flag)), by = "new_parcel_id"]
+parcelsX[Npcl == 1 & Nbase == 0, `:=`(base_pin_flag = 1, Nbase = 1)]
 
 # make column names lowercase
 colnames(rpacct) <- tolower(colnames(rpacct))
@@ -83,38 +89,68 @@ rpacct.nodupl <- rpacct[!duplicated(acctnbr)]
 # construct column "pin" in the rpacct table
 rpacct.nodupl <- construct_pin_from_major_minor(rpacct.nodupl)
 
-# group records with the same acctnbr2
-rpacct_grouped <- rpacct.nodupl[, .(apprlandval = sum(apprlandval), apprimpsval = sum(apprimpsval),
+# merge with stacked parcels Xwalk
+rpacct.nodupl[parcelsX, new_parcel_id := i.pin, on = c(pin = "pin_orig")]
+
+# group records with the same new_parcel_id
+rpacct_grouped <- rpacct.nodupl[, .(apprlandval = as.double(sum(apprlandval)), 
+                                    apprimpsval = as.double(sum(apprimpsval)),
+                                    exempt = sum(taxstat != "T")), by = "new_parcel_id"]
+# grouped by the non-stacked parcels (to be used in the constructing building values)
+rpacct_grouped_orig <- rpacct.nodupl[, .(apprlandval = as.double(sum(apprlandval)), 
+                                    apprimpsval = as.double(sum(apprimpsval)),
                                     exempt = sum(taxstat != "T")), by = "pin"]
+
 
 # construct column "pin" in parcel table
 parcel <- construct_pin_from_major_minor(parcel)
-
-# join with parcels
-prep_parcels <- merge(
-    merge(parcels.nodupl, rpacct_grouped, by = "pin", all = TRUE),
-    parcel[, .(pin, use_code = as.character(presentuse), propname, proptype, currentzoning, sqftlot, nbrbldgsites)], 
-    by = "pin", all = TRUE)
-
-cat("\n", nrow(rpacct_grouped[!pin %in% prep_parcels[, pin]]), "records from rpacct were not matched with parcels.\n",
-    nrow(prep_parcels[is.na(apprlandval)]), "parcel records did not have a record in rpacct.")
-cat("\n", nrow(parcel[!pin %in% prep_parcels[, pin]]), "records from extr_parcel were not matched with 23to18 parcels.\n",
-    nrow(prep_parcels[is.na(use_code)]), " 23to18 parcel records did not have a record in extr_parcel.")
+# merge with stacked parcels Xwalk
+parcel[parcelsX, `:=`(new_parcel_id = i.new_parcel_id, base_pin_flag = i.base_pin_flag), on = c(pin = "pin_orig")][, use_code := as.character(presentuse)]
 
 # join with reclass table
-prep_parcels[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
-                    on = c(use_code = "county_land_use_code")]
-       
-cat("\nMatched", nrow(prep_parcels[!is.na(land_use_type_id)]), "records with land use reclass table")
-cat("\nUnmatched: ", nrow(prep_parcels[is.na(land_use_type_id) & !is.na(use_code)]), "records.")
-if(nrow(notfoundlu <- prep_parcels[is.na(land_use_type_id) & !is.na(use_code), .N, by = "use_code"]) > 0){
+parcel[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
+             on = c(use_code = "county_land_use_code")]
+#parcel[is.na(land_use_type_id), land_use_type_id := 0]
+
+# assign land use type of the base parcel
+parcel[is.na(land_use_type_id), land_use_type_id := 0]
+parcelsX[parcel, land_use_type_id := i.land_use_type_id, on = c(pin_orig = "pin")]
+parcel[parcelsX[base_pin_flag == 1], `:=`(base_land_use_type_id = i.land_use_type_id), 
+             on = "new_parcel_id"]
+parcel[is.na(base_land_use_type_id), base_land_use_type_id := ifelse(is.na(land_use_type_id), 0, land_use_type_id)]
+parcel[, `:=`(N = .N, has_valid_base_land_use_type = any(base_land_use_type_id > 0)), by = "new_parcel_id"]
+parcel[base_land_use_type_id == 0 & N > 1, base_land_use_type_id := ifelse(has_valid_base_land_use_type, NA, land_use_type_id)]
+
+cat("\nMatched", nrow(parcel[!is.na(land_use_type_id) & land_use_type_id > 0 & !is.na(new_parcel_id)]), "records with land use reclass table")
+cat("\nUnmatched: ", nrow(parcel[ !is.na(new_parcel_id) &  !is.na(use_code) & (is.na(land_use_type_id) | land_use_type_id == 0)]), "records.")
+if(nrow(notfoundlu <- parcel[ !is.na(new_parcel_id) & (is.na(land_use_type_id)  | land_use_type_id == 0) & !is.na(use_code), .N, by = "use_code"]) > 0){
     cat("\nThe following land use codes were not found:\n")
     print(notfoundlu[order(use_code)])
 } else cat("\nAll land use codes matched.")
 
+# join with parcels
+prep_parcels <- merge(
+    merge(parcelsX[base_pin_flag == 1, .(new_parcel_id, pin_1, gis_sqft, point_x, point_y)], 
+          rpacct_grouped, by = "new_parcel_id", all.x = TRUE),
+            parcel[, .(land_use_type_id = max(base_land_use_type_id, na.rm = TRUE),
+                       use_code_dif = any(land_use_type_id != max(base_land_use_type_id, na.rm = TRUE)),
+                       N = .N), by = "new_parcel_id"], 
+    by = "new_parcel_id", all.x = TRUE)
+
+cat("\n", nrow(rpacct_grouped[!new_parcel_id %in% prep_parcels[, new_parcel_id]]), "records from rpacct were not matched with parcels.\n",
+    nrow(prep_parcels[is.na(apprlandval)]), "parcel records did not have a record in rpacct.")
+cat("\n", nrow(parcel[!new_parcel_id %in% prep_parcels[, new_parcel_id]]), "records from extr_parcel were not matched with 23to18 parcels.\n",
+    nrow(prep_parcels[!new_parcel_id %in% parcel[, new_parcel_id]]), " 23to18 parcel records did not have a record in extr_parcel.")
+
+
+prep_parcels[is.na(land_use_type_id), land_use_type_id := 0]
+# for now we use the land use type of the base parcel
+# but these parcels have differences in land use types:
+prep_parcels[!is.na(new_parcel_id) & new_parcel_id > 0 & N > 1 & use_code_dif == TRUE][order(-N)]
+
 # construct final parcels                
 parcels_final <- prep_parcels[, .(
-    parcel_id = pin_1, parcel_id_fips = pin, land_use_type_id, gross_sqft,
+    parcel_id = pin_1, parcel_id_fips = new_parcel_id, land_use_type_id, gross_sqft = gis_sqft,
     land_value = apprlandval, improvement_value = apprimpsval, exemption = as.integer(exempt > 0),
     y_coord_sp = point_y, x_coord_sp = point_x, county_id = county.id
     )]
@@ -122,6 +158,7 @@ parcels_final <- prep_parcels[, .(
 cat("\nTotal all:", nrow(parcels_final), "parcels")
 cat("\nAssigned to 2018:", nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]), "parcels")
 cat("\nDifference:", nrow(parcels_final) - nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]))
+
 
 
 ###################
@@ -145,7 +182,7 @@ cat("\nNumber of apartments:", nrow(prep_buildings_apt))
 
 prep_buildings_condo <- construct_pin_from_major_minor(condocomplex[, minor := "0000"])[
     , .(pin, major, stories = nbrstories, units = nbrunits, sqft_per_unit = avgunitsize,
-        building_quality = bldgquality, year_built = yrbuilt)]
+        building_quality = bldgquality, year_built = yrbuilt, descr = complexdescr)]
 
 cat("\nNumber of condo complexes:", nrow(prep_buildings_condo))
 
@@ -158,10 +195,13 @@ prep_buildings_com <- construct_pin_from_major_minor(commbldg)[
 cat("\nNumber of commercial buildings:", nrow(prep_buildings_com))
 
 # sum land and improvement values over condos in condo complexes
-condo_value <- merge(construct_pin_from_major_minor(condounit), rpacct_grouped, by = "pin")
-condo_land_imp_value <- condo_value[, .(land_value = sum(apprlandval), improvement_value = sum(apprimpsval)),
+condo_value <- merge(construct_pin_from_major_minor(condounit), rpacct_grouped_orig, by = "pin")
+condo_land_imp_value <- condo_value[, .(land_value = sum(apprlandval), improvement_value = sum(apprimpsval),
+                                        Nrec = .N),
                                     by = "major"]
+
 prep_buildings_condo <- merge(prep_buildings_condo, condo_land_imp_value, by = "major")
+prep_buildings_condo[grepl(" of ", descr), units := Nrec]
 
 # cases where a building is in both tables, apartment and commercial
 aptcom_combo <- merge(prep_buildings_apt[, .(pin, units, sqft_per_unit_apt = sqft_per_unit)], 
@@ -224,15 +264,16 @@ prep_buildings <- rbind(
     fill = TRUE
     )
 
+# assign new_parcel_id
+prep_buildings[parcelsX, new_parcel_id := i.new_parcel_id, on = c(pin = "pin_orig")]
+
 # remove buildings that do not have any match in the parcels table
 nbld <- nrow(prep_buildings)
-prep_buildings <- prep_buildings[pin %in% parcels_final[, parcel_id_fips]]
+prep_buildings <- prep_buildings[!is.na(new_parcel_id)]
 cat("\n", nbld - nrow(prep_buildings), "buildings removed due to missing parcels.")
 
 # calculate improvement value
-prep_buildings[parcels_final, `:=`(total_improvement_value = i.improvement_value,
-                                   land_use_type_id = i.land_use_type_id), 
-               on = c(pin = "parcel_id_fips")]
+prep_buildings[rpacct_grouped_orig, `:=`(total_improvement_value = i.apprimpsval), on = "pin"]
 prep_buildings[, sqft_tmp := pmax(1, gross_sqft, na.rm = TRUE)][
     , total_sqft := sum(sqft_tmp), by = "pin"][
         , improvement_value := round(sqft_tmp/total_sqft * total_improvement_value)][
@@ -243,10 +284,12 @@ prep_buildings[prep_buildings_condo,
                improvement_value := ifelse(is.na(improvement_value), i.improvement_value, improvement_value),
                on = "pin"]
                
-# update the parcels' land_value where improvement value is missing based on condo valuation info
-parcels_final[prep_buildings_condo,  
+# update the parcels' land_value where it is missing based on condo valuation info
+# assign new_parcel_id
+prep_buildings_condo[parcelsX, new_parcel_id := i.new_parcel_id, on = c(pin = "pin_orig")]
+parcels_final[prep_buildings_condo[, .(land_value = sum(land_value)), by = "new_parcel_id"],  
               land_value := ifelse(is.na(land_value), i.land_value, land_value),
-              on = c(parcel_id_fips = "pin")][, improvement_value := NULL]
+              on = c(parcel_id_fips = "new_parcel_id")][, improvement_value := NULL]
 
 # join with reclass table
 prep_buildings[, use_code_char := as.character(use_code)][
@@ -269,7 +312,7 @@ prep_buildings[(pin %in% aptcom_combo[, pin] | pin %in% condocom_combo[, pin]) &
                ]
 
 # add parcel_id to buildings
-prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(pin = "parcel_id_fips")]
+prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(new_parcel_id = "parcel_id_fips")]
 
 # create final buildings table
 buildings_final <- prep_buildings[, .(building_id = 1:nrow(prep_buildings),
