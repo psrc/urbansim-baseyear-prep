@@ -1,7 +1,7 @@
 ---
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
-date: "2/7/2024"
+date: "2/13/2024"
 output: pdf_document
 ---
 
@@ -103,10 +103,20 @@ if(adjust.to.synthpop){
                   tracts.lu, by = "census_2020_tract_id")
   control.dt <- synthh
 } else {
+    # load OFM data
   source(file.path(data.dir, "load_ofm.R"))
   cb <- block.lu
-  control.dt <- ofm[, .(county_id, census_2020_block_group_id, HH = round(sum(HH))), 
+  control.dt <- ofm[, .(county_id, HH = round(sum(HH))), 
                     by = c("county_id", "census_2020_block_group_id")]
+  # since we have a few fake parcels in JBLM that might not match the OFM BGs, we put the OFM counts into those BGs
+  cbg <- fread(file.path(data.dir, "census_2020_block_groups.csv"))
+  swaps <- list("530530729072" = "530530729073", "530530729082" = "530530729083")
+  for(swapbg in names(swaps)){
+      bg1 <- cbg[census_2020_block_group_geoid == swapbg, census_2020_block_group_id]
+      bg2 <- cbg[census_2020_block_group_geoid == swaps[[swapbg]], census_2020_block_group_id]
+      control.dt[census_2020_block_group_id == bg2, HH := HH + control.dt[census_2020_block_group_id == bg1, HH]]
+      control.dt[census_2020_block_group_id == bg1, HH := 0]
+  }
 }
 cbg <- unique(cb[, .(census_2020_block_group_id, county_id)])
 
@@ -390,7 +400,7 @@ fbydu[, .(DU = sum(DU), DUimp1 = sum(DUimp1), DUorig = sum(DUorig), DUdif =  sum
 ```
 
 ```{r echo = FALSE}
-file.out <- file.path(data.dir, paste0(out.buildings.name, "csv"))
+file.out <- file.path(data.dir, paste0(out.buildings.name, ".csv"))
 if(save.as.csv || save.into.mysql) {
   # convert logical to integer
   logical.cols <- colnames(bld)[sapply(bld, is.logical)]
@@ -400,9 +410,9 @@ if(save.as.csv || save.into.mysql) {
 if(save.as.csv) # write out resulting buildings
   fwrite(bld, file=file.out)
 
+db <- "psrc_2023_parcel_baseyear"
 if(save.into.mysql) {
     source("../../collect_parcels_buildings/BY2023/mysql_connection.R")
-    db <- "psrc_2023_parcel_baseyear"
     connection <- mysql.connection(db)
     dbWriteTable(connection, out.buildings.name, bld, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)

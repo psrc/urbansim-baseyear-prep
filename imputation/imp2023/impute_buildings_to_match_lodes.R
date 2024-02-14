@@ -2,7 +2,8 @@ library(data.table)
 
 setwd("~/psrc/urbansim-baseyear-prep/imputation/imp2023")
 save.as.csv <- TRUE
-out.file.name <- paste0("buildings_imputed_phase3_lodes_", format(Sys.Date(), '%Y%m%d'), ".csv")
+save.into.mysql <- TRUE
+out.buildings.name <- paste0("buildings_imputed_phase3_lodes_", format(Sys.Date(), '%Y%m%d'))
 
 gov.bts <- c(2, 5, 7, 9, 18)
 sch.bts <- 18
@@ -16,7 +17,7 @@ publutypes <- c(2, 7, 9, 11, 23)
 schlutypes <- 23
 
 # load buildings
-bld.file.name <- "buildings_imputed_phase2_ofm_20240207.csv"
+bld.file.name <- "buildings_imputed_phase2_ofm_20240213.csv"
 data.year <- 2023 # data files will be taken from "../data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
@@ -120,10 +121,22 @@ for(icond in 1:2) {
     }
 }
 
-file.out <- file.path(data.dir, out.file.name)
+# clean year_built
+bld[, .N, by = "year_built"][order(year_built)]
+bld[(year_built < 1800) | (year_built > 2023), year_built := 0]
+
+file.out <- file.path(data.dir, paste0(out.buildings.name, ".csv"))
 if(save.as.csv) {
     # write out resulting buildings
     fwrite(bld, file=file.out)
+}
+
+if(save.into.mysql) {
+    source("../../collect_parcels_buildings/BY2023/mysql_connection.R")
+    db <- "psrc_2023_parcel_baseyear"
+    connection <- mysql.connection(db)
+    dbWriteTable(connection, out.buildings.name, bld, overwrite = TRUE, row.names = FALSE)
+    DBI::dbDisconnect(connection)
 }
 
 cat("\nImputed", nrow(bld) - nrow(bld.orig), "governmental buildings.\n")
