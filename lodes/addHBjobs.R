@@ -2,24 +2,29 @@
 # based on given geography x sector distribution
 # Hana Sevcikova, PSRC
 # June 26, 2018
-# updated February 7, 2022
+# updated February 20, 2024
 
 setwd("~/psrc/urbansim-baseyear-prep/lodes")
 
 library(data.table)
 
-# unrolled NHB jobs as created by unroll_lodes.R
-#nhb.job.file <- "jobs_blodes_AJ_nohb.csv"
-nhb.job.file <- "jobs_nohb.csv"
+data.dir <- "data"
+
+# unrolled NHB jobs as created by unroll_adjusted_lodes.R
+nhb.job.file <- "jobs_nohb2023.csv"
+
+save.as.csv <- TRUE
+save.into.mysql <- TRUE
+out.jobs.name <- paste0("jobs_preparcelized_",  
+                             format(Sys.Date(), '%Y%m%d'))
 
 # distribution file
-hb.distr.file <- "faz_home_based_2017_19.csv"
+hb.distr.file <- file.path(data.dir, "faz_home_based_2017_19.csv")
 
 # block-geo distribution file
-#block.lookup.file <- "block_faz.csv"
-block.lookup.file <- "block_group_faz.csv"
+block.lookup.file <- file.path(data.dir, "block_group_2020_faz.csv")
 geo.lookup.id <- "faz_id"
-block.id.name <- "census_block_group_id"
+block.id.name <- "census_2020_block_group_id"
 
 # read jobs table
 nhb.jobs <- fread(nhb.job.file)
@@ -53,7 +58,21 @@ marg <- nhb.jobs[, .N, by = .(home_based_status, sector_id)]
 setorder(marg, "home_based_status", "sector_id")
 nhb.jobs[, .N, by = home_based_status]
 
-# attach the original suffices
-# correct home_based_status to be i1 instead of b1
-colnames(nhb.jobs) <- c(sub("b1", "i1", colnames.orig), paste0(geo.lookup.id, ":i4"))
-fwrite(nhb.jobs, file = "jobs_final.csv")
+if(save.as.csv){
+    file.out <- paste0(out.jobs.name, ".csv")
+    # attach the original suffices
+    # correct home_based_status to be i1 instead of b1
+    jobs.to.save <- copy(nhb.jobs)
+    colnames(jobs.to.save) <- c(sub("b1", "i1", colnames.orig), paste0(geo.lookup.id, ":i4"))
+    fwrite(jobs.to.save, file = file.out)
+}
+if(save.into.mysql) {
+    db <- "psrc_2023_parcel_baseyear"
+    source("../collect_parcels_buildings/BY2023/mysql_connection.R")
+    connection <- mysql.connection(db)
+    dbWriteTable(connection, out.jobs.name, nhb.jobs, overwrite = TRUE, row.names = FALSE)
+    DBI::dbDisconnect(connection)
+}
+
+# convert it from command line into Opus cache:
+# python -m opus_core.tools.convert_table csv flt -d . -o /path/to/opus/cache/2023 -t jobs_table_name

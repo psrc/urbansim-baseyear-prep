@@ -526,8 +526,8 @@ record_id,county_id,"county_building_use_code","county_building_use_description"
 678,61,"NHBDSHL","NHBD Shopping Center, Shell",8,23,"other",1
 679,33,"386","MINI-WAREHOUSE (386)",8,14,"mini_storage",635
 680,33,"525","MINI WAREHOUSE, HI-RISE (525)",8,14,"mini_storage",87
-682,53,"386","Mini Warehouse",8,14,"mini_storage",16
-683,53,"940","Mini Storage",8,14,"mini_storage",778
+682,53,"386","Mini Warehouse",8,14,"outbuilding",16
+683,53,"940","Mini Storage",8,14,"outbuilding",778
 684,61,"MINIWSHR","Mini-Warehouse, High-rise",8,14,"mini_storage",2
 685,61,"MWRHSE","Mini Warehouse",8,14,"mini_storage",318
 686,53,"98","Boat House Commercial",8,17,"recreation",0
@@ -671,4 +671,4 @@ record_id,county_id,"county_building_use_code","county_building_use_description"
 275,53,"957","Government",7,5,"government",282
 29,53,"959","Agricultural",8,1,"agriculture",262
 518,53,"961","Marina Slip Condos",8,17,"recreation",152
-683,53,"941","Mini Storage Condo",8,14,"mini_storage",778
+683,53,"941","Mini Storage Condo",8,14,"outbuilding",778

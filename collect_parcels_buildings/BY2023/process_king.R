@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 02/05/2024
+# Hana Sevcikova, last update 02/24/2024
 #
 
 library(data.table)
@@ -41,7 +41,7 @@ construct_pin_from_major_minor <- function(dt){
 ###############
 
 # parcels & tax accounts
-parcels.23to18 <- fread(file.path(data.dir, "parcels23_kin_to_2018_parcels.csv"))
+#parcels.23to18 <- fread(file.path(data.dir, "parcels23_kin_to_2018_parcels.csv"))
 parcel <- fread(file.path(data.dir, "extr_parcel.csv"))
 parcelsX <- fread(file.path(data.dir, "parcels23_kin_dissolve_to_2018_parcels.csv")) # solves stacked parcels
 
@@ -325,6 +325,16 @@ cat("\nTotal all: ", nrow(buildings_final), "buildings")
 cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings")
 cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "\n")
 
+# generate building type crosstabs
+bt.tab <- buildings_final[!is.na(parcel_id) & parcel_id != 0, .(N = .N, DU = sum(residential_units), 
+                                                                nonres_sqft = sum(non_residential_sqft)), 
+                          by = .(use_code, building_type_id)]
+bt.tab <- merge(bt.tab, bt_reclass[county_id == county.id, .(county_building_use_code = as.integer(county_building_use_code), 
+                                                             county_building_use_description, building_type_id, building_type_name)],
+                by.x = c("use_code", "building_type_id"), by.y = c("county_building_use_code", "building_type_id"),
+                all.x = TRUE)
+setcolorder(bt.tab, c("use_code", "county_building_use_description", "building_type_id", "building_type_name"))
+
 
 ###############
 # write results
@@ -341,5 +351,6 @@ if(write.result){
     dbWriteTable(connection, "urbansim_buildings", buildings_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_parcels_all", parcels_final, overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }

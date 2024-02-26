@@ -15,7 +15,7 @@ county.id <- 61
 #data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
 data.dir <- "Snohomish_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
-write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
+write.result <- FALSE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -298,6 +298,15 @@ cat("\nTotal all: ", nrow(buildings_final), "buildings")
 cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings")
 cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "\n")
 
+# generate building type crosstabs
+bt.tab <- buildings_final[!is.na(parcel_id) & parcel_id != 0, .(N = .N, DU = sum(residential_units), 
+                                                                nonres_sqft = sum(non_residential_sqft)), 
+                          by = .(use_code, building_type_id)]
+bt.tab <- merge(bt.tab, bt_reclass[county_id == county.id, .(county_building_use_code, county_building_use_description, building_type_id, building_type_name)],
+                by.x = c("use_code", "building_type_id"), by.y = c("county_building_use_code", "building_type_id"),
+                all.x = TRUE)
+setcolorder(bt.tab, c("use_code", "county_building_use_description", "building_type_id", "building_type_name"))
+
 
 if(write.result){
     # write results
@@ -311,6 +320,7 @@ if(write.result){
     dbWriteTable(connection, "urbansim_buildings", buildings_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_parcels_all", parcels_final, overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
 

@@ -4,7 +4,7 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #    urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 01/10/2024
+# Hana Sevcikova, last update 02/21/2024
 #
 
 library(data.table)
@@ -170,7 +170,6 @@ impXwalk <- unique(impXwalk)
 # join with dissolved parcels
 buildings_tmp <- merge(buildings_tmp, impXwalk, by = "parcel_number_orig", all.x = TRUE)
                        
-
 # group buildings since there were duplicate building_id values per parcel
 buildings_all <- buildings_tmp[, .(
     sqft = sum(built_as_square_feet, na.rm = TRUE), units = sum(units, na.rm = TRUE), 
@@ -188,6 +187,11 @@ buildings_all[bt_reclass[county_id == county.id], building_type_id := i.building
 buildings_all[bt_reclass[county_id == county.id], built_as_building_type_id := i.building_type_id, 
                on = c(built_as_id = "county_building_use_code")]
 
+# remove detached garages
+nbld <- nrow(buildings_all)
+buildings_all <- buildings_all[built_as_id != 99 & primary_occupancy_code != 99]
+cat("\nDropped", nbld - nrow(buildings_all), "detached garages.")
+    
 # reclass some non-res types that appear in residential buildings
 # check types via 
 # prep_buildings[count > 1 & building_type_id %in% c(4, 12, 19, 11) & ! is.na(built_as_building_type_id) & ! built_as_building_type_id %in% c(4, 12, 19, 11), .N, by = c("built_as_id", "built_as_description")][order(built_as_description)]
@@ -195,14 +199,15 @@ buildings_all[count > 1 & building_type_id %in% c(4, 12, 19, 11) &
                    ! is.na(built_as_building_type_id) & ! built_as_building_type_id %in% c(4, 12, 19, 11) & !built_as_id == 124,
                `:=`(primary_occupancy_code = built_as_id, units = 0)]
 
+# for warehouses, take the alternative type 
+buildings_all[count > 1 & building_type_id == 21 & 
+                  ! is.na(built_as_building_type_id) & built_as_building_type_id != 21,
+               `:=`(primary_occupancy_code = built_as_id, 
+                    units = ifelse(built_as_building_type_id %in% c(4, 12, 19, 11), units, 0))]
+              
 # rerun the join on reclass table as the occupancy code might have changed
 buildings_all[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
               on = c(primary_occupancy_code = "county_building_use_code")]
-
-# join with improvement table
-#buildings_all <- merge(improvement, buildings_grouped, 
-#                        by = c("building_id", "parcel_number"),
-#                        all = TRUE)
 
 prep_buildings <- buildings_all[parcel_number %in% parcels_final[, parcel_id_fips]]
 cat("\nDropped", nrow(buildings_all) - nrow(prep_buildings), "buildings due to missing representation in the parcels dataset.")
@@ -218,13 +223,14 @@ prep_buildings[, `:=`(improvement_value = round(sqft_tmp/total_sqft * total_impr
 # join with building reclass table
 prep_buildings[, primary_occupancy_code := as.character(primary_occupancy_code)]
 prep_buildings[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
-               on = c(primary_occupancy_code = "county_building_use_code")]
+            on = c(primary_occupancy_code = "county_building_use_code")]
 cat("\nMatched", nrow(prep_buildings[!is.na(building_type_id)]), "records with building reclass table")
 cat("\nUnmatched: ", nrow(prep_buildings[is.na(building_type_id)]), "records.")
 if(nrow(missbt <- prep_buildings[is.na(building_type_id), .N, by = c("primary_occupancy_code", "primary_occupancy_description")]) > 0){
     cat("\nThe following building codes were not found:\n")
     print(missbt[order(-N)])
 } else cat("\nAll building use codes matched.")
+
 
 # Clean up the units column
 prep_buildings[is.na(units), units := 0]
@@ -287,6 +293,14 @@ cat("\nTotal all: ", nrow(buildings_final), "buildings")
 cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings")
 cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "\n")
 
+# generate building type crosstabs
+bt.tab <- buildings_final[!is.na(parcel_id) & parcel_id != 0, .(N = .N, DU = sum(residential_units), 
+                                                                nonres_sqft = sum(non_residential_sqft)), 
+                          by = .(use_code, building_type_id)]
+bt.tab <- merge(bt.tab, bt_reclass[county_id == county.id, .(county_building_use_code, county_building_use_description, building_type_id, building_type_name)],
+                by.x = c("use_code", "building_type_id"), by.y = c("county_building_use_code", "building_type_id"),
+                all.x = TRUE)
+setcolorder(bt.tab, c("use_code", "county_building_use_description", "building_type_id", "building_type_name"))
 
 if(write.result){
     fwrite(parcels_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_parcels_pierce.csv")
@@ -299,5 +313,6 @@ if(write.result){
     dbWriteTable(connection, "urbansim_buildings", buildings_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_parcels_all", parcels_final, overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }

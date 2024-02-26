@@ -4,15 +4,15 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #.   urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 11/15/2023
+# Hana Sevcikova, last update 02/24/2024
 #
 
 library(data.table)
 
 county <- "Kitsap"
 
-data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
-#data.dir <- "Kitsap_data" # Hana's local path
+#data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+data.dir <- "Kitsap_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
@@ -283,7 +283,8 @@ buildings_final <- prep_buildings_in_pcl[, .(building_id = id, gross_sqft = tota
                                              parcel_id, parcel_id_fips = rp_acct_id, residential_units, 
                                              building_type_id, improvement_value, stories, land_area = 0, 
                                              non_residential_sqft = ifelse(residential_units > 0, 0, total_sqft),
-                                             use_code, use_desc)]
+                                             use_code = paste(bldg_typ, improv_typ, sep = ";"), 
+                                             use_desc)]
 
 cat("\nTotal all: ", nrow(buildings_final), "buildings")
 cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings\n")
@@ -292,6 +293,17 @@ cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_
 # remove unnecessary columns and pre-populate other columns, whatever is needed
 parcels_final[, `:=`(num_dwell = NULL, county_id = 35)]
 setnames(parcels_final, "rp_acct_id", "parcel_id_fips") # rename rp_acct_id column
+
+# generate building type crosstabs
+bt.tab <- merge(buildings_final[!is.na(parcel_id) & parcel_id != 0],
+                prep_buildings_in_pcl[, .(building_id = id, bldg_typ, improv_typ)], by = "building_id", 
+                all.x = TRUE, all.y = FALSE)[, .(N = .N, DU = sum(residential_units), 
+                                                nonres_sqft = sum(non_residential_sqft)), 
+                          by = .(bldg_typ, improv_typ, use_desc, building_type_id)]
+bt.tab <- merge(bt.tab, bt_reclass[, .(bldg_typ, improv_typ, use_desc, building_type_id, building_type_name)],
+                by = c("bldg_typ", "improv_typ", "use_desc", "building_type_id"), all.x = TRUE)
+setcolorder(bt.tab, c("bldg_typ", "improv_typ", "use_desc", "building_type_id", "building_type_name"))
+
 
 if(write.result){
     # write results
@@ -307,5 +319,6 @@ if(write.result){
     # urbansim_parcels_all & urbansim_buildings_all contain all records regardless if they are found in BY2018
     dbWriteTable(connection, "urbansim_parcels_all", parcels_final, overwrite = TRUE, row.names = FALSE)
     dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
