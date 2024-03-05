@@ -1,7 +1,7 @@
 ---
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
-date: "2/13/2024"
+date: "2/26/2024"
 output: pdf_document
 ---
 
@@ -38,7 +38,7 @@ The output is written into imputation/data2023/buildings_imputed_phase2_ofm_{dat
 Set the name of the buildings file and the household synthesizer file:
 
 ```{r, echo=TRUE}
-bld.file.name <- "buildings_imputed_phase1_20240205.csv"
+bld.file.name <- "buildings_imputed_phase1_20240226.csv"
 adjust.to.synthpop <- FALSE
 synth.file.name <- "summary_adjusted_urbansim_bg_id.csv" # used only if adjust.to.synthpop is TRUE
 ```
