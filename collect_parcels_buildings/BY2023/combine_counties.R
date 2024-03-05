@@ -9,7 +9,7 @@
 
 library(data.table)
 
-write.result <- TRUE # it will overwrite the existing tables parcels & buildings
+write.result <- FALSE # it will overwrite the existing tables parcels & buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -34,6 +34,10 @@ for(county in c("king", "kitsap", "pierce", "snohomish")){
                  colClasses = c(parcel_id_fips = "character"))
     buildings <- rbind(buildings, bld, fill = TRUE)
 }
+
+# assign a unique identifier
+all_buildings[, building_id := 1:nrow(all_buildings)]
+buildings[, building_id := 1:nrow(buildings)]
 
 fwrite(all_parcels, file = "parcels_4counties_all.csv")
 fwrite(all_buildings, file = "buildings_4counties_all.csv")
