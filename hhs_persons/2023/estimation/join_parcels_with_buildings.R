@@ -8,7 +8,7 @@
 library(data.table)
 setwd("~/psrc/urbansim-baseyear-prep/hhs_persons/2023/estimation")
 
-bld <- fread("../../../imputation/data2023/buildings_imputed_phase3_lodes_20240213.csv") # latest buildings table
+bld <- fread("../../../imputation/data2023/buildings_imputed_phase3_lodes_20240226.csv") # latest buildings table
 pcl <- fread("../../../imputation/data2023/ref2018/parcels.csv") # parcels with attributes "parcel_id", "x_coord_sp", "y_coord_sp"
 
 pbld <- bld[, .(residential_units = sum(residential_units), number_of_buildings = .N), by = .(parcel_id)]

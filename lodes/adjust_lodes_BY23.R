@@ -111,6 +111,7 @@ if(adjust.by.qcew){
     # read parcel file to get BG x city correspondence 
     # - the file should also have columns number_of_buildings_pcl (# buildings per parcel)
     #   and number_of_buildings_bg (# buildings per block group)
+    # It was created via data/prepare_parcels_for_adjustment.R
     load(file.path(data.dir, "parcels_bldg_bg_share.rda"))
     pcl[allcities, acity_id := i.acity_id, on = "city_id"]
     

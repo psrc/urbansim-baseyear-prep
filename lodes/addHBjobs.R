@@ -2,7 +2,7 @@
 # based on given geography x sector distribution
 # Hana Sevcikova, PSRC
 # June 26, 2018
-# updated February 20, 2024
+# updated March 5, 2024
 
 setwd("~/psrc/urbansim-baseyear-prep/lodes")
 

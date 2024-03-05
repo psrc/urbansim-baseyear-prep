@@ -1,0 +1,1123 @@
+county,juris,industry,emp_all
+33,Algona,1,0
+33,Auburn,1,350
+33,Bellevue,1,997
+33,Black Diamond,1,44
+33,Bothell,1,24
+33,Burien,1,174
+33,Carnation,1,-99
+33,Covington,1,0
+33,Des Moines,1,109
+33,Duvall,1,0
+33,Enumclaw,1,156
+33,Federal Way,1,315
+33,Hunts Point,1,-99
+33,Issaquah,1,319
+33,Kenmore,1,96
+33,Kent,1,612
+33,Kirkland,1,515
+33,Lake Forest Park,1,0
+33,Maple Valley,1,63
+33,Medina,1,0
+33,Mercer Island,1,94
+33,Newcastle,1,0
+33,Normandy Park,1,0
+33,North Bend,1,-99
+33,Pacific,1,-99
+33,Redmond,1,379
+33,Renton,1,670
+33,Sammamish,1,328
+33,SeaTac,1,0
+33,Seattle,1,4783
+33,Shoreline,1,180
+33,Snoqualmie,1,122
+33,Tukwila,1,0
+33,Unincorporated,1,4838
+33,Woodinville,1,95
+35,Bainbridge Island,1,136
+35,Bremerton,1,67
+35,Port Orchard,1,0
+35,Poulsbo,1,43
+35,Unincorporated,1,665
+53,Auburn,1,0
+53,Bonney Lake,1,0
+53,Buckley,1,99
+53,DuPont,1,-99
+53,Eatonville,1,37
+53,Edgewood,1,39
+53,Fife,1,0
+53,Gig Harbor,1,73
+53,Lakewood,1,146
+53,Milton,1,0
+53,Orting,1,0
+53,Pacific,1,-99
+53,Puyallup,1,164
+53,Roy,1,-99
+53,Ruston,1,0
+53,South Prairie,1,0
+53,Steilacoom,1,0
+53,Sumner,1,102
+53,Tacoma,1,931
+53,Unincorporated,1,3169
+53,University Place,1,0
+53,Wilkeson,1,0
+61,Arlington,1,483
+61,Bothell,1,44
+61,Brier,1,0
+61,Darrington,1,36
+61,Edmonds,1,126
+61,Everett,1,427
+61,Gold Bar,1,32
+61,Lake Stevens,1,101
+61,Lynnwood,1,0
+61,Marysville,1,204
+61,Mill Creek,1,29
+61,Monroe,1,132
+61,Mountlake Terrace,1,0
+61,Mukilteo,1,-99
+61,Snohomish,1,98
+61,Stanwood,1,54
+61,Sultan,1,57
+61,Unincorporated,1,3848
+99,Region,1,27831
+33,Algona,10,60
+33,Auburn,10,2394
+33,Beaux Arts,10,-99
+33,Bellevue,10,7912
+33,Black Diamond,10,59
+33,Bothell,10,981
+33,Burien,10,2007
+33,Carnation,10,87
+33,Clyde Hill,10,-99
+33,Covington,10,984
+33,Des Moines,10,1101
+33,Duvall,10,244
+33,Enumclaw,10,708
+33,Federal Way,10,3618
+33,Issaquah,10,2100
+33,Kenmore,10,295
+33,Kent,10,3706
+33,Kirkland,10,3438
+33,Lake Forest Park,10,223
+33,Maple Valley,10,1001
+33,Medina,10,-99
+33,Mercer Island,10,541
+33,Newcastle,10,298
+33,Normandy Park,10,124
+33,North Bend,10,527
+33,Pacific,10,74
+33,Redmond,10,4433
+33,Renton,10,4038
+33,Sammamish,10,561
+33,SeaTac,10,2838
+33,Seattle,10,41044
+33,Shoreline,10,1425
+33,Skykomish,10,11
+33,Snoqualmie,10,306
+33,Tukwila,10,3737
+33,Unincorporated,10,1942
+33,Woodinville,10,1579
+33,Yarrow Point,10,-99
+35,Bainbridge Island,10,791
+35,Bremerton,10,1625
+35,Port Orchard,10,1092
+35,Poulsbo,10,1102
+35,Unincorporated,10,3823
+53,Auburn,10,426
+53,Bonney Lake,10,1324
+53,Buckley,10,180
+53,DuPont,10,390
+53,Eatonville,10,135
+53,Edgewood,10,76
+53,Fife,10,761
+53,Fircrest,10,182
+53,Gig Harbor,10,1965
+53,Lakewood,10,3125
+53,Milton,10,339
+53,Orting,10,196
+53,Pacific,10,-99
+53,Puyallup,10,3176
+53,Roy,10,-99
+53,Ruston,10,212
+53,South Prairie,10,-99
+53,Steilacoom,10,108
+53,Sumner,10,808
+53,Tacoma,10,10331
+53,Unincorporated,10,6613
+53,University Place,10,600
+53,Wilkeson,10,8
+61,Arlington,10,1148
+61,Bothell,10,1071
+61,Brier,10,-99
+61,Darrington,10,17
+61,Edmonds,10,1981
+61,Everett,10,4099
+61,Gold Bar,10,47
+61,Granite Falls,10,206
+61,Lake Stevens,10,952
+61,Lynnwood,10,3202
+61,Marysville,10,2111
+61,Mill Creek,10,1059
+61,Monroe,10,967
+61,Mountlake Terrace,10,263
+61,Mukilteo,10,596
+61,Snohomish,10,1085
+61,Stanwood,10,523
+61,Sultan,10,129
+61,Unincorporated,10,3606
+99,Region,10,156935
+33,Algona,11,16
+33,Auburn,11,2694
+33,Beaux Arts,11,-99
+33,Bellevue,11,10390
+33,Black Diamond,11,59
+33,Bothell,11,638
+33,Burien,11,1203
+33,Carnation,11,6
+33,Clyde Hill,11,46
+33,Covington,11,430
+33,Des Moines,11,646
+33,Duvall,11,140
+33,Enumclaw,11,316
+33,Federal Way,11,2108
+33,Hunts Point,11,20
+33,Issaquah,11,1923
+33,Kenmore,11,485
+33,Kent,11,3523
+33,Kirkland,11,3872
+33,Lake Forest Park,11,223
+33,Maple Valley,11,535
+33,Medina,11,211
+33,Mercer Island,11,1056
+33,Milton,11,0
+33,Newcastle,11,497
+33,Normandy Park,11,135
+33,North Bend,11,241
+33,Pacific,11,111
+33,Redmond,11,2847
+33,Renton,11,4232
+33,Sammamish,11,930
+33,SeaTac,11,2596
+33,Seattle,11,54980
+33,Shoreline,11,1749
+33,Skykomish,11,-99
+33,Snoqualmie,11,842
+33,Tukwila,11,2737
+33,Unincorporated,11,3991
+33,Woodinville,11,859
+33,Yarrow Point,11,32
+35,Bainbridge Island,11,1396
+35,Bremerton,11,1174
+35,Port Orchard,11,733
+35,Poulsbo,11,397
+35,Unincorporated,11,3086
+53,Auburn,11,132
+53,Bonney Lake,11,656
+53,Buckley,11,127
+53,Carbonado,11,0
+53,DuPont,11,365
+53,Eatonville,11,48
+53,Edgewood,11,189
+53,Fife,11,1091
+53,Fircrest,11,298
+53,Gig Harbor,11,1309
+53,Lakewood,11,2747
+53,Milton,11,197
+53,Orting,11,98
+53,Pacific,11,144
+53,Puyallup,11,2732
+53,Roy,11,5
+53,Ruston,11,173
+53,South Prairie,11,14
+53,Steilacoom,11,112
+53,Sumner,11,776
+53,Tacoma,11,8425
+53,Unincorporated,11,5909
+53,University Place,11,825
+53,Wilkeson,11,0
+61,Arlington,11,744
+61,Bothell,11,444
+61,Brier,11,28
+61,Darrington,11,7
+61,Edmonds,11,1585
+61,Everett,11,4127
+61,Gold Bar,11,12
+61,Granite Falls,11,102
+61,Index,11,-99
+61,Lake Stevens,11,628
+61,Lynnwood,11,2407
+61,Marysville,11,1158
+61,Mill Creek,11,853
+61,Monroe,11,618
+61,Mountlake Terrace,11,539
+61,Mukilteo,11,655
+61,Snohomish,11,480
+61,Stanwood,11,269
+61,Sultan,11,158
+61,Unincorporated,11,4909
+61,Woodway,11,26
+99,Region,11,160236
+33,Algona,12,19
+33,Auburn,12,3071
+33,Beaux Arts,12,2
+33,Bellevue,12,3689
+33,Black Diamond,12,60
+33,Bothell,12,517
+33,Burien,12,523
+33,Carnation,12,44
+33,Clyde Hill,12,35
+33,Covington,12,192
+33,Des Moines,12,402
+33,Duvall,12,82
+33,Enumclaw,12,290
+33,Federal Way,12,1706
+33,Hunts Point,12,3
+33,Issaquah,12,781
+33,Kenmore,12,170
+33,Kent,12,3337
+33,Kirkland,12,5723
+33,Lake Forest Park,12,129
+33,Maple Valley,12,230
+33,Medina,12,29
+33,Mercer Island,12,265
+33,Newcastle,12,66
+33,Normandy Park,12,29
+33,North Bend,12,139
+33,Pacific,12,77
+33,Redmond,12,976
+33,Renton,12,7114
+33,Sammamish,12,302
+33,SeaTac,12,4363
+33,Seattle,12,49601
+33,Shoreline,12,2043
+33,Skykomish,12,10
+33,Snoqualmie,12,645
+33,Tukwila,12,2765
+33,Unincorporated,12,3823
+33,Woodinville,12,159
+33,Yarrow Point,12,4
+35,Bainbridge Island,12,802
+35,Bremerton,12,15781
+35,Port Orchard,12,1124
+35,Poulsbo,12,572
+35,Unincorporated,12,7829
+53,Auburn,12,20
+53,Bonney Lake,12,225
+53,Buckley,12,745
+53,Carbonado,12,6
+53,DuPont,12,83
+53,Eatonville,12,83
+53,Edgewood,12,68
+53,Fife,12,955
+53,Fircrest,12,65
+53,Gig Harbor,12,243
+53,Lakewood,12,4485
+53,Milton,12,65
+53,Orting,12,240
+53,Puyallup,12,599
+53,Roy,12,27
+53,Ruston,12,15
+53,South Prairie,12,8
+53,Steilacoom,12,116
+53,Sumner,12,208
+53,Tacoma,12,12257
+53,Unincorporated,12,12726
+53,University Place,12,530
+53,Wilkeson,12,6
+61,Arlington,12,834
+61,Bothell,12,263
+61,Brier,12,39
+61,Darrington,12,75
+61,Edmonds,12,383
+61,Everett,12,6895
+61,Gold Bar,12,19
+61,Granite Falls,12,57
+61,Index,12,7
+61,Lake Stevens,12,232
+61,Lynnwood,12,1007
+61,Marysville,12,1054
+61,Mill Creek,12,355
+61,Monroe,12,1829
+61,Mountlake Terrace,12,359
+61,Mukilteo,12,172
+61,Snohomish,12,328
+61,Stanwood,12,242
+61,Sultan,12,45
+61,Unincorporated,12,6311
+61,Woodway,12,14
+99,Region,12,173816
+33,Auburn,13,3070
+33,Bellevue,13,4435
+33,Black Diamond,13,66
+33,Bothell,13,1958
+33,Burien,13,1021
+33,Carnation,13,184
+33,Clyde Hill,13,179
+33,Covington,13,704
+33,Des Moines,13,1504
+33,Duvall,13,222
+33,Enumclaw,13,594
+33,Federal Way,13,2187
+33,Issaquah,13,880
+33,Kenmore,13,551
+33,Kent,13,2781
+33,Kirkland,13,2185
+33,Lake Forest Park,13,149
+33,Maple Valley,13,756
+33,Medina,13,76
+33,Mercer Island,13,714
+33,Newcastle,13,290
+33,Normandy Park,13,81
+33,North Bend,13,210
+33,Pacific,13,83
+33,Redmond,13,1281
+33,Renton,13,2869
+33,Sammamish,13,1677
+33,SeaTac,13,654
+33,Seattle,13,39957
+33,Shoreline,13,2135
+33,Skykomish,13,23
+33,Snoqualmie,13,638
+33,Tukwila,13,518
+33,Unincorporated,13,5744
+33,Woodinville,13,369
+35,Bainbridge Island,13,634
+35,Bremerton,13,1682
+35,Port Orchard,13,562
+35,Poulsbo,13,531
+35,Unincorporated,13,3358
+53,Auburn,13,77
+53,Bonney Lake,13,614
+53,Buckley,13,264
+53,Carbonado,13,34
+53,DuPont,13,160
+53,Eatonville,13,213
+53,Edgewood,13,277
+53,Fife,13,283
+53,Fircrest,13,117
+53,Gig Harbor,13,438
+53,Lakewood,13,2720
+53,Milton,13,238
+53,Orting,13,406
+53,Puyallup,13,1974
+53,Roy,13,60
+53,Steilacoom,13,264
+53,Sumner,13,508
+53,Tacoma,13,6090
+53,Unincorporated,13,8667
+53,University Place,13,850
+53,Wilkeson,13,50
+61,Arlington,13,805
+61,Bothell,13,844
+61,Brier,13,149
+61,Darrington,13,89
+61,Edmonds,13,852
+61,Everett,13,3172
+61,Gold Bar,13,56
+61,Granite Falls,13,337
+61,Index,13,12
+61,Lake Stevens,13,1348
+61,Lynnwood,13,1964
+61,Marysville,13,1370
+61,Mill Creek,13,403
+61,Monroe,13,516
+61,Mountlake Terrace,13,468
+61,Mukilteo,13,695
+61,Snohomish,13,477
+61,Stanwood,13,739
+61,Sultan,13,234
+61,Unincorporated,13,4555
+99,Region,13,130901
+33,Algona,2,103
+33,Auburn,2,4920
+33,Bellevue,2,6996
+33,Black Diamond,2,272
+33,Bothell,2,1315
+33,Burien,2,1305
+33,Carnation,2,66
+33,Clyde Hill,2,12
+33,Covington,2,829
+33,Des Moines,2,483
+33,Duvall,2,152
+33,Enumclaw,2,664
+33,Federal Way,2,2014
+33,Issaquah,2,686
+33,Kenmore,2,618
+33,Kent,2,8441
+33,Kirkland,2,3808
+33,Lake Forest Park,2,217
+33,Maple Valley,2,734
+33,Medina,2,15
+33,Mercer Island,2,547
+33,Milton,2,6
+33,Newcastle,2,88
+33,Normandy Park,2,81
+33,North Bend,2,423
+33,Pacific,2,453
+33,Redmond,2,3227
+33,Renton,2,3777
+33,Sammamish,2,423
+33,SeaTac,2,1008
+33,Seattle,2,27458
+33,Shoreline,2,986
+33,Skykomish,2,0
+33,Snoqualmie,2,86
+33,Tacoma,2,0
+33,Tukwila,2,2915
+33,Unincorporated,2,6288
+33,Woodinville,2,2018
+33,Yarrow Point,2,-99
+35,Bainbridge Island,2,551
+35,Bremerton,2,624
+35,Port Orchard,2,401
+35,Poulsbo,2,312
+35,Unincorporated,2,3625
+53,Auburn,2,150
+53,Bonney Lake,2,313
+53,Buckley,2,289
+53,Carbonado,2,21
+53,DuPont,2,26
+53,Eatonville,2,18
+53,Edgewood,2,672
+53,Fife,2,1829
+53,Fircrest,2,77
+53,Gig Harbor,2,578
+53,Lakewood,2,1756
+53,Milton,2,495
+53,Orting,2,108
+53,Pacific,2,731
+53,Puyallup,2,2285
+53,Roy,2,-99
+53,Ruston,2,-99
+53,South Prairie,2,-99
+53,Steilacoom,2,49
+53,Sumner,2,2788
+53,Tacoma,2,4898
+53,Unincorporated,2,10229
+53,University Place,2,444
+53,Wilkeson,2,-99
+61,Arlington,2,1595
+61,Bothell,2,525
+61,Brier,2,86
+61,Darrington,2,16
+61,Edmonds,2,794
+61,Everett,2,3935
+61,Gold Bar,2,-99
+61,Granite Falls,2,75
+61,Index,2,0
+61,Lake Stevens,2,1060
+61,Lynnwood,2,1721
+61,Marysville,2,1591
+61,Mill Creek,2,559
+61,Monroe,2,1025
+61,Mountlake Terrace,2,691
+61,Mukilteo,2,1339
+61,Snohomish,2,650
+61,Stanwood,2,74
+61,Sultan,2,90
+61,Unincorporated,2,11661
+61,Woodway,2,10
+99,Region,2,144269
+33,Algona,3,1092
+33,Auburn,3,7059
+33,Bellevue,3,3613
+33,Black Diamond,3,19
+33,Bothell,3,1208
+33,Burien,3,173
+33,Carnation,3,-99
+33,Clyde Hill,3,4
+33,Covington,3,118
+33,Des Moines,3,-99
+33,Duvall,3,62
+33,Enumclaw,3,261
+33,Federal Way,3,401
+33,Issaquah,3,701
+33,Kenmore,3,97
+33,Kent,3,15475
+33,Kirkland,3,1728
+33,Lake Forest Park,3,11
+33,Maple Valley,3,87
+33,Medina,3,10
+33,Mercer Island,3,86
+33,Milton,3,0
+33,Newcastle,3,71
+33,Normandy Park,3,7
+33,North Bend,3,308
+33,Pacific,3,36
+33,Redmond,3,6344
+33,Renton,3,14146
+33,Sammamish,3,85
+33,SeaTac,3,493
+33,Seattle,3,23641
+33,Shoreline,3,137
+33,Snoqualmie,3,551
+33,Tukwila,3,8800
+33,Unincorporated,3,2342
+33,Woodinville,3,2473
+35,Bainbridge Island,3,486
+35,Bremerton,3,1325
+35,Port Orchard,3,94
+35,Poulsbo,3,143
+35,Unincorporated,3,1046
+53,Auburn,3,4
+53,Bonney Lake,3,48
+53,Buckley,3,76
+53,DuPont,3,63
+53,Eatonville,3,0
+53,Edgewood,3,43
+53,Fife,3,1386
+53,Fircrest,3,0
+53,Gig Harbor,3,402
+53,Lakewood,3,984
+53,Milton,3,40
+53,Orting,3,0
+53,Pacific,3,106
+53,Puyallup,3,705
+53,Ruston,3,-99
+53,South Prairie,3,-99
+53,Steilacoom,3,-99
+53,Sumner,3,3016
+53,Tacoma,3,5391
+53,Unincorporated,3,4897
+53,University Place,3,71
+53,Wilkeson,3,0
+61,Arlington,3,2410
+61,Bothell,3,3439
+61,Brier,3,0
+61,Darrington,3,227
+61,Edmonds,3,128
+61,Everett,3,-99
+61,Gold Bar,3,-99
+61,Granite Falls,3,83
+61,Lake Stevens,3,47
+61,Lynnwood,3,557
+61,Marysville,3,1131
+61,Mill Creek,3,75
+61,Monroe,3,1612
+61,Mountlake Terrace,3,204
+61,Mukilteo,3,2604
+61,Snohomish,3,229
+61,Stanwood,3,219
+61,Sultan,3,266
+61,Unincorporated,3,9016
+99,Region,3,163259
+33,Algona,4,479
+33,Auburn,4,8293
+33,Bellevue,4,9354
+33,Black Diamond,4,47
+33,Bothell,4,1113
+33,Burien,4,923
+33,Carnation,4,36
+33,Clyde Hill,4,48
+33,Covington,4,154
+33,Des Moines,4,568
+33,Duvall,4,77
+33,Enumclaw,4,174
+33,Federal Way,4,2019
+33,Hunts Point,4,-99
+33,Issaquah,4,2434
+33,Kenmore,4,464
+33,Kent,4,19882
+33,Kirkland,4,3740
+33,Lake Forest Park,4,68
+33,Maple Valley,4,401
+33,Medina,4,19
+33,Mercer Island,4,271
+33,Milton,4,8
+33,Newcastle,4,134
+33,Normandy Park,4,47
+33,North Bend,4,242
+33,Pacific,4,90
+33,Redmond,4,4325
+33,Renton,4,6327
+33,Renton PAA,4,0
+33,Sammamish,4,798
+33,SeaTac,4,21061
+33,Seattle,4,38013
+33,Shoreline,4,472
+33,Skykomish,4,0
+33,Snoqualmie,4,409
+33,Tukwila,4,6107
+33,Unincorporated,4,3558
+33,Woodinville,4,1591
+33,Yarrow Point,4,3
+35,Bainbridge Island,4,285
+35,Bremerton,4,918
+35,Port Orchard,4,143
+35,Poulsbo,4,193
+35,Unincorporated,4,1223
+53,Auburn,4,45
+53,Bonney Lake,4,180
+53,Buckley,4,91
+53,Carbonado,4,0
+53,DuPont,4,3574
+53,Eatonville,4,8
+53,Edgewood,4,105
+53,Fife,4,5898
+53,Fircrest,4,25
+53,Gig Harbor,4,258
+53,Lakewood,4,1941
+53,Milton,4,64
+53,Orting,4,15
+53,Pacific,4,796
+53,Puyallup,4,2377
+53,Roy,4,0
+53,Ruston,4,14
+53,South Prairie,4,0
+53,Steilacoom,4,66
+53,Sumner,4,7061
+53,Tacoma,4,7937
+53,Unincorporated,4,4414
+53,University Place,4,248
+53,Wilkeson,4,-99
+61,Arlington,4,1670
+61,Bothell,4,1053
+61,Brier,4,37
+61,Darrington,4,4
+61,Edmonds,4,715
+61,Everett,4,5585
+61,Gold Bar,4,9
+61,Granite Falls,4,18
+61,Lake Stevens,4,431
+61,Lynnwood,4,1216
+61,Marysville,4,763
+61,Mill Creek,4,422
+61,Monroe,4,419
+61,Mountlake Terrace,4,467
+61,Mukilteo,4,870
+61,Snohomish,4,161
+61,Stanwood,4,94
+61,Sultan,4,33
+61,Unincorporated,4,4368
+61,Woodway,4,-99
+99,Region,4,190014
+33,Algona,5,-99
+33,Auburn,5,4488
+33,Bellevue,5,13549
+33,Black Diamond,5,35
+33,Bothell,5,1294
+33,Burien,5,2353
+33,Carnation,5,45
+33,Clyde Hill,5,10
+33,Covington,5,1665
+33,Des Moines,5,615
+33,Duvall,5,111
+33,Enumclaw,5,789
+33,Federal Way,5,4778
+33,Hunts Point,5,-99
+33,Issaquah,5,3398
+33,Kenmore,5,479
+33,Kent,5,6241
+33,Kirkland,5,4438
+33,Lake Forest Park,5,281
+33,Maple Valley,5,564
+33,Medina,5,36
+33,Mercer Island,5,526
+33,Newcastle,5,241
+33,Normandy Park,5,170
+33,North Bend,5,733
+33,Pacific,5,55
+33,Redmond,5,4078
+33,Renton,5,5289
+33,Sammamish,5,981
+33,SeaTac,5,615
+33,Seattle,5,34348
+33,Shoreline,5,2639
+33,Skykomish,5,-99
+33,Snoqualmie,5,291
+33,Tukwila,5,7598
+33,Unincorporated,5,2758
+33,Woodinville,5,1809
+33,Yarrow Point,5,-99
+35,Bainbridge Island,5,776
+35,Bremerton,5,1795
+35,Port Orchard,5,1948
+35,Poulsbo,5,1437
+35,Unincorporated,5,5161
+53,Auburn,5,197
+53,Bonney Lake,5,2058
+53,Buckley,5,152
+53,Carbonado,5,0
+53,DuPont,5,66
+53,Eatonville,5,108
+53,Edgewood,5,95
+53,Fife,5,1821
+53,Fircrest,5,52
+53,Gig Harbor,5,2027
+53,Lakewood,5,3203
+53,Milton,5,414
+53,Orting,5,62
+53,Pacific,5,60
+53,Puyallup,5,4914
+53,Roy,5,-99
+53,Ruston,5,5
+53,South Prairie,5,-99
+53,Steilacoom,5,20
+53,Sumner,5,1854
+53,Tacoma,5,11450
+53,Unincorporated,5,7771
+53,University Place,5,1053
+61,Arlington,5,1430
+61,Bothell,5,883
+61,Brier,5,17
+61,Darrington,5,-99
+61,Edmonds,5,1784
+61,Everett,5,6706
+61,Gold Bar,5,42
+61,Granite Falls,5,145
+61,Lake Stevens,5,1147
+61,Lynnwood,5,7474
+61,Marysville,5,3388
+61,Mill Creek,5,971
+61,Monroe,5,1658
+61,Mountlake Terrace,5,629
+61,Mukilteo,5,367
+61,Snohomish,5,1454
+61,Stanwood,5,466
+61,Sultan,5,52
+61,Unincorporated,5,6625
+61,Woodway,5,-99
+99,Region,5,191146
+33,Algona,7,114
+33,Auburn,7,4306
+33,Beaux Arts,7,14
+33,Bellevue,7,85062
+33,Black Diamond,7,170
+33,Bothell,7,5733
+33,Burien,7,1416
+33,Carnation,7,65
+33,Clyde Hill,7,380
+33,Covington,7,535
+33,Des Moines,7,855
+33,Duvall,7,392
+33,Enumclaw,7,777
+33,Federal Way,7,5518
+33,Hunts Point,7,112
+33,Issaquah,7,11995
+33,Kenmore,7,887
+33,Kent,7,7381
+33,Kirkland,7,20688
+33,Lake Forest Park,7,473
+33,Maple Valley,7,831
+33,Medina,7,316
+33,Mercer Island,7,2750
+33,Milton,7,4
+33,Newcastle,7,1272
+33,Normandy Park,7,224
+33,North Bend,7,538
+33,Pacific,7,301
+33,Redmond,7,68873
+33,Renton,7,12394
+33,Sammamish,7,2433
+33,SeaTac,7,3837
+33,Seattle,7,273740
+33,Shoreline,7,2292
+33,Snoqualmie,7,1007
+33,Tukwila,7,8458
+33,Unincorporated,7,11228
+33,Woodinville,7,2664
+33,Yarrow Point,7,31
+35,Bainbridge Island,7,2274
+35,Bremerton,7,2687
+35,Port Orchard,7,1145
+35,Poulsbo,7,1398
+35,Unincorporated,7,7208
+53,Auburn,7,179
+53,Bonney Lake,7,733
+53,Buckley,7,84
+53,Carbonado,7,5
+53,DuPont,7,2308
+53,Eatonville,7,216
+53,Edgewood,7,459
+53,Fife,7,1999
+53,Fircrest,7,910
+53,Gig Harbor,7,3410
+53,Lakewood,7,3164
+53,Milton,7,193
+53,Orting,7,253
+53,Pacific,7,224
+53,Puyallup,7,4356
+53,Roy,7,11
+53,Ruston,7,44
+53,South Prairie,7,5
+53,Steilacoom,7,120
+53,Sumner,7,1564
+53,Tacoma,7,18680
+53,Unincorporated,7,12206
+53,University Place,7,1225
+61,Arlington,7,900
+61,Bothell,7,6682
+61,Brier,7,184
+61,Darrington,7,9
+61,Edmonds,7,2810
+61,Everett,7,9996
+61,Gold Bar,7,37
+61,Granite Falls,7,96
+61,Index,7,3
+61,Lake Stevens,7,844
+61,Lynnwood,7,6657
+61,Marysville,7,1537
+61,Mill Creek,7,1407
+61,Monroe,7,802
+61,Mountlake Terrace,7,4090
+61,Mukilteo,7,1529
+61,Snohomish,7,1151
+61,Stanwood,7,357
+61,Sultan,7,80
+61,Unincorporated,7,12181
+61,Woodway,7,41
+99,Region,7,658520
+33,Auburn,8,198
+33,Bellevue,8,3600
+33,Black Diamond,8,-99
+33,Bothell,8,458
+33,Burien,8,189
+33,Carnation,8,-99
+33,Clyde Hill,8,-99
+33,Covington,8,63
+33,Des Moines,8,64
+33,Duvall,8,117
+33,Enumclaw,8,49
+33,Federal Way,8,390
+33,Issaquah,8,518
+33,Kenmore,8,563
+33,Kent,8,672
+33,Kirkland,8,1548
+33,Lake Forest Park,8,25
+33,Maple Valley,8,129
+33,Medina,8,-99
+33,Mercer Island,8,664
+33,Newcastle,8,62
+33,Normandy Park,8,7
+33,North Bend,8,81
+33,Redmond,8,1793
+33,Renton,8,741
+33,Sammamish,8,1303
+33,SeaTac,8,195
+33,Seattle,8,17426
+33,Shoreline,8,979
+33,Skykomish,8,-99
+33,Snoqualmie,8,164
+33,Tukwila,8,385
+33,Unincorporated,8,1807
+33,Woodinville,8,509
+35,Bainbridge Island,8,450
+35,Bremerton,8,104
+35,Port Orchard,8,76
+35,Poulsbo,8,32
+35,Unincorporated,8,365
+53,Auburn,8,-99
+53,Bonney Lake,8,87
+53,Buckley,8,9
+53,Carbonado,8,0
+53,DuPont,8,99
+53,Edgewood,8,6
+53,Fife,8,47
+53,Fircrest,8,14
+53,Gig Harbor,8,203
+53,Lakewood,8,280
+53,Milton,8,7
+53,Orting,8,0
+53,Puyallup,8,645
+53,Ruston,8,7
+53,Steilacoom,8,14
+53,Sumner,8,71
+53,Tacoma,8,2658
+53,Unincorporated,8,2619
+53,University Place,8,372
+61,Arlington,8,43
+61,Bothell,8,401
+61,Brier,8,-99
+61,Edmonds,8,227
+61,Everett,8,391
+61,Granite Falls,8,0
+61,Lake Stevens,8,59
+61,Lynnwood,8,205
+61,Marysville,8,116
+61,Mill Creek,8,83
+61,Monroe,8,187
+61,Mountlake Terrace,8,298
+61,Mukilteo,8,125
+61,Snohomish,8,92
+61,Stanwood,8,24
+61,Sultan,8,13
+61,Unincorporated,8,1012
+61,Woodway,8,-99
+99,Region,8,46720
+33,Algona,9,-99
+33,Auburn,9,4817
+33,Bellevue,9,14187
+33,Black Diamond,9,-99
+33,Bothell,9,2134
+33,Burien,9,2772
+33,Carnation,9,70
+33,Clyde Hill,9,4
+33,Covington,9,479
+33,Des Moines,9,1468
+33,Duvall,9,119
+33,Enumclaw,9,887
+33,Federal Way,9,7578
+33,Issaquah,9,4722
+33,Kenmore,9,430
+33,Kent,9,4607
+33,Kirkland,9,5634
+33,Lake Forest Park,9,243
+33,Maple Valley,9,570
+33,Medina,9,-99
+33,Mercer Island,9,1395
+33,Milton,9,-99
+33,Newcastle,9,333
+33,Normandy Park,9,235
+33,North Bend,9,332
+33,Pacific,9,15
+33,Redmond,9,3812
+33,Renton,9,7528
+33,Sammamish,9,621
+33,SeaTac,9,1192
+33,Seattle,9,76786
+33,Shoreline,9,2835
+33,Snoqualmie,9,335
+33,Tukwila,9,3322
+33,Unincorporated,9,2593
+33,Woodinville,9,819
+33,Yarrow Point,9,-99
+35,Bainbridge Island,9,790
+35,Bremerton,9,4506
+35,Port Orchard,9,1149
+35,Poulsbo,9,1243
+35,Unincorporated,9,4220
+53,Auburn,9,32
+53,Bonney Lake,9,708
+53,Buckley,9,141
+53,Carbonado,9,-99
+53,DuPont,9,163
+53,Eatonville,9,73
+53,Edgewood,9,121
+53,Fife,9,467
+53,Fircrest,9,96
+53,Gig Harbor,9,2144
+53,Lakewood,9,5025
+53,Milton,9,205
+53,Orting,9,69
+53,Puyallup,9,6614
+53,Roy,9,-99
+53,Ruston,9,68
+53,Steilacoom,9,42
+53,Sumner,9,459
+53,Tacoma,9,30753
+53,Unincorporated,9,4830
+53,University Place,9,1190
+61,Arlington,9,993
+61,Bothell,9,849
+61,Brier,9,21
+61,Darrington,9,-99
+61,Edmonds,9,3796
+61,Everett,9,14059
+61,Gold Bar,9,-99
+61,Granite Falls,9,55
+61,Lake Stevens,9,488
+61,Lynnwood,9,3186
+61,Marysville,9,2009
+61,Mill Creek,9,881
+61,Monroe,9,930
+61,Mountlake Terrace,9,1170
+61,Mukilteo,9,731
+61,Snohomish,9,391
+61,Stanwood,9,704
+61,Sultan,9,82
+61,Unincorporated,9,4610
+61,Woodway,9,-99
+99,Region,9,253090
+99,Region,99,2296737
+33,Algona,99,1916
+33,Auburn,99,45659
+33,Beaux Arts,99,19
+33,Bellevue,99,163784
+33,Black Diamond,99,843
+33,Bothell,99,17372
+33,Burien,99,14059
+33,Carnation,99,640
+33,Clyde Hill,99,1105
+33,Covington,99,6293
+33,Des Moines,99,7940
+33,Duvall,99,1763
+33,Enumclaw,99,5664
+33,Federal Way,99,32632
+33,Hunts Point,99,179
+33,Issaquah,99,30456
+33,Kenmore,99,5136
+33,Kent,99,76657
+33,Kirkland,99,57316
+33,Lake Forest Park,99,2083
+33,Maple Valley,99,5901
+33,Medina,99,955
+33,Mercer Island,99,8910
+33,Milton,99,105
+33,Newcastle,99,3424
+33,Normandy Park,99,1167
+33,North Bend,99,3801
+33,Pacific,99,1312
+33,Redmond,99,102369
+33,Renton,99,69125
+33,Renton PAA,99,0
+33,Sammamish,99,10443
+33,SeaTac,99,38958
+33,Seattle,99,681776
+33,Shoreline,99,17872
+33,Skykomish,99,61
+33,Snoqualmie,99,5397
+33,Tacoma,99,0
+33,Tukwila,99,47480
+33,Unincorporated,99,50911
+33,Woodinville,99,14942
+33,Yarrow Point,99,81
+35,Bainbridge Island,99,9370
+35,Bremerton,99,32288
+35,Port Orchard,99,8501
+35,Poulsbo,99,7402
+35,Unincorporated,99,41609
+53,Auburn,99,1274
+53,Bonney Lake,99,6978
+53,Buckley,99,2257
+53,Carbonado,99,72
+53,DuPont,99,7366
+53,Eatonville,99,942
+53,Edgewood,99,2150
+53,Fife,99,16559
+53,Fircrest,99,1838
+53,Gig Harbor,99,13051
+53,Lakewood,99,29576
+53,Milton,99,2262
+53,Orting,99,1491
+53,Pacific,99,2090
+53,Puyallup,99,30542
+53,Roy,99,161
+53,Ruston,99,595
+53,South Prairie,99,85
+53,Steilacoom,99,947
+53,Sumner,99,19216
+53,Tacoma,99,119801
+53,Unincorporated,99,84051
+53,University Place,99,7489
+53,Wilkeson,99,79
+61,Arlington,99,13055
+61,Bothell,99,16498
+61,Brier,99,597
+61,Darrington,99,541
+61,Edmonds,99,15181
+61,Everett,99,88257
+61,Gold Bar,99,285
+61,Granite Falls,99,1175
+61,Index,99,27
+61,Lake Stevens,99,7336
+61,Lynnwood,99,29680
+61,Marysville,99,16433
+61,Mill Creek,99,7097
+61,Monroe,99,10695
+61,Mountlake Terrace,99,9245
+61,Mukilteo,99,9684
+61,Snohomish,99,6595
+61,Stanwood,99,3764
+61,Sultan,99,1239
+61,Unincorporated,99,72702
+61,Woodway,99,102
