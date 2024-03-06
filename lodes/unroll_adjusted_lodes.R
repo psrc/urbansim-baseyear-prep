@@ -5,9 +5,9 @@ library(data.table)
 data.dir <- "data"
 lodes.file <- file.path(data.dir, 'Lodes23adj20240220.csv') # 2023 LODES
 lodes <- fread(lodes.file, colClasses=c(census_2020_block_group_geoid = "character")) # set block group to character and county to numeric
+bg <- fread(file.path(data.dir, "census_2020_block_groups.csv"), colClasses = c("numeric", "character", "numeric"))
 
 if(! "census_2020_block_group_id" %in% names(lodes)) {
-    bg <- fread(file.path(data.dir, "census_2020_block_groups.csv"), colClasses = c("character", "numeric", "numeric"))
     lodes[bg, census_2020_block_group_id := i.census_2020_block_group_id, on = "census_2020_block_group_id"]
 }
 
@@ -22,6 +22,16 @@ for(bl in ublocks) {
                                    census_2020_block_group_id=bl))
 }
 jobs[,`:=`(job_id = 1:nrow(jobs), home_based_status=0, building_id=-1)]
+
+# since we have a few fake parcels in JBLM that might not match the Lodes BGs, 
+# we put the jobs into those BGs
+swaps <- list("530530729072" = "530530729073", "530530729082" = "530530729083")
+for(swapbg in names(swaps)){
+    bg1 <- bg[census_2020_block_group_geoid == swapbg, census_2020_block_group_id]
+    bg2 <- bg[census_2020_block_group_geoid == swaps[[swapbg]], census_2020_block_group_id]
+    jobs[census_2020_block_group_id == bg1, census_2020_block_group_id := bg2]
+}
+
 # reorder columns and attach type for Opus
 jobs <- jobs[, .(job_id, sector_id, home_based_status, building_id, census_2020_block_group_id)] 
 colnames(jobs) <- c('job_id:i4', 'sector_id:i4', 'home_based_status:i1', 'building_id:i4', 'census_2020_block_group_id:i4')
