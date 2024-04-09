@@ -5,7 +5,7 @@
 # 
 # Inputs: files synthetic_households.csv, synthetic_persons.csv,
 #               seed_households.csv, seed_persons.csv,
-#               census_2020_block_groups.csv
+#               census_2020_block_groups.csv (from https://github.com/psrc/urbansim-baseyear-prep/tree/master/imputation/data2023)
 # Outputs: files households_v1.csv and persons_v1.csv in the directory set in output.dir
 
 library(magrittr)

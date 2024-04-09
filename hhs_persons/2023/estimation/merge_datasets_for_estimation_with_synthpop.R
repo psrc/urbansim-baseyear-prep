@@ -7,7 +7,7 @@
 # (files 1_household.csv, 2_person.csv)
 #
 # Hana Sevcikova, PSRC
-# 03/05/2024
+# 04/09/2024
 
 library(data.table)
 library(magrittr)
@@ -196,6 +196,9 @@ persest[hhsest, home_parcel_id := i.parcel_id, on = .(hhno)]
 persest[, work_at_home := as.integer(work_parcel_id == home_parcel_id)]
 persest[, job_id := -1]
 
+if(! "job_id" %in% colnames(pers))
+    pers[, job_id := -1]
+    
 # # school-related stuff
 # schools <- fread("schools.csv")
 # schools[, sname := tolower(sname)]
