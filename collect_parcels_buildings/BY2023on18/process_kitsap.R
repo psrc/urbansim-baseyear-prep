@@ -4,20 +4,20 @@
 #    urbansim_parcels, urbansim_buildings: contain records that are found in BY2018
 #.   urbansim_parcels_all, urbansim_buildings_all: all records regardless if they are found in BY2018
 #
-# Hana Sevcikova, last update 04/23/2024
+# Hana Sevcikova, last update 02/24/2024
 #
 
 library(data.table)
 
 county <- "Kitsap"
 
-#data.dir <- file.path("\\aws-model10\J$\UrbanSIM Data\Projects\2023_Baseyear\Assessor\Extracts\Kitsap\Urbansim_Processing\GIS\", county) # path to the Assessor text files
+#data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
 data.dir <- "Kitsap_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings urbansim_parcels_all, urbansim_buildings_all
-write.result <- FALSE
+write.result <- TRUE
 
 if(write.result) source("mysql_connection.R")
 
@@ -26,8 +26,11 @@ if(write.result) source("mysql_connection.R")
 ###############
 
 # parcels tables
-#parcels <- fread(file.path(data.dir, "parcels.txt"))
-parcels.all <- fread(file.path(data.dir, "parcels23_kit_dissolve_pt.csv"))
+parcels <- fread(file.path(data.dir, "parcels.txt"))
+parcels.23to18 <- fread(file.path(data.dir, "parcels23_kit_to_2018_parcels.csv"))
+
+if(! "gis_sqft" %in% colnames(parcels.23to18))
+    setnames(parcels.23to18, "shape_area", "gis_sqft")
 
 # tables flatats, land & main
 tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
@@ -50,41 +53,39 @@ valuation <- fread(file.path(data.dir, "Valuations.txt"))
 ###################
 # Process parcels
 ###################
+# Kitsap ID: rp_acct_id
+# urbansim ID: pin
 
 cat("\nProcessing Kitsap parcels\n=========================\n")
 # remove duplicates (just take the first record of each duplicate)
-#parcels.nodupl <- parcels[!duplicated(rp_acct_id)]
-parcels.all.nodupl <- parcels.all[!duplicated(rp_acct_id)]
-cat("\nNumber of duplicates removed from parcels dataset: ", 
-    nrow(parcels.all) - nrow(parcels.all.nodupl))
+parcels.nodupl <- parcels[!duplicated(rp_acct_id)]
+parcels.23to18.nodupl <- parcels.23to18[!duplicated(rp_acct_id)]
+cat("\nNumber of duplicates removed from Kitsap parcels: ", nrow(parcels) - nrow(parcels.nodupl))
 
-# merge the two parcel tables together
-# (we only need tax info from the attribute table)
-#parcels_allinfo <- merge(parcels.all.nodupl, 
-#                        parcels.nodupl[, .(rp_acct_id, exemption_id)],
-#                        all.x = TRUE, by = "rp_acct_id")
+# merge Kitsap and urbansim parcels
+parcels_allinfo <- merge(parcels.nodupl, 
+                        parcels.23to18.nodupl[, .(rp_acct_id, pin, point_x, point_y, gis_sqft)],
+                        all = TRUE, by = "rp_acct_id")
 
-#cat("\nMismatch of", nrow(parcels.nodupl) - nrow(parcels_allinfo), "parcels between the two parcel datasets.")
+cat("\n", nrow(parcels_allinfo[is.na(pin)]), "Kitsap parcels not found in urbansim dataset.")
 
 # remove any duplicates from the three assessors files
 tax <- unique(tax)
 land <- unique(land)
 main <- unique(main)
 
-# extract what is needed and merge together
-# with the flatats dataset
-prep_parcels <- merge(parcels.all.nodupl,
+# extract what is needed and merge together with parcels
+# flatats dataset
+prep_parcels <- merge(parcels_allinfo,
                       tax[, .(rp_acct_id, levy_code, jurisdict, acres_tax = acres, bldg_value, 
                               land_value, assd_value)],
                       by = "rp_acct_id", all.x = TRUE)
-
-# There are more than 50K parcels in the "tax" dataset that are not in "parcels",
-# but only 709 of them have acres > 0. We will ignore them for now.
+# There are more than 42K parcels in the "tax" dataset that are not in "parcels",
+# but only 324 of them have acres > 0. We will ignore them for now.
 cat("\nNumber of records in flatats that are not available in parcels: ",
-    nrow(tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id]]))
+    nrow(tax[!rp_acct_id %in% parcels_allinfo[, rp_acct_id]]))
 cat("\n\t\t\t",
-    nrow(tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id] & acres > 0]), "of those have acres > 0, summing to", 
-    tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id], sum(acres)], "acres.")
+    nrow(tax[!rp_acct_id %in% parcels_allinfo[, rp_acct_id] & acres > 0]), "of those have acres > 0")
 
 # land dataset
 prep_parcels <- merge(prep_parcels,
@@ -98,20 +99,22 @@ cat("\nNumber of records in land that are not available in parcels: ",
 prep_parcels <- merge(prep_parcels,
                       main[, .(rp_acct_id, acct_stat, tax_status, tax_year)],
                       by = "rp_acct_id", all.x = TRUE)
-# There are 404 records in parcels that are not present in land and main.
+# There are 428 records in parcels that are not present in land and main.
 cat("\nNumber of records in main that are not available in parcels: ",
     nrow(prep_parcels[!rp_acct_id %in% main[, rp_acct_id]]))
 
+# check for duplicates
+cat("\nNumber of duplicates after merging: ", nrow(prep_parcels[, .N, by = "rp_acct_id"][N > 1]))
+
 # compose final parcels dataset
-parcels_final <- prep_parcels[, .(parcel_id = 1:nrow(prep_parcels),
-                                  rp_acct_id, 
+parcels_final <- prep_parcels[, .(parcel_id = pin, rp_acct_id, 
                                   land_value, num_dwell,
                                   use_code = prop_class,
                                   exemption = as.integer(tax_status != "T"), 
                                   gross_sqft = round(gis_sqft), 
                                   x_coord_sp = point_x, y_coord_sp = point_y
                                   )]
-
+# TODO: - Do we need the other columns of prep_parcels? 
 
 # join with land use reclass table
 parcels_final[lu_reclass, land_use_type_id := i.land_use_type_id, on = "use_code"]
@@ -120,7 +123,9 @@ if(nrow(notfoundlu <- parcels_final[is.na(land_use_type_id) & !is.na(use_code), 
     print(notfoundlu[order(use_code)])
 } else cat("\nAll land use codes matched.")
 
-cat("\nTotal:", nrow(parcels_final), "parcels")
+cat("\nTotal all:", nrow(parcels_final), "parcels")
+cat("\nAssigned to 2018:", nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]), "parcels")
+cat("\nDifference:", nrow(parcels_final) - nrow(parcels_final[!is.na(parcel_id) & parcel_id != 0]))
 
 ###################
 # Process buildings
@@ -137,58 +142,30 @@ prep_buildings <- raw_buildings[, .(id = 1:nrow(raw_buildings),
                                     bldg_typ, use_desc
                                     )]
 
-# drop buildings that do not have spatial representation in parcels
-nbld <- nrow(prep_buildings)
-prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, rp_acct_id]]
-cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing parcels.")
-
-
-
 # add mobile homes info
 # ------------------
 # remove duplicates
 mobile_homes.nodupl <- mobile_homes[!duplicated(mobile_homes[, c("rp_acct_id", "yr_blt", "mh_make", "mh_size"), with = FALSE])]
 cat("\nNumber of duplicates removed from mobile homes: ", nrow(mobile_homes) - nrow(mobile_homes.nodupl))
 
-# match mobile homes to buildings;
-# as there might be duplicates on both sides (MHs and buildings), loop over unique records and tag processed rows
-mobile_homes.nodupl[, processed := FALSE]
-prep_buildings_in_pcl[, processed := FALSE]
-while(nrow(mobile_homes.nodupl[processed == FALSE]) > 0 && 
-      nrow(prep_buildings_in_pcl[rp_acct_id %in% mobile_homes.nodupl[processed == FALSE, rp_acct_id] & 
-                          processed == FALSE]) > 0){
-    tmh <- mobile_homes.nodupl[processed == FALSE]
-    tmh <- tmh[!duplicated(tmh[,.(rp_acct_id, yr_blt)])]
-    if("id_bld" %in% colnames(tmh)) tmh[, id_bld := NULL]
-    tbld_mh <- prep_buildings_in_pcl[rp_acct_id %in% tmh[, rp_acct_id] & processed == FALSE & bldg_typ == "MHOME"]
-    utbld_mh <- tbld_mh[!duplicated(tbld_mh[, .(rp_acct_id, year_built)])]
-    bldg_mh <- merge(tmh, utbld_mh[,.(id_bld = id, rp_acct_id, yr_blt = year_built)], 
-                     by = c("rp_acct_id", "yr_blt"), all.x = TRUE)
-    prep_buildings_in_pcl[id %in% bldg_mh[, id_bld] & processed == FALSE, processed := TRUE]
-    # if there was no match, try it without MHOME; year must match
-    tbld_mh <- prep_buildings_in_pcl[rp_acct_id %in% bldg_mh[is.na(id_bld), rp_acct_id] & processed == FALSE]
-    utbld_mh <- tbld_mh[!duplicated(tbld_mh[, .(rp_acct_id, year_built)])]
-    bldg_mh[utbld_mh[,.(id_bld = id, rp_acct_id, yr_blt = year_built)], 
-            `:=`(id_bld = ifelse(is.na(id_bld), i.id_bld, id_bld)), on = c("rp_acct_id", "yr_blt")]
-    prep_buildings_in_pcl[id %in% bldg_mh[, id_bld] & processed == FALSE, processed := TRUE]
-    # if year didn't match try without it, but blg_type must be MHOME
-    tbld_mh <- prep_buildings_in_pcl[rp_acct_id %in% bldg_mh[is.na(id_bld), rp_acct_id] & bldg_typ == "MHOME" & processed == FALSE]
-    bldg_mh[tbld_mh[,.(id_bld = id, rp_acct_id, yr_blt = year_built)], 
-            `:=`(id_bld = ifelse(is.na(id_bld), i.id_bld, id_bld), 
-                 yr_blt = pmax(i.yr_blt, yr_blt)), on = "rp_acct_id"] # take the max of year built
-    prep_buildings_in_pcl[id %in% bldg_mh[, id_bld] & processed == FALSE, processed := TRUE]
-    mobile_homes.nodupl[bldg_mh[!is.na(id_bld)], id_bld := i.id_bld, on = "id"]
-    nprocessed <- nrow(mobile_homes.nodupl[id %in% bldg_mh[!is.na(id_bld), id]  & processed == FALSE])
-    if(nprocessed == 0) break
-    mobile_homes.nodupl[id %in% bldg_mh[!is.na(id_bld), id]  & processed == FALSE, processed := TRUE]
-}
+# identify building records for these mobile homes
+bldg_mh <- merge(mobile_homes.nodupl, prep_buildings[, .(id_bld = id, rp_acct_id, yr_blt = year_built)], 
+                 by = c("rp_acct_id", "yr_blt"), all.x = TRUE)
+# if year didn't match try without it, but blg_type must be MHOME
+rp <- unique(bldg_mh[is.na(id_bld) & rp_acct_id %in% prep_buildings[bldg_typ == "MHOME", rp_acct_id], rp_acct_id])
+bldg_mh[prep_buildings[bldg_typ == "MHOME" & rp_acct_id %in% rp], 
+        `:=`(id_bld = i.id, yr_blt = pmax(i.year_built, yr_blt)), on = "rp_acct_id"] # take the max of year built
 
-# For now we will ignore the 2575 remaining mobile homes where there is no match to the buildings
-cat("\nIgnoring", nrow(mobile_homes.nodupl[processed == FALSE]), "(out of",  nrow(mobile_homes.nodupl),
-        ") mobile homes with no match to the buildings dataset.")
+# For now we will ignore the 14 remaining mobile homes where there is no match to the buildings
+cat("\nIgnoring ", nrow(bldg_mh[is.na(id_bld)]), " mobile homes with no match to the buildings dataset.")
 
 # update total sqft and year built for mobile homes
-prep_buildings_in_pcl[mobile_homes.nodupl[processed == TRUE], `:=`(total_sqft = i.mh_size, year_built = i.yr_blt), on = c(id = "id_bld")]
+prep_buildings[bldg_mh, `:=`(total_sqft = i.mh_size, year_built = i.yr_blt), on = c(id = "id_bld")]
+
+# drop buildings that do not have spatial representation in parcels
+nbld <- nrow(prep_buildings)
+prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, rp_acct_id]]
+cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing Kitsap parcels.")
 
 
 # Calculate improvement value from valuation
@@ -214,8 +191,15 @@ prep_buildings_in_pcl[, proportion := total_sqft_tmp / total_sqft_per_account
 
 # Impute building_type_id
 # ------------------------
+# remove leading and trailing spaces in some of the columns in the building reclass table
+# (should not be needed anymore)
+#cols_to_trim <- colnames(bt_reclass)[sapply(colnames(bt_reclass), function(x) is.character(bt_reclass[[x]]))]
+#bt_reclass[, (cols_to_trim) := lapply(.SD, trimws), .SDcols = cols_to_trim]
+
 # Assign building type by joining with the building reclass table
-prep_buildings_in_pcl[bt_reclass, building_type_id := i.building_type_id, 
+prep_buildings_in_pcl[bt_reclass, 
+                      building_type_id := ifelse(is.na(building_type_id), i.building_type_id, 
+                                                 building_type_id), 
                       on = c("bldg_typ", "improv_typ", "use_desc")]
 
 cat("\nMatched", nrow(prep_buildings_in_pcl[!is.na(building_type_id)]), "records with building reclass table")
@@ -231,13 +215,12 @@ if(nrow(missbt <- prep_buildings_in_pcl[is.na(building_type_id), .N, by = c("bld
 # ------------
 # join buildings with parcel info 
 prep_buildings_in_pcl <- merge(prep_buildings_in_pcl, 
-                               parcels_final[, .(parcel_id, rp_acct_id, num_dwell, land_use_type_id, use_code)],
+                               parcels_final[, .(rp_acct_id, parcel_id, num_dwell, land_use_type_id, use_code)],
                                by = "rp_acct_id", all.x = TRUE)
 prep_buildings_in_pcl[is.na(num_dwell), num_dwell := 0]
 
-# first, set all residential records to one unit and non-res to zero 
+# first set all residential records to one unit and non-res to zero 
 index_residential <- with(prep_buildings_in_pcl, building_type_id %in% c(4, 11, 12, 19))
-# note that there are 24 mix-use records, none of which looks like there should be DUs in it
 prep_buildings_in_pcl[index_residential, residential_units := 1][, residential_units_orig := 1]
 prep_buildings_in_pcl[!index_residential, `:=`(residential_units = 0, residential_units_orig = 0)]
 # sum units per parcel
@@ -296,22 +279,23 @@ cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residentia
     ".")
 
 # collect attributes for the final table (here we could pre-populate other columns if needed)
-buildings_final <- prep_buildings_in_pcl[, .(building_id = id, parcel_id,
-                                             gross_sqft = total_sqft, year_built,
-                                             parcel_id_fips = rp_acct_id, residential_units, 
+buildings_final <- prep_buildings_in_pcl[, .(building_id = id, gross_sqft = total_sqft, year_built,
+                                             parcel_id, parcel_id_fips = rp_acct_id, residential_units, 
                                              building_type_id, improvement_value, stories, land_area = 0, 
                                              non_residential_sqft = ifelse(residential_units > 0, 0, total_sqft),
                                              use_code = paste(bldg_typ, improv_typ, sep = ";"), 
                                              use_desc)]
 
 cat("\nTotal all: ", nrow(buildings_final), "buildings")
+cat("\nAssigned to 2018:", nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "buildings\n")
+cat("\nDifference:", nrow(buildings_final) - nrow(buildings_final[!is.na(parcel_id) & parcel_id != 0]), "\n")
 
 # remove unnecessary columns and pre-populate other columns, whatever is needed
 parcels_final[, `:=`(num_dwell = NULL, county_id = 35)]
 setnames(parcels_final, "rp_acct_id", "parcel_id_fips") # rename rp_acct_id column
 
 # generate building type crosstabs
-bt.tab <- merge(buildings_final,
+bt.tab <- merge(buildings_final[!is.na(parcel_id) & parcel_id != 0],
                 prep_buildings_in_pcl[, .(building_id = id, bldg_typ, improv_typ)], by = "building_id", 
                 all.x = TRUE, all.y = FALSE)[, .(N = .N, DU = sum(residential_units), 
                                                 nonres_sqft = sum(non_residential_sqft)), 
@@ -323,12 +307,18 @@ setcolorder(bt.tab, c("bldg_typ", "improv_typ", "use_desc", "building_type_id", 
 
 if(write.result){
     # write results
-    fwrite(parcels_final, file = "urbansim_parcels_kitsap.csv")
-    fwrite(buildings_final, file = "urbansim_buildings_kitsap.csv")
+    fwrite(parcels_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_parcels_kitsap.csv")
+    fwrite(buildings_final[!is.na(parcel_id) & parcel_id != 0], file = "urbansim_buildings_kitsap.csv")
+    fwrite(parcels_final, file = "urbansim_parcels_all_kitsap.csv")
+    fwrite(buildings_final, file = "urbansim_buildings_all_kitsap.csv")
     db <- paste0(tolower(county), "_2023_parcel_baseyear")
     connection <- mysql.connection(db)
-    dbWriteTable(connection, "urbansim23_parcels", parcels_final, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "urbansim23_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "building_type_crosstab23", bt.tab, overwrite = TRUE, row.names = FALSE)
+    # urbansim_parcels & urbansim_buildings contain records that are found in BY2018
+    dbWriteTable(connection, "urbansim_parcels", parcels_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings", buildings_final[!is.na(parcel_id) & parcel_id != 0], overwrite = TRUE, row.names = FALSE)
+    # urbansim_parcels_all & urbansim_buildings_all contain all records regardless if they are found in BY2018
+    dbWriteTable(connection, "urbansim_parcels_all", parcels_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings_all", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
