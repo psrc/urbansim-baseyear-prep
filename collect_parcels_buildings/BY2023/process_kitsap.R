@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim23_parcels, urbansim23_buildings, building_type_crosstab23
 #
-# Hana Sevcikova, last update 04/29/2024
+# Hana Sevcikova, last update 05/1/2024
 #
 
 library(data.table)
@@ -26,9 +26,8 @@ if(write.result) source("mysql_connection.R")
 
 # parcels table
 parcels.all <- fread(file.path(data.dir, "parcels23_kit_dissolve_pt.csv"))
-parcels.units <- fread(file.path(data.dir, "KITSAP_COUNTY_PARCELS_01172024.csv"))
+parcels.units <- fread(file.path(data.dir, "KITSAP_COUNTY_PARCELS_01172024.csv")) # from Grant (got it from Kitsap staff)
 
-                       
 # tables flatats, land & main
 tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
 land <- fread(file.path(data.dir, "land.txt")) # Land data
@@ -76,14 +75,16 @@ main <- unique(main)
 prep_parcels <- merge(parcels.all.nodupl,
                       tax[, .(rp_acct_id, levy_code, jurisdict, acres_tax = acres, bldg_value, 
                               land_value, assd_value)],
-                      by = "rp_acct_id", all.x = TRUE)
+                      by = "rp_acct_id") # will remove parcels not found in flatats
 
 # There are more than 50K parcels in the "tax" dataset that are not in "parcels",
 # but only 709 of them have acres > 0. We will ignore them for now.
-cat("\nNumber of records in flatats that are not available in parcels: ",
-    nrow(tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id]]))
+cat("\nNumber of records in parcels that are not available in flatats (records dropped from parcels): ",
+    nrow(parcels.all.nodupl[!rp_acct_id %in% tax[, rp_acct_id]]))
+cat("\nNumber of records in flatats that are not available in updated parcels (records ignored): ",
+    nrow(tax[!rp_acct_id %in% prep_parcels[, rp_acct_id]]))
 cat("\n\t\t\t",
-    nrow(tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id] & acres > 0]), "of those have acres > 0, summing to", 
+    nrow(tax[!rp_acct_id %in% prep_parcels[, rp_acct_id] & acres > 0]), "of those have acres > 0, summing to", 
     tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id], sum(acres)], "acres.")
 
 # land dataset
@@ -91,7 +92,9 @@ prep_parcels <- merge(prep_parcels,
                       land[, .(rp_acct_id, acres_land = acres, nbrhd_cd, prop_class, 
                                zone_code, num_dwell, num_other, tot_improv)],
                       by = "rp_acct_id", all.x = TRUE)
-cat("\nNumber of records in land that are not available in parcels: ",
+cat("\nNumber of records in land that are not available in parcels (records ignored): ",
+    nrow(land[!rp_acct_id %in% prep_parcels[, rp_acct_id]]))
+cat("\nNumber of records in parcels that are not available in land: ",
     nrow(prep_parcels[!rp_acct_id %in% land[, rp_acct_id]]))
 
 # main dataset
@@ -99,11 +102,13 @@ prep_parcels <- merge(prep_parcels,
                       main[, .(rp_acct_id, acct_stat, tax_status, tax_year)],
                       by = "rp_acct_id", all.x = TRUE)
 # There are 404 records in parcels that are not present in land and main.
-cat("\nNumber of records in main that are not available in parcels: ",
+cat("\nNumber of records in main that are not available in parcels (records ignored): ",
+    nrow(main[!rp_acct_id %in% prep_parcels[, rp_acct_id]]))
+cat("\nNumber of records in parcels that are not available in main: ",
     nrow(prep_parcels[!rp_acct_id %in% main[, rp_acct_id]]))
 
 # compose final parcels dataset
-parcels_final <- prep_parcels[, .(parcel_id = 1:nrow(prep_parcels),
+parcels_final <- prep_parcels[, .(parcel_id = rp_acct_id,
                                   rp_acct_id, 
                                   land_value, num_dwell,
                                   use_code = prop_class,
