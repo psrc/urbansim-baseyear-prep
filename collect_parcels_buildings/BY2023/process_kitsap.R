@@ -1,7 +1,7 @@
 # Script to create parcels and buildings tables from Kitsap assessor data
 # for the use in urbansim.
 # It generates 3 tables: 
-#    urbansim23_parcels, urbansim23_buildings, building_type_crosstab23
+#    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
 # Hana Sevcikova, last update 05/1/2024
 #
