@@ -16,7 +16,7 @@ misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings urbansim_parcels_all, urbansim_buildings_all
-write.result <- FALSE
+write.result <- TRUE
 
 if(write.result) source("mysql_connection.R")
 
@@ -24,10 +24,11 @@ if(write.result) source("mysql_connection.R")
 # Load all data
 ###############
 
-# parcels tables
-#parcels <- fread(file.path(data.dir, "parcels.txt"))
+# parcels table
 parcels.all <- fread(file.path(data.dir, "parcels23_kit_dissolve_pt.csv"))
+parcels.units <- fread(file.path(data.dir, "KITSAP_COUNTY_PARCELS_01172024.csv"))
 
+                       
 # tables flatats, land & main
 tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
 land <- fread(file.path(data.dir, "land.txt")) # Land data
@@ -224,11 +225,17 @@ if(nrow(missbt <- prep_buildings_in_pcl[is.na(building_type_id), .N, by = c("bld
     print(missbt[order(-N)])
 } else cat("\nAll building use codes matched.")
 
-
+# handle special cases in parcels.units (most likely errors in the units file)
+parcels.units[rp_acct_id %in% c(2561223, 1490747, 2647287, 2680080, 2687820), total_unit := NA]
+parcels.units[rp_acct_id == 2414415, total_unit := 7] # from the Townhouse records
 
 # impute DUs
 # ------------
 # join buildings with parcel info 
+# first an external dataset with # units
+# (alternatively, the column num_dwell could serve the same purpose but seems to underestimate the number of units)
+prep_buildings_in_pcl[parcels.units, du_in_pcl := i.total_unit, on = "rp_acct_id"] 
+# now other attributes
 prep_buildings_in_pcl <- merge(prep_buildings_in_pcl, 
                                parcels_final[, .(parcel_id, rp_acct_id, num_dwell, land_use_type_id, use_code)],
                                by = "rp_acct_id", all.x = TRUE)
@@ -257,24 +264,31 @@ codes_units <- list(`121` = 2,   # Duplex
                     `137` = c(50, 100, 60), # 50+. (min, max, default)
                     `141` = c(4, 100, 20)  # Condo (min, max, default)
                     )
+
+
+# consider parcels with one unit that match the external info as done
+prep_buildings_in_pcl[, processed := FALSE]
+prep_buildings_in_pcl[index_residential & sum_du == du_in_pcl, processed := TRUE]
+
 # first process parcels that have only 1 unit and is not mobile home
 for(code in names(codes_units)){
-    index <- with(prep_buildings_in_pcl, index_residential & sum_du == 1 & building_type_id != 11 & 
+    index <- with(prep_buildings_in_pcl, index_residential & !processed & sum_du == 1 & building_type_id != 11 & 
                       !is.na(use_code) & use_code == code)
     if(sum(index) == 0) next # if no buildings for this code, go to the next code
     if(length(codes_units[[code]]) > 1){ # number of units is given as a range; compute from sqft
         units <- prep_buildings_in_pcl[index, round(total_sqft/1000)] # using 1000sf per unit 
         units <- pmax(codes_units[[code]][1], pmin(units, codes_units[[code]][2])) # keep it in the given range
     } else units <- codes_units[[code]]
-    prep_buildings_in_pcl[index,  `:=`(residential_units = units)]
+    prep_buildings_in_pcl[index,  `:=`(residential_units = ifelse(is.na(du_in_pcl), units, du_in_pcl),
+                                       processed = TRUE)]
 }
 
 # now process parcels with multiple buildings
 # here correct units for duplexes 
 for(code in names(codes_units)) {
-    prep_buildings_in_pcl[index_residential & sum_du > 1 & sum_du < codes_units[[code]][1] & 
+    prep_buildings_in_pcl[index_residential & !processed & sum_du > 1 & sum_du < codes_units[[code]][1] & 
                               !is.na(use_code) & use_code == code & use_desc == "Duplex", 
-                          `:=`(residential_units = 2)]
+                          `:=`(residential_units = 2, processed = TRUE)]
 }
 # now we impute units into Multi-family records 
 # recompute the number of DUs per parcel and get the number of Multi-family records
@@ -282,13 +296,31 @@ prep_buildings_in_pcl[, `:=`(sum_du2 = sum(residential_units), nmf = sum(buildin
                       by = "rp_acct_id"]
 for(code in names(codes_units)) {
     # only MF records where the new sum of DUs hasn't reached what we expect
-    index <- with(prep_buildings_in_pcl, index_residential & sum_du2 > 1 & sum_du2 < codes_units[[code]][1] & 
+    index <- with(prep_buildings_in_pcl, index_residential & !processed & sum_du2 > 1 & 
+                      sum_du2 < ifelse(is.na(du_in_pcl), codes_units[[code]][1], du_in_pcl) & 
                       !is.na(use_code) & use_code == code & nmf > 0 & building_type_id %in% c(4, 12))
     if(sum(index) == 0) next # if no buildings for this code, go to the next code
     target <- if(length(codes_units[[code]]) > 1) codes_units[[code]][3] else codes_units[[code]] # number of DUs we expect according to the use code
+    targets <- prep_buildings_in_pcl[index, ifelse(is.na(du_in_pcl), target, du_in_pcl)]
     # add the remainder of the expectation to the MF records 
-    prep_buildings_in_pcl[index, `:=`(residential_units = residential_units + round((target - sum_du2) / nmf))]
+    prep_buildings_in_pcl[index, `:=`(residential_units = residential_units + round((targets - sum_du2) / nmf), processed = TRUE)]
 }
+
+# process the rest - distribute the remaining units into non-processed buildings
+prep_buildings_in_pcl[, `:=`(sum_du2 = sum(residential_units)), by = "rp_acct_id"]
+index <- with(prep_buildings_in_pcl, index_residential & !processed  & du_in_pcl > sum_du2)
+
+tmpbld <- prep_buildings_in_pcl[index, .(nres = .N), by = "rp_acct_id"]
+prep_buildings_in_pcl[index, process_this_step := TRUE]
+prep_buildings_in_pcl[tmpbld, `:=`(residential_units = ifelse(process_this_step == TRUE, residential_units + round((du_in_pcl - sum_du2) / i.nres), 
+    residential_units)), on = "rp_acct_id"]
+prep_buildings_in_pcl[index, processed := TRUE]
+
+# bldpcl <- prep_buildings_in_pcl[, .(sum_du = sum(residential_units)), by = "rp_acct_id"]
+# bldpcl[parcels.units, should_be := i.total_unit, on = "rp_acct_id"]
+# bldpcl[, .(sum(sum_du, na.rm = TRUE), sum(should_be, na.rm = TRUE))]
+# prep_buildings_in_pcl[rp_acct_id %in%  bldpcl[should_be > 2*sum_du, rp_acct_id], .N, by = "use_desc"][order(-N)]
+prep_buildings_in_pcl[is.na(residential_units), residential_units := 0]
 
 cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residential_units_orig)], 
     "residential units. Total number of units is", prep_buildings_in_pcl[, sum(residential_units)],
@@ -326,8 +358,8 @@ if(write.result){
     fwrite(buildings_final, file = "urbansim_buildings_kitsap.csv")
     db <- paste0(tolower(county), "_2023_parcel_baseyear")
     connection <- mysql.connection(db)
-    dbWriteTable(connection, "urbansim23_parcels", parcels_final, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "urbansim23_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "building_type_crosstab23", bt.tab, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_parcels", parcels_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "urbansim_buildings", buildings_final, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
