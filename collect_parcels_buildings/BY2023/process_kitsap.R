@@ -15,7 +15,7 @@ data.dir <- "Kitsap_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
-# urbansim_parcels, urbansim_buildings urbansim_parcels_all, urbansim_buildings_all
+# urbansim_parcels, urbansim_buildings, building_type_crosstab
 write.result <- TRUE
 
 if(write.result) source("mysql_connection.R")
@@ -56,14 +56,6 @@ cat("\nProcessing Kitsap parcels\n=========================\n")
 parcels.all.nodupl <- parcels.all[!duplicated(rp_acct_id)]
 cat("\nNumber of duplicates removed from parcels dataset: ", 
     nrow(parcels.all) - nrow(parcels.all.nodupl))
-
-# merge the two parcel tables together
-# (we only need tax info from the attribute table)
-#parcels_allinfo <- merge(parcels.all.nodupl, 
-#                        parcels.nodupl[, .(rp_acct_id, exemption_id)],
-#                        all.x = TRUE, by = "rp_acct_id")
-
-#cat("\nMismatch of", nrow(parcels.nodupl) - nrow(parcels_allinfo), "parcels between the two parcel datasets.")
 
 # remove any duplicates from the three assessors files
 tax <- unique(tax)
@@ -321,10 +313,12 @@ prep_buildings_in_pcl[tmpbld, `:=`(residential_units = ifelse(process_this_step 
     residential_units)), on = "rp_acct_id"]
 prep_buildings_in_pcl[index, processed := TRUE]
 
+## for checking purposes
 # bldpcl <- prep_buildings_in_pcl[, .(sum_du = sum(residential_units)), by = "rp_acct_id"]
 # bldpcl[parcels.units, should_be := i.total_unit, on = "rp_acct_id"]
 # bldpcl[, .(sum(sum_du, na.rm = TRUE), sum(should_be, na.rm = TRUE))]
 # prep_buildings_in_pcl[rp_acct_id %in%  bldpcl[should_be > 2*sum_du, rp_acct_id], .N, by = "use_desc"][order(-N)]
+
 prep_buildings_in_pcl[is.na(residential_units), residential_units := 0]
 
 cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residential_units_orig)], 
