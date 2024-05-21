@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 05/14/2024
+# Hana Sevcikova, last update 05/20/2024
 #
 
 library(data.table)
@@ -65,14 +65,27 @@ parcels.full[stacked, taxparceln := i.new_parcel_id, on = c(taxparceln_old = "ta
 parcels.aggr <- parcels.full[, .(land_value = sum(land_value), 
                                  improvement_value = sum(improvemen),
                                  exemption = all(ifelse(exemption_ == "", 0, 1)==0)), 
+                             by = "taxparceln"]
+# this is for cases that were re-assigned to a new id, but the old id still exists in base parcels (there are just two such parcels)
+parcels.aggr.by.old.id <- parcels.full[, .(land_value = sum(land_value), 
+                                 improvement_value = sum(improvemen),
+                                 exemption = all(ifelse(exemption_ == "", 0, 1)==0)), 
                              by = c("taxparceln", "taxparceln_old")]
-# aggregate use_code
-parcels.aggr.use <- parcels.full[, .N, by = c("taxparceln", "taxparceln_old", "use_code")]
 
-#full.parcels[dissolve, base_parcel := i.taxparce_1, on = "taxparceln"]
+# for land use code, use the base parcel code
+parcels.full[, is_base := taxparcelt == "Base Parcel" & taxparceln == taxparceln_old][, nbase := sum(is_base), by = "taxparceln"]
+parcels.full[nbase == 0, is_base := taxparceln == taxparceln_old]
+parcels.full[parcels.full[is_base == TRUE, .(use_code = use_code[1]), by = "taxparceln"], use_code_base := i.use_code, on = "taxparceln"]
 
-prep_parcels <- merge(parcels.base, parcels.aggr[, .(taxparceln_old, land_value, improvement_value, exemption)], 
-                      by.x = "taxparceln", by.y = "taxparceln_old", all.x = TRUE)
+# merge base parcels with the aggregations
+prep_parcels <- merge(parcels.base, 
+                      rbind(parcels.aggr[, .(taxparceln, land_value, improvement_value, exemption)], 
+                            parcels.aggr.by.old.id[! taxparceln_old %in% parcels.aggr[, taxparceln] & 
+                                                       taxparceln_old %in% parcels.base[, taxparceln], 
+                                                   .(taxparceln = taxparceln_old, land_value, improvement_value, exemption)]
+                            ),
+                      by = "taxparceln", all.x = TRUE)
+
 
 tax[, taxparceln := as.double(parcel_number)]
 tax.nodupl <- tax[!duplicated(taxparceln)] # if there would be duplicates, one would probably need to sum the land value 
@@ -110,7 +123,7 @@ prep_parcels[tax.nodupl, improvement_value := ifelse(
 cat("\nImputed improvement value into additional", zero_imp - nrow(prep_parcels[improvement_value == 0]), "records using prior year info.")
 
 # assign use codes
-prep_parcels[parcels.aggr.use, use_code := i.use_code, on = c(taxparceln = "taxparceln_old")]
+prep_parcels[unique(parcels.full[, .(taxparceln, use_code)]), use_code := i.use_code, on = "taxparceln"]
 cat("\nuse_code is NA for", nrow(prep_parcels[is.na(use_code)]), "parcels.")
 
 # assemble columns for final parcels table
