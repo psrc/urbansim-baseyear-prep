@@ -11,7 +11,8 @@ library(data.table)
 county <- "King"
 county.id <- 33
 
-#data.dir <- file.path("~/e$/Assessor23", county) # path to the Assessor text files
+# path to the Assessor text files
+#data.dir <- "\\AWS-MODEL10\urbansim data\Projects\2023_Baseyear\Assessor\Extracts\King\Urbansim_Processing" 
 data.dir <- "King_data"
 misc.data.dir <- "data" # path to the BY2023/data folder
 write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings

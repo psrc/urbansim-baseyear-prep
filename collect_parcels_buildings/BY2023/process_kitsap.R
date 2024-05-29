@@ -3,20 +3,21 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 05/1/2024
+# Hana Sevcikova, last update 05/28/2024
 #
 
 library(data.table)
 
 county <- "Kitsap"
 
-#data.dir <- file.path("\\aws-model10\J$\UrbanSIM Data\Projects\2023_Baseyear\Assessor\Extracts\Kitsap\Urbansim_Processing\GIS\", county) # path to the Assessor text files
+# path to the Assessor text files
+#data.dir <- "\\aws-model10\UrbanSIM Data\Projects\2023_Baseyear\Assessor\Extracts\Kitsap\Urbansim_Processing" 
 data.dir <- "Kitsap_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings, building_type_crosstab
-write.result <- TRUE
+write.result <- FALSE
 
 if(write.result) source("mysql_connection.R")
 
@@ -27,6 +28,7 @@ if(write.result) source("mysql_connection.R")
 # parcels table
 parcels.all <- fread(file.path(data.dir, "parcels23_kit_dissolve_pt.csv"))
 parcels.units <- fread(file.path(data.dir, "KITSAP_COUNTY_PARCELS_01172024.csv")) # from Grant (got it from Kitsap staff)
+                                                                    # in \\file\datateam\Projects\Assessor\assessor_permit\kitsap\data\2023\extracts
 
 # tables flatats, land & main
 tax <- fread(file.path(data.dir, "flatats.txt")) # Combined Tax Account Data
@@ -45,6 +47,10 @@ mobile_homes <- fread(file.path(data.dir, "mh_fixed.txt"))[, V15 := NULL] # remo
 
 # Valuation
 valuation <- fread(file.path(data.dir, "Valuations.txt"))
+
+# Info about fake parcels and buildings (prepared by Mark)
+fake_parcels <- fread(file.path(data.dir, "kitsap_fake_parcel_changes.csv"))
+fake_buildings <- fread(file.path(data.dir, "kitsap_fake_building_changes.csv"))
 
 ###################
 # Process parcels
@@ -65,8 +71,7 @@ main <- unique(main)
 # extract what is needed and merge together
 # with the flatats dataset
 prep_parcels <- merge(parcels.all.nodupl,
-                      tax[, .(rp_acct_id, levy_code, jurisdict, acres_tax = acres, bldg_value, 
-                              land_value, assd_value)],
+                      tax[, .(rp_acct_id, land_value)],
                       by = "rp_acct_id") # will remove parcels not found in flatats
 
 # There are more than 50K parcels in the "tax" dataset that are not in "parcels",
@@ -80,9 +85,7 @@ cat("\n\t\t\t",
     tax[!rp_acct_id %in% parcels.all.nodupl[, rp_acct_id], sum(acres)], "acres.")
 
 # land dataset
-prep_parcels <- merge(prep_parcels,
-                      land[, .(rp_acct_id, acres_land = acres, nbrhd_cd, prop_class, 
-                               zone_code, num_dwell, num_other, tot_improv)],
+prep_parcels <- merge(prep_parcels, land[, .(rp_acct_id, prop_class, num_dwell)],
                       by = "rp_acct_id", all.x = TRUE)
 cat("\nNumber of records in land that are not available in parcels (records ignored): ",
     nrow(land[!rp_acct_id %in% prep_parcels[, rp_acct_id]]))
@@ -90,14 +93,27 @@ cat("\nNumber of records in parcels that are not available in land: ",
     nrow(prep_parcels[!rp_acct_id %in% land[, rp_acct_id]]))
 
 # main dataset
-prep_parcels <- merge(prep_parcels,
-                      main[, .(rp_acct_id, acct_stat, tax_status, tax_year)],
+prep_parcels <- merge(prep_parcels, main[, .(rp_acct_id, tax_status)],
                       by = "rp_acct_id", all.x = TRUE)
 # There are 404 records in parcels that are not present in land and main.
 cat("\nNumber of records in main that are not available in parcels (records ignored): ",
     nrow(main[!rp_acct_id %in% prep_parcels[, rp_acct_id]]))
 cat("\nNumber of records in parcels that are not available in main: ",
     nrow(prep_parcels[!rp_acct_id %in% main[, rp_acct_id]]))
+
+# join fake parcels with the three attribute files
+fake_parcels[tax, `:=`(land_value = i.land_value * land_proportion), 
+             on = c(orig_rp_acct_id = "rp_acct_id")]
+fake_parcels[land, `:=`(old_prop_class = i.prop_class, num_dwell = i.num_dwell), 
+             on = c(orig_rp_acct_id = "rp_acct_id")]
+fake_parcels[main, `:=`(tax_status = i.tax_status), on = c(orig_rp_acct_id = "rp_acct_id")]
+
+# add info from fake parcels to the set of all parcels
+# (expects that new parcels are inlcuded in the set of base parcels)
+prep_parcels <- prep_parcels[rp_acct_id != unique(fake_parcels[, orig_rp_acct_id])]
+prep_parcels[fake_parcels, `:=`(prop_class = i.new_prop_class, land_value = i.land_value, 
+                                num_dwell = i.um_dwell, tax_status = i.tax_status),
+             on = c(rp_acct_id = "new_rp_acct_id")]
 
 # compose final parcels dataset
 parcels_final <- prep_parcels[, .(parcel_id = rp_acct_id,
@@ -108,7 +124,6 @@ parcels_final <- prep_parcels[, .(parcel_id = rp_acct_id,
                                   gross_sqft = round(gis_sqft), 
                                   x_coord_sp = point_x, y_coord_sp = point_y
                                   )]
-
 
 # join with land use reclass table
 parcels_final[lu_reclass, land_use_type_id := i.land_use_type_id, on = "use_code"]
@@ -130,7 +145,7 @@ cat("\n\nProcessing Kitsap buildings\n=========================\n")
 prep_buildings <- raw_buildings[, .(id = 1:nrow(raw_buildings),
                                     improv_typ, 
                                     rp_acct_id, total_sqft = flr_tot_sf,
-                                    year_built, stories, bedrooms,
+                                    year_built, stories, 
                                     bldg_typ, use_desc
                                     )]
 
@@ -139,6 +154,27 @@ nbld <- nrow(prep_buildings)
 prep_buildings_in_pcl <- prep_buildings[rp_acct_id %in% parcels_final[, rp_acct_id]]
 cat("\nDropped ", nbld - nrow(prep_buildings_in_pcl), " buildings due to missing parcels.")
 
+# add fake buildings
+new_fake_buildings <- fake_buildings[is.na(orig_rp_acct_id), 
+                                     .(rp_acct_id = new_rp_acct_id, bld_typ = new_bld_typ,
+                                      improv_typ = new_improv_type, use_desc = new_use_desc,
+                                      total_sqft = new_flr_tot_sf, year_built = NA, stories = NA)]
+new_fake_buildings[, id := seq(max(prep_buildings_in_pcl[, id]) + 1, length = nrow(new_fake_buildings))]
+
+nbld <- nrow(prep_buildings)
+prep_buildings_in_pcl <- rbind(prep_buildings_in_pcl, new_fake_buildings)
+cat("\nAdded ", nrow(prep_buildings_in_pcl) - nbld, " fake buidlings.")
+
+if(nrow((mod_fake_buildings <- fake_buildings[!is.na(orig_rp_acct_id)])) > 0){
+  # move buildings into different parcels
+  # (this code is untested as there is currently no such case)
+  prep_buildings_in_pcl[mod_fake_buildings, `:=`(rp_acct_id = i.new_rp_acct_id, bld_typ = i.new_bld_typ,
+                                                 improv_typ = i.new_improv_type, use_desc = i.new_use_desc,
+                                                 total_sqft = i.new_flr_tot_sf),
+                        on = c(rp_acct_id = "orig_rp_acct_id", bld_typ = "orig_bld_typ", 
+                               improv_typ = "orig_improv_type")]
+  cat("\nModified ", nrow(mod_fake_buildings), " fake buildings.")
+}
 
 
 # add mobile homes info
