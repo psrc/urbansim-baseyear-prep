@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 05/29/2024
+# Hana Sevcikova, last update 06/03/2024
 #
 
 library(data.table)
@@ -18,6 +18,8 @@ misc.data.dir <- "data" # path to the BY2023/data folder
 write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result) source("mysql_connection.R")
+
+set.seed(1234)
 
 ###############
 # Load all data
@@ -44,6 +46,9 @@ rvs <- fread(file.path(data.dir, "snoh_rv_units.csv"))
 # PUD data
 pud <- fread(file.path(data.dir, "pud_points_joined.csv"))
 
+# CoStar data
+costar.all <- fread(file.path(data.dir, "CostarExport_Snoh_MF_subset.csv"))
+
 ###################
 # Process parcels
 ###################
@@ -52,7 +57,6 @@ cat("\nProcessing Snohomish parcels\n=========================\n")
 
 # make column names lowercase
 colnames(parcels.full) <- tolower(colnames(parcels.full))
-colnames(pud) <- tolower(colnames(pud))
 
 # remove parcel_id = 1
 parcels.base <- parcels.base[parcel_id > 1]
@@ -130,6 +134,8 @@ cat("\n\nProcessing Snohomish buildings\n=========================\n")
 
 # make column names lowercase
 colnames(raw_buildings) <- tolower(colnames(raw_buildings))
+colnames(pud) <- tolower(colnames(pud))
+colnames(costar.all) <- tolower(colnames(costar.all))
 
 buildings_tmp <- raw_buildings[, .(building_id = 1:nrow(raw_buildings),
                                     parcel_number_orig = as.character(pin), 
@@ -176,17 +182,34 @@ pud[, parcel_id := as.character(parcel_id)]
 prep_buildings[pud[, .(units = sum(first_count_address)), by = "parcel_id"], 
                pud_units := i.units, on = "parcel_id"]
 
+# join with costar data
+costar.all[, parcel_id := as.character(parcel_min)]
+costar <- costar.all[building_type %in% c("", "Apartments") & parcel_id == as.character(parcel_max)]
+costar[, ave_sqft_per_unit := as.numeric(gsub(",", "", ave_sqft_per_unit))]
+costar.dusize <- costar[, .(ave_sqft_per_unit = mean(ave_sqft_per_unit, na.rm = TRUE),
+                            ave_sqft_per_unit_comp = sum(sqft, na.rm = TRUE)/sum(number_units, na.rm = TRUE)),
+                        by = "parcel_id"]
+costar.dusize[, ave_sqft_per_unit_fin := ifelse(is.na(ave_sqft_per_unit), 
+                                                pmin(4000, ave_sqft_per_unit_comp), ave_sqft_per_unit)]
+costar.dusize <- costar.dusize[ave_sqft_per_unit_fin >= 250]
+
+
 # impute residential units
 prep_buildings[, residential_units := 0]
 prep_buildings[building_type_id %in% c(19, 11), residential_units := 1] # SF, MH
 prep_buildings[usecode == 2, residential_units := 2]
 prep_buildings[usecode == 3, residential_units := 3]
 
-
-
 # for usecode 4 set it between 4 and 6 depending on sqft, using 800sf/DU
-prep_buildings[usecode == 4,
-               residential_units := pmax(4, pmin(round(sqft_tmp/800), 6))]#[, DUtot := sum(residential_units), by = "parcel_id"]
+idx <- with(prep_buildings, usecode == 4)
+tmpb <- merge(prep_buildings[idx], costar.dusize[, .(parcel_id, ave_sqft_per_unit = ave_sqft_per_unit_fin)], by = c("parcel_id"))
+tmpb[, residential_units := pmax(1, round(sqft_tmp/ave_sqft_per_unit))]
+prep_buildings[tmpb, units_from_costar := i.residential_units, on = "building_id"]
+prep_buildings[idx, residential_units_comp := pmax(4, pmin(round(sqft_tmp/800), 6))]
+prep_buildings[idx, residential_units := ifelse(!is.na(units_from_costar), 
+                                                units_from_costar, residential_units_comp
+                                                )]
+
 
 # usecode == 5 looks like each record is an individual unit
 # use NumberRooms for units for single-record Apartment buildings
@@ -202,9 +225,16 @@ prep_buildings[usecode %in% c(51, 52, 53, 61, 62),
                `:=`(residential_units = 1, 
                     building_type_id = ifelse(is.na(building_type_id), 4, building_type_id))]
 
-# use 800sf/DU for the remaining MF
-prep_buildings[residential_units == 0 & usecode %in% c(44, 63, 70, 'APART'),
-               `:=`(residential_units = pmax(1, round(sqft_tmp/800)))]
+# remaining MF
+idx <- with(prep_buildings, residential_units == 0 & usecode %in% c(44, 63, 70, 'APART'))
+tmpb <- merge(prep_buildings[idx], costar.dusize[, .(parcel_id, ave_sqft_per_unit = ave_sqft_per_unit_fin)], by = c("parcel_id"))
+tmpb[, residential_units := pmax(1, round(sqft_tmp/ave_sqft_per_unit))]
+prep_buildings[tmpb, units_from_costar := i.residential_units, on = "building_id"]
+prep_buildings[idx, `:=`(residential_units_comp = pmax(1, round(sqft_tmp/800)))]
+prep_buildings[idx, residential_units := ifelse(!is.na(units_from_costar), 
+                                                units_from_costar, residential_units_comp
+                                                )]
+
 # for these use codes, set building type MF if not already set otherwise
 prep_buildings[usecode %in% c(44, 63, 70, 'APART')  & is.na(building_type_id),
                     building_type_id := 12]
@@ -215,6 +245,7 @@ if(nrow(missbt <- prep_buildings[is.na(building_type_id), .N, by = c("usecode", 
     cat("\nThe following building codes were not found:\n")
     print(missbt[order(-N)])
 } else cat("\nAll building use codes matched.")
+
 
 # aggregate DUs for Condo buildings on the same parcel
 prep_buildings_condo <- NULL
@@ -243,6 +274,87 @@ remove_bld <- prep_buildings[parcel_id %in% fix_apa_floor,
 nbld <- nrow(prep_buildings)
 prep_buildings <- prep_buildings[!building_id %in% remove_bld[, building_id]]
 cat("\nDropped ", nbld - nrow(prep_buildings), " building records representing building floors.")
+
+# remove condos for now (they will be added later)
+prep_buildings <- prep_buildings[building_type_id != 4]
+
+# COSTAR & PUD adjustments 
+# =========================
+# adjust to costar/pud records that we are sure about
+
+sumDU <- prep_buildings[,sum(residential_units)]
+
+prep_buildings[costar[, .(units = sum(number_units)), by = "parcel_id"], 
+               costar_units := i.units, on = "parcel_id"]
+
+prep_buildings[, `:=`(residential_units_before_adj = residential_units,
+                      is_mf_residential = building_type_id %in% c(12), 
+                      is_sf_residential = building_type_id %in% c(19, 11))][
+                          , is_residential :=  is_mf_residential | is_sf_residential]
+
+# get sum of DUs per parcel and costar and pud info
+# use only records where pud is close to costar and thus, the DU count is most likely correct
+# (accept max difference of one)
+pclblds <- prep_buildings[, .(DUall = sum(residential_units), Nall = sum(is_residential),
+                              DUmf = sum(residential_units * is_mf_residential),
+                              Nmf = sum(is_mf_residential), DUsf = sum(is_sf_residential),
+                              costar = mean(costar_units, na.rm = TRUE),
+                              pud = mean(pud_units, na.rm = TRUE)
+                              ), 
+                          by = "parcel_id"][!is.na(pud) & abs(pud - costar) < 2 & Nall > 0]
+
+# select records where there is a mismatch between our estimates and costar/pud
+adjpcl <- pclblds[DUmf != costar & DUmf != pud & DUall != costar & DUall != pud]
+
+# track processed parcel records
+processed <- rep(FALSE, nrow(adjpcl))
+
+# parcels with one building
+idx <- processed == FALSE & with(adjpcl, Nall == 1)
+prep_buildings[adjpcl[idx], residential_units := ifelse(is_residential, i.costar, residential_units), 
+               on = "parcel_id"]
+processed[idx] <- TRUE
+
+# parcels with one MF building
+idx <- processed == FALSE & with(adjpcl, Nmf == 1)
+prep_buildings[adjpcl[idx], residential_units := ifelse(is_mf_residential, pmax(1, i.costar - DUsf),
+                                                        residential_units), 
+               on = "parcel_id"]
+processed[idx] <- TRUE
+
+# process buildings that don't have a MF building
+idx <- processed == FALSE & with(adjpcl, Nmf == 0)
+idx2 <- idx & with(adjpcl, DUall < costar) # only those where costar is larger
+for(pcl in adjpcl[idx2, parcel_id]){
+    add <- adjpcl[parcel_id == pcl, costar - DUall]
+    bidx <- which(with(prep_buildings, parcel_id == pcl & building_type_id == 19)) # index of affected buildings
+    if(add %% length(bidx) == 0){ # try to distribute equally
+        prep_buildings[bidx, residential_units := residential_units + add/length(bidx)]
+    } else { # sample
+        sampled <- sample(bidx, add, replace = TRUE, prob = prep_buildings[bidx, residential_units])
+        tsampled <- table(sampled)
+        prep_buildings[as.integer(names(tsampled)), residential_units := residential_units + tsampled]
+    }
+}
+processed[idx] <- TRUE
+
+# process remaining buildings
+idx <- processed == FALSE
+for(pcl in adjpcl[idx, parcel_id]){
+    bidx <- which(with(prep_buildings, parcel_id == pcl & is_mf_residential))
+    dif <- adjpcl[parcel_id == pcl, costar - DUall]
+    sampled <- sample(bidx, abs(dif), replace = TRUE, prob = prep_buildings[bidx, residential_units])
+    tsampled <- table(sampled)
+    if(dif > 0){ # add units
+        prep_buildings[as.integer(names(tsampled)), residential_units := residential_units + tsampled]
+    } else { # remove 
+        prep_buildings[as.integer(names(tsampled)), residential_units := pmax(1, residential_units - tsampled)]
+    }
+}
+
+sumDUafter <- prep_buildings[,sum(residential_units)]
+
+cat("\nAdjustments with costar data yields a change of ",  sumDUafter - sumDU, "DUs.")
 
 
 # assemble columns for final buildings table by joining residential and non-res part
