@@ -109,7 +109,7 @@ record_id,county_id,"county_building_use_code","county_building_use_description"
 192,53,"442","Bar/Tavern",4,3,"commercial",2
 193,53,"515","Casinos",4,3,"commercial",1
 194,53,"529","Snack Bar",4,3,"commercial",12
-195,33,"710","MULTIPLE RESIDENCE, RETIREMENT COMMUNITY COMPLEX",8,3,"group_quarter",110
+195,33,"710","MULTIPLE RESIDENCE, RETIREMENT COMMUNITY COMPLEX",8,6,"group_quarter",110
 206,61,"ANCHOR","Mall Anchor Department Store",4,3,"commercial",3
 207,61,"AUTOSERV","Auto Service",4,3,"commercial",168
 208,61,"AUTOSHOW","Auto Showroom",4,3,"commercial",44
@@ -672,3 +672,6 @@ record_id,county_id,"county_building_use_code","county_building_use_description"
 29,53,"959","Agricultural",8,1,"agriculture",262
 518,53,"961","Marina Slip Condos",8,17,"recreation",152
 683,53,"941","Mini Storage Condo",8,14,"outbuilding",778
+691,33,"163","Site Improvement(163)",8,23,"other",2
+692,33,"346","Post Office",7,5,"government",1
+693,33,"986","Congregate Housing",2,12,"multi_family_residential",3

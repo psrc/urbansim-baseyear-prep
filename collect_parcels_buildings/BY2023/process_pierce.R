@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 05/20/2024
+# Hana Sevcikova, last update 06/04/2024
 #
 
 library(data.table)
@@ -27,10 +27,9 @@ if(write.result) source("mysql_connection.R")
 ###############
 
 # parcels & tax accounts
-parcels.base <- fread(file.path(data.dir, "parcels23_pierce_base.csv"))
+parcels.base <- fread(file.path(data.dir, "parcels23_pie_base.csv"))
 parcels.full <- fread(file.path(data.dir, "tax_parcels.csv")) # file with all attributes
 stacked <- fread(file.path(data.dir, "parcels23_stacked_pins.csv"))
-#condo.dissolve <- fread(file.path(data.dir, "parcels23_pierce_condo_dissolve_pt_to_base_dissolve_overlay.csv"))
 tax <- fread(file.path(data.dir, "tax_account.txt"), sep = "|", quote = "") # 
 
 # reclass tables
@@ -40,7 +39,11 @@ bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.
 # buildings
 raw_buildings <- fread(file.path(data.dir, "improvement_builtas.txt"))
 improvement <- fread(file.path(data.dir, "improvement.txt"))
-#improvement_detail <- fread(file.path(data.dir, "improvement_detail.txt"))
+
+# Info about fake parcels and buildings (prepared by Mark)
+fake_parcels <- fread(file.path(data.dir, "pierce_fake_parcel_changes.csv"))
+fake_buildings <- fread(file.path(data.dir, "pierce_fake_building_changes.csv"))
+
 
 ###################
 # Process parcels
@@ -51,25 +54,60 @@ cat("\nProcessing Pierce parcels\n=========================\n")
 
 # make column names lowercase
 colnames(parcels.full) <- tolower(colnames(parcels.full))
+colnames(fake_parcels) <- tolower(colnames(fake_parcels))
 
 # type change & re-assignment to new parcel ids due to stacked parcels 
-parcels.base[, `:=`(taxparceln = as.double(taxparceln))]
-parcels.full[, `:=`(taxparceln = as.double(taxparceln), taxparceln_old = as.double(taxparceln))]
-#condo.dissolve[, `:=`(taxparce_1 = as.double(taxparce_1),
-#                taxparceln_old = as.double(taxparceln))]
-stacked[, `:=`(taxparceln = as.double(taxparceln))]
+parcels.base[, `:=`(taxparceln = as.character(taxparceln))]
+parcels.full[, `:=`(taxparceln = as.character(taxparceln), taxparceln_old = as.character(taxparceln))]
+stacked[, `:=`(taxparceln = as.character(taxparceln), new_parcel_id = as.character(new_parcel_id))]
 parcels.full[stacked, taxparceln := i.new_parcel_id, on = c(taxparceln_old = "taxparceln")]
-#condo.dissolve[stacked, taxparceln := i.new_parcel_id, on = c(taxparceln_old = "taxparceln")]
+fake_parcels[, `:=`(orig_taxparceln = as.character(orig_taxparceln),
+                    new_taxparceln = as.character(new_taxparceln))]
+
+
+# join fake parcels with the full attribute dataset
+if(nrow((old.fakes <- fake_parcels[!is.na(orig_taxparceln)])) > 0){ # this section is untested since there are no such parcels
+    fake_parcels[parcels.full[taxparceln %in% old.fakes[, orig_taxparceln]], 
+                 `:=`(land_value = i.land_value * land_proportion,
+                      improvemen = i.improvemen * land_proportion,
+                      exemption_ = i.exemption_,
+                      ), 
+             on = c(orig_taxparceln = "taxparceln")]
+    parcels.full <- parcels.full[! taxparceln %in% unique(old.fakes[, orig_taxparceln])]
+} else {
+    fake_parcels[, `:=`(land_value = 0, improvemen = 0, exemption_ = "")]
+}
+new.fakes.add <- fake_parcels[!(new_taxparceln %in% parcels.full[, taxparceln])] # parcels to add
+new.fakes.mod <- fake_parcels[(new_taxparceln %in% parcels.full[, taxparceln])] # parcels to modify
+if(nrow(new.fakes.add) > 0){
+    # fake parcels to add
+    parcels.full <- rbind(parcels.full, new.fakes.add[
+        , .(taxparceln = new_taxparceln, use_code = new_use_code, 
+            landuse_de = new_landuse_de,
+            land_value, improvemen, exemption_
+            )],
+        fill = TRUE)
+}
+if(nrow(new.fakes.mod) > 0){
+    # fake parcels to modify (untested; currently no such case)
+    parcels.full[new.fakes.mod, `:=`(use_code = i.new_use_code, landuse_de = i.new_landuse_de,
+                                     land_value = i.land_value, improvemen = i.improvemen, 
+                                     exemption_ = i.exemption_
+                                     ), on = c(taxparceln = "new_taxparceln")]
+}
+cat("\nIncorporated info for ", nrow(fake_parcels[new_taxparceln %in% parcels.full[, taxparceln]]),
+    "fake parcels")
 
 # aggregate attributes in parcels.full
 parcels.aggr <- parcels.full[, .(land_value = sum(land_value), 
                                  improvement_value = sum(improvemen),
-                                 exemption = all(ifelse(exemption_ == "", 0, 1)==0)), 
+                                 exemption = !all(ifelse(exemption_ == "", 0, 1)==0)), 
                              by = "taxparceln"]
+
 # this is for cases that were re-assigned to a new id, but the old id still exists in base parcels (there are just two such parcels)
 parcels.aggr.by.old.id <- parcels.full[, .(land_value = sum(land_value), 
                                  improvement_value = sum(improvemen),
-                                 exemption = all(ifelse(exemption_ == "", 0, 1)==0)), 
+                                 exemption = !all(ifelse(exemption_ == "", 0, 1)==0)), 
                              by = c("taxparceln", "taxparceln_old")]
 
 # for land use code, use the base parcel code
@@ -86,8 +124,7 @@ prep_parcels <- merge(parcels.base,
                             ),
                       by = "taxparceln", all.x = TRUE)
 
-
-tax[, taxparceln := as.double(parcel_number)]
+tax[, taxparceln := as.character(parcel_number)]
 tax.nodupl <- tax[!duplicated(taxparceln)] # if there would be duplicates, one would probably need to sum the land value 
                                            # instead of removing records (not sure)
 cat("\nNumber of duplicates removed from Pierce parcels: ", nrow(tax) - nrow(tax.nodupl))
@@ -128,7 +165,7 @@ cat("\nuse_code is NA for", nrow(prep_parcels[is.na(use_code)]), "parcels.")
 
 # assemble columns for final parcels table
 parcels_final <- prep_parcels[, .(
-    parcel_id = taxparceln, parcel_id_fips = as.character(taxparceln), land_value, use_code = as.character(use_code), 
+    parcel_id = 1:nrow(prep_parcels), parcel_id_fips = as.character(taxparceln), land_value, use_code = as.character(use_code), 
     gross_sqft = round(gis_sqft),  x_coord_sp = point_x, y_coord_sp = point_y, 
     exemption, county_id = county.id)]
     
@@ -142,7 +179,6 @@ if(nrow(misslu <- parcels_final[is.na(land_use_type_id) & !is.na(use_code), .N, 
 
 cat("\nTotal all:", nrow(parcels_final), "parcels")
 
-
 ###################
 # Process buildings
 ###################
@@ -153,11 +189,11 @@ cat("\n\nProcessing Pierce buildings\n=========================\n")
 buildings_tmp <- merge(improvement, raw_buildings, 
                        by = c("building_id", "parcel_number"),
                        all = TRUE)
-setnames(buildings_tmp, "parcel_number", "parcel_number_orig")
+buildings_tmp[, `:=`(parcel_number_orig = as.character(parcel_number))][, parcel_number := NULL]
 
 # join with parcels and assign the right taxparceln
 buildings_tmp <- merge(buildings_tmp, stacked, by.x = "parcel_number_orig", by.y = "taxparceln", all.x = TRUE)
-buildings_tmp[, taxparceln := ifelse(is.na(new_parcel_id), as.double(parcel_number_orig), as.double(new_parcel_id))]
+buildings_tmp[, taxparceln := ifelse(is.na(new_parcel_id), parcel_number_orig, new_parcel_id)]
 
 # check duplicates 
 # buildings_tmp[duplicated(buildings_tmp, by = c("building_id", "taxparceln"))]
@@ -169,6 +205,21 @@ buildings_all <- buildings_tmp[, .(
     year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
     net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
     by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, taxparceln)]
+
+# add fake buildings
+new_fake_buildings <- fake_buildings[is.na(orig_parcel_number), 
+                                     .(taxparceln = as.character(new_parcel_number), 
+                                       primary_occupancy_code = new_primary_occupancy_code,
+                                       primary_occupancy_description = new_primary_occupancy_description,
+                                       built_as_id = new_primary_occupancy_code,
+                                       built_as_description = new_primary_occupancy_description,
+                                       square_feet = new_square_feet,
+                                        year_built = NA)]
+
+nbld <- nrow(buildings_all)
+buildings_all <- rbind(buildings_all, new_fake_buildings, fill = TRUE)
+cat("\nAdded ", nrow(buildings_all) - nbld, " fake buidlings.")
+
 buildings_all[, count:= .N, by = "taxparceln"]
 
 # preliminary join with building reclass table
@@ -181,7 +232,7 @@ buildings_all[bt_reclass[county_id == county.id], built_as_building_type_id := i
 
 # remove detached garages
 nbld <- nrow(buildings_all)
-buildings_all <- buildings_all[built_as_id != 99 & primary_occupancy_code != 99]
+buildings_all <- buildings_all[!((!is.na(built_as_id) & built_as_id == 99) | (!is.na(primary_occupancy_code) & primary_occupancy_code == 99))]
 cat("\nDropped", nbld - nrow(buildings_all), "detached garages.")
     
 # reclass some non-res types that appear in residential buildings
@@ -200,7 +251,7 @@ buildings_all[count > 1 & building_type_id == 21 &
               
 # remove laundromats & clubhouses in res buildings
 nbld <- nrow(buildings_all)
-buildings_all <- buildings_all[built_as_id != 99 & primary_occupancy_code != 99]
+buildings_all <- buildings_all[!((!is.na(built_as_id) & built_as_id == 99) | (!is.na(primary_occupancy_code) & primary_occupancy_code == 99))]
 buildings_all <- buildings_all[!(building_type_id %in% c(4, 11, 12, 19) & built_as_id %in% c(336, 311) & units == 0)]
     cat("\nDropped", nbld - nrow(buildings_all), "laundromats and clubhouses in residential buildings.")
     
@@ -208,11 +259,12 @@ buildings_all <- buildings_all[!(building_type_id %in% c(4, 11, 12, 19) & built_
 buildings_all[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
               on = c(primary_occupancy_code = "county_building_use_code")]
 
-prep_buildings <- buildings_all[taxparceln %in% parcels_final[, parcel_id]]
+prep_buildings <- buildings_all[taxparceln %in% parcels_final[, parcel_id_fips]]
 cat("\nDropped", nrow(buildings_all) - nrow(prep_buildings), "buildings due to missing representation in the parcels dataset.")
 
 # Calculate improvement value proportionally to the sqft
-prep_buildings[prep_parcels, `:=`(total_improvement_value = i.improvement_value), on = "taxparceln"]
+prep_buildings[prep_parcels, `:=`(total_improvement_value = i.improvement_value), 
+               on = "taxparceln"]
 prep_buildings[, `:=`(sqft_tmp = pmax(1, sqft, na.rm = TRUE))]
 prep_buildings[, `:=`(total_sqft = sum(sqft_tmp), count = .N), by = "taxparceln"]
 prep_buildings[, `:=`(improvement_value = round(sqft_tmp/total_sqft * total_improvement_value))][, sqft_tmp := NULL]
@@ -286,10 +338,12 @@ for (descr in c("Condo Low Rise", "Condo High Rise", "Condo Apartment Low Rise")
 cat("\nDue to missing sqft units were not imputed into building with the following occupancy description:\n")
 print(prep_buildings[index_residential & units == 0, .N, by = "primary_occupancy_description"])
 
+prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(taxparceln = "parcel_id_fips")]
+
 # assemble columns for final buildings table
 buildings_final <- prep_buildings[, .(
     building_id = 1:nrow(prep_buildings), 
-    parcel_id = taxparceln, parcel_id_fips = as.character(taxparceln), gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
+    parcel_id, parcel_id_fips = taxparceln, gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
     year_built, residential_units = units, non_residential_sqft, improvement_value,
     use_code = primary_occupancy_code, building_type_id
 )]
@@ -297,8 +351,8 @@ buildings_final <- prep_buildings[, .(
 cat("\nTotal all: ", nrow(buildings_final), "buildings")
 
 # generate building type crosstabs
-bt.tab <- buildings_final[!is.na(parcel_id) & parcel_id != 0, .(N = .N, DU = sum(residential_units), 
-                                                                nonres_sqft = sum(non_residential_sqft)), 
+bt.tab <- buildings_final[, .(N = .N, DU = sum(residential_units), 
+                             nonres_sqft = sum(non_residential_sqft)), 
                           by = .(use_code, building_type_id)]
 bt.tab <- merge(bt.tab, bt_reclass[county_id == county.id, .(county_building_use_code, county_building_use_description, building_type_id, building_type_name)],
                 by.x = c("use_code", "building_type_id"), by.y = c("county_building_use_code", "building_type_id"),

@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 05/28/2024
+# Hana Sevcikova, last update 06/03/2024
 #
 
 library(data.table)
@@ -17,7 +17,7 @@ misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings, building_type_crosstab
-write.result <- TRUE
+write.result <- FALSE
 
 if(write.result) source("mysql_connection.R")
 
@@ -110,6 +110,8 @@ fake_parcels[main, `:=`(tax_status = i.tax_status), on = c(orig_rp_acct_id = "rp
 # add info from fake parcels to the set of all parcels
 # (expects that new parcels are included in the set of base parcels)
 prep_parcels <- prep_parcels[! rp_acct_id %in% unique(fake_parcels[, orig_rp_acct_id])]
+if(nrow(prep_parcels[rp_acct_id %in% fake_parcels[, new_rp_acct_id]]) == 0)
+  stop("Fake parcels are not included in the full parcels.")
 prep_parcels[fake_parcels, `:=`(prop_class = i.new_prop_class, land_value = i.land_value, 
                                 num_dwell = i.num_dwell, tax_status = i.tax_status),
              on = c(rp_acct_id = "new_rp_acct_id")]

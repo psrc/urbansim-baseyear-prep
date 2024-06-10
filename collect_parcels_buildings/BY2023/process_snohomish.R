@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/03/2024
+# Hana Sevcikova, last update 06/10/2024
 #
 
 library(data.table)
@@ -49,6 +49,12 @@ pud <- fread(file.path(data.dir, "pud_points_joined.csv"))
 # CoStar data
 costar.all <- fread(file.path(data.dir, "CostarExport_Snoh_MF_subset.csv"))
 
+# Info about fake parcels and buildings (prepared by Mark)
+# (not needed as it was solved via stacked parcels)
+#fake_parcels <- fread(file.path(data.dir, "snohomish_fake_parcel_changes.csv"))
+#fake_buildings <- fread(file.path(data.dir, "snohomish_fake_building_changes.csv"))
+
+
 ###################
 # Process parcels
 ###################
@@ -59,11 +65,11 @@ cat("\nProcessing Snohomish parcels\n=========================\n")
 colnames(parcels.full) <- tolower(colnames(parcels.full))
 
 # remove parcel_id = 1
-parcels.base <- parcels.base[parcel_id > 1]
+parcels.base <- parcels.base[parcelid > 1]
 stacked <- stacked[new_parcel_id > 1]
 
 # type change & creating new id column from the Snohomish-specific id
-parcels.base[, `:=`(parcel_id = as.character(parcel_id))]
+parcels.base[, `:=`(parcel_id = as.character(parcelid))]
 stacked[, `:=`(parcel_id = as.character(parcel_id), new_parcel_id = as.character(new_parcel_id))]
 parcels.full[, `:=`(parcel_number = as.character(parcel_number), parcel_id = as.character(parcel_number))]
 
@@ -119,7 +125,7 @@ prep_parcels <- merge(parcels.base, parcels.aggr, by = "parcel_id", all.x = TRUE
 
 # construct final parcels 
 # (if no additional columns or other cleaning needed then it's just a copy of prep_parcels)
-parcels_final <- prep_parcels[, .(parcel_id, parcel_id_fips = parcel_id, 
+parcels_final <- prep_parcels[, .(parcel_id = 1:nrow(prep_parcels), parcel_id_fips = parcel_id, 
                                   land_value, improvement_value, total_value, gross_sqft = gis_sqft,
                                   x_coord_sp = point_x, y_coord_sp = point_y, land_use_type_id, 
                                   exemption, county_id = county.id)]
@@ -149,11 +155,11 @@ prep_buildings[, parcel_id := ifelse(is.na(new_parcel_id), as.character(parcel_n
 
 # remove buildings that cannot be assigned to parcels
 nbld <- nrow(prep_buildings)
-prep_buildings <- prep_buildings[parcel_id %in% parcels_final[, parcel_id]]
+prep_buildings <- prep_buildings[parcel_id %in% parcels_final[, parcel_id_fips]]
 cat("\nDropped ", nbld - nrow(prep_buildings), " buildings due to missing parcels.")
 
 # assign land use type
-prep_buildings[parcels_final, land_use_type_id := i.land_use_type_id, on = "parcel_id"]
+prep_buildings[parcels_final, land_use_type_id := i.land_use_type_id, on = c(parcel_id = "parcel_id_fips")]
 
 # join with building reclass table to get building type
 prep_buildings[bt_reclass[county_id == county.id], building_type_id := i.building_type_id, 
@@ -375,6 +381,7 @@ buildings_final <- rbind(
         )])
 
 buildings_final[, parcel_id_fips := parcel_id]
+buildings_final[parcels_final, `:=`(parcel_id = i.parcel_id), on = "parcel_id_fips"]
 
 # column order
 setcolorder(buildings_final, c("building_id", "parcel_id", "parcel_id_fips"))

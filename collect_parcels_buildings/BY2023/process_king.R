@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 05/20/2024
+# Hana Sevcikova, last update 06/10/2024
 #
 
 library(data.table)
@@ -36,12 +36,24 @@ construct_pin_from_major_minor <- function(dt){
     dt
 }
 
+construct_pin_from_major_minor_for_fakes <- function(dt){
+    # construct original and new pins on fake parcels/buildings
+    dt[, `:=`(major = orig_major, minor = orig_minor)]
+    dt <- construct_pin_from_major_minor(dt)
+    dt[, `:=`(orig_pin = pin, major = new_major, minor = new_minor)]
+    dt <- construct_pin_from_major_minor(dt)
+    dt[, `:=`(new_pin = pin, major = NULL, minor = NULL)]
+    dt[is.na(orig_major), orig_pin := NA]
+    dt[is.na(new_major), new_pin := NA]
+    return(dt)
+}
+
 ###############
 # Load all data
 ###############
 
 # parcels & tax accounts
-parcels.base <- fread(file.path(data.dir, "parcels23_king_base.csv"))
+parcels.base <- fread(file.path(data.dir, "parcels23_kin_base.csv"))
 parcels.full <- fread(file.path(data.dir, "extr_parcel.csv"))
 stacked <- fread(file.path(data.dir, "parcels23_stacked_pins.csv")) # stacked parcels
 
@@ -58,6 +70,10 @@ condocomplex <- fread(file.path(data.dir, "EXTR_CondoComplex.csv"))
 condounit <- fread(file.path(data.dir, "EXTR_CondoUnit2.csv"))
 resbldg <- fread(file.path(data.dir, "EXTR_ResBldg.csv"))
 
+# Info about fake parcels and buildings (prepared by Mark)
+fake_parcels <- fread(file.path(data.dir, "king_fake_parcel_changes.csv"))
+fake_buildings <- fread(file.path(data.dir, "king_fake_building_changes.csv"))
+
 ###################
 # Process parcels
 ###################
@@ -67,6 +83,7 @@ cat("\nProcessing King parcels\n=========================\n")
 
 # make column names lowercase
 colnames(parcels.full) <- tolower(colnames(parcels.full))
+colnames(fake_parcels) <- tolower(colnames(fake_parcels))
 
 # fix types
 rpacct[, acctnbr := as.character(acctnbr)]
@@ -82,9 +99,6 @@ parcels.full[stacked, pin := i.new_parcel_id, on = c(pin_old = "pin")]
 # parcels that were renamed but their old pin is still in base
 # parcels.base[pin %in% stacked[, pin]]
 
-# remove duplicates
-#parcels.nodupl <- parcels.23to18[!duplicated(pin)]
-#cat("\nNumber of duplicates removed from 23to18 parcels: ", nrow(parcels.23to18) - nrow(parcels.nodupl))
 
 
 # It looks like all duplicates in rpacct have zero land and improvement values, 
@@ -99,6 +113,43 @@ rpacct.nodupl <- construct_pin_from_major_minor(rpacct.nodupl)
 # merge with stacked parcels
 rpacct.nodupl[, pin_old := pin]
 rpacct.nodupl[stacked, pin := i.new_parcel_id, on = c(pin_old = "pin")]
+
+# construct original and new pins on fake parcels
+fake_parcels <- construct_pin_from_major_minor_for_fakes(fake_parcels)
+
+# join fake parcels with the full attribute dataset
+if(nrow((old.fakes <- fake_parcels[!is.na(orig_pin)])) > 0){ # this section is untested since there are no such parcels
+    fake_parcels[rpacct.nodupl[pin %in% old.fakes[, orig_pin]], 
+                 `:=`(apprlandval = i.apprlandval * land_proportion,
+                      apprimpsval = i.apprimpsval * land_proportion,
+                      taxstat = i.taxstat
+                 ), 
+                 on = c(orig_pin = "pin")]
+    rpacct.nodupl <- rpacct.nodupl[! pin %in% unique(old.fakes[, orig_pin])]
+} else {
+    fake_parcels[, `:=`(apprlandval = 0, apprimpsval = 0, taxstat = "T")]
+}
+new.fakes.add <- fake_parcels[!(new_pin %in% rpacct.nodupl[, pin])]
+new.fakes.mod <- fake_parcels[(new_pin %in% rpacct.nodupl[, pin])]
+if(nrow(new.fakes.add) > 0){
+    # fake parcels to add
+    rpacct.nodupl <- rbind(rpacct.nodupl, new.fakes.add[
+        , .(pin = new_pin, major = new_major, minor = new_minor,
+            presentuse = new_presentuse, apprlandval, apprimpsval, taxstat
+        )],
+        fill = TRUE)
+}
+if(nrow(new.fakes.mod) > 0){
+    # fake parcels to modify (untested; currently no such case)
+    rpacct.nodupl[new.fakes.mod, `:=`(major = i.new_major, minor = i.new_minor,
+                                      presentuse = i.new_presentuse, 
+                                      apprlandval = i.apprlandval, 
+                                      apprimpsval = i.apprimpsval, taxstat = i.taxstat
+    ), on = c(pin = "new_pin")]
+}
+cat("\nIncorporated info for ", nrow(fake_parcels[new_pin %in% rpacct.nodupl[, pin]]),
+    "fake parcels")
+
 
 # group records with the same pin
 rpacct_grouped <- rpacct.nodupl[, .(apprlandval = as.double(sum(apprlandval)), 
@@ -145,13 +196,12 @@ cat("\n", nrow(parcels.full[!pin %in% prep_parcels[, pin]]), "records from extr_
 
 # construct final parcels                
 parcels_final <- prep_parcels[, .(
-    parcel_id = pin, parcel_id_fips = pin, land_use_type_id, gross_sqft = gis_sqft,
+    parcel_id = 1:nrow(prep_parcels), parcel_id_fips = pin, land_use_type_id, gross_sqft = gis_sqft,
     land_value = apprlandval, improvement_value = apprimpsval, exemption = as.integer(exempt > 0),
     y_coord_sp = point_y, x_coord_sp = point_x, county_id = county.id
     )]
 
 cat("\nTotal:", nrow(parcels_final), "parcels")
-
 
 ###################
 # Process buildings
@@ -165,6 +215,7 @@ colnames(commbldg) <- tolower(colnames(commbldg))
 colnames(condocomplex) <- tolower(colnames(condocomplex))
 colnames(condounit) <- tolower(colnames(condounit))
 colnames(resbldg) <- tolower(colnames(resbldg))
+colnames(fake_buildings) <- tolower(colnames(fake_buildings))
 
 prep_buildings_apt <- construct_pin_from_major_minor(aptcomplex)[
     , .(pin, stories = nbrstories, units = nbrunits, sqft_per_unit = avgunitsize,
@@ -185,6 +236,30 @@ prep_buildings_com <- construct_pin_from_major_minor(commbldg)[
         year_built = yrbuilt, residential_units = 0, sqft_per_unit = 1)]
 
 cat("\nNumber of commercial buildings:", nrow(prep_buildings_com))
+
+# add fake buildings to the commercial set
+# construct original and new pins on fake buildings
+fake_buildings <- construct_pin_from_major_minor_for_fakes(fake_buildings)
+new_fake_buildings <- fake_buildings[is.na(orig_pin), 
+                                     .(pin = new_pin, stories = NA, building_number = new_bldgnbr,
+                                       use_code = new_predominantuse, building_quality = NA,
+                                       bldg_gross_sqft = new_bldggrosssqft, 
+                                       bldg_net_sqft = new_bldgnetsqft, year_built = NA, 
+                                       residential_units = 0, sqft_per_unit = 1)
+                        ]
+nbld <- nrow(prep_buildings_com)
+prep_buildings_com <- rbind(prep_buildings_com, new_fake_buildings)
+cat("\nAdded ", nrow(prep_buildings_com) - nbld, " fake buidlings.")
+
+if(nrow((mod_fake_buildings <- fake_buildings[!is.na(orig_pin)])) > 0){
+    # move buildings into different parcels
+    prep_buildings_com[mod_fake_buildings, `:=`(
+        pin = i.new_pin, building_number = i.new_bldgnbr,
+        use_code = i.new_predominantuse, bldg_gross_sqft = i.new_bldggrosssqft, 
+        bldg_net_sqft = i.new_bldgnetsqft),
+    on = c(pin = "orig_pin", building_number = "orig_bldgnbr")]
+    cat("\nModified ", nrow(mod_fake_buildings), " fake buildings.")
+}
 
 # sum land and improvement values over condos in condo complexes
 condo_value <- merge(construct_pin_from_major_minor(condounit), rpacct_grouped_old, by = "pin")
@@ -260,6 +335,7 @@ prep_buildings[, pin_old := pin]
 prep_buildings <- merge(prep_buildings, stacked, by = "pin", all.x = TRUE)
 prep_buildings[, pin := ifelse(is.na(new_parcel_id), pin, new_parcel_id)]
 
+
 # remove buildings that do not have any match in the parcels table
 nbld <- nrow(prep_buildings)
 prep_buildings <- prep_buildings[pin %in% parcels_final[, parcel_id_fips]]
@@ -308,11 +384,13 @@ prep_buildings[(pin %in% aptcom_combo[, pin] | pin %in% condocom_combo[, pin]) &
                     non_residential_sqft = 0) 
                ]
 
+prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(pin = "parcel_id_fips")]
+
 # create final buildings table
 buildings_final <- prep_buildings[, .(building_id = 1:nrow(prep_buildings),
-                                      parcel_id = pin, gross_sqft, non_residential_sqft, sqft_per_unit,
-                                      year_built, parcel_id_fips = pin, 
-                                      residential_units, improvement_value,
+                                      parcel_id, parcel_id_fips = pin, 
+                                      gross_sqft, non_residential_sqft, sqft_per_unit,
+                                      year_built, residential_units, improvement_value,
                                       building_type_id, use_code, stories)]
 
 cat("\nTotal: ", nrow(buildings_final), "buildings")
