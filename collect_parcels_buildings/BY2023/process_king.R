@@ -196,7 +196,7 @@ cat("\n", nrow(parcels.full[!pin %in% prep_parcels[, pin]]), "records from extr_
 
 # construct final parcels                
 parcels_final <- prep_parcels[, .(
-    parcel_id = 1:nrow(prep_parcels), parcel_id_fips = pin, land_use_type_id, gross_sqft = gis_sqft,
+    parcel_id = 1:nrow(prep_parcels), parcel_id_fips = pin, land_use_type_id, use_code, gross_sqft = gis_sqft,
     land_value = apprlandval, improvement_value = apprimpsval, exemption = as.integer(exempt > 0),
     y_coord_sp = point_y, x_coord_sp = point_x, county_id = county.id
     )]
@@ -301,8 +301,8 @@ prep_buildings_res <- construct_pin_from_major_minor(resbldg[
 cat("\nNumber of other residential buildings:", nrow(prep_buildings_res))
 
 # set building_type_id depending on number of units
-prep_buildings_res[nbrlivingunits == 1, building_type_id := 19] # SF
-prep_buildings_res[nbrlivingunits > 1, building_type_id := 12]
+prep_buildings_res[nbrlivingunits == 1, `:=`(building_type_id = 19, use_code = 351)] # SF
+prep_buildings_res[nbrlivingunits > 1, `:=`(building_type_id = 12)]
 
 # put everything together
 prep_buildings <- rbind(
@@ -391,7 +391,8 @@ buildings_final <- prep_buildings[, .(building_id = 1:nrow(prep_buildings),
                                       parcel_id, parcel_id_fips = pin, 
                                       gross_sqft, non_residential_sqft, sqft_per_unit,
                                       year_built, residential_units, improvement_value,
-                                      building_type_id, use_code, stories)]
+                                      building_type_id, use_code, stories, 
+                                      land_area = round(gross_sqft/stories))]
 
 cat("\nTotal: ", nrow(buildings_final), "buildings")
 

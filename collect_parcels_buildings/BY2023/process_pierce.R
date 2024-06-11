@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/04/2024
+# Hana Sevcikova, last update 06/10/2024
 #
 
 library(data.table)
@@ -43,7 +43,6 @@ improvement <- fread(file.path(data.dir, "improvement.txt"))
 # Info about fake parcels and buildings (prepared by Mark)
 fake_parcels <- fread(file.path(data.dir, "pierce_fake_parcel_changes.csv"))
 fake_buildings <- fread(file.path(data.dir, "pierce_fake_building_changes.csv"))
-
 
 ###################
 # Process parcels
@@ -201,7 +200,7 @@ buildings_tmp[, taxparceln := ifelse(is.na(new_parcel_id), parcel_number_orig, n
 # group buildings since there were duplicate building_id values per parcel
 buildings_all <- buildings_tmp[, .(
     sqft = sum(built_as_square_feet, na.rm = TRUE), units = sum(units, na.rm = TRUE), 
-    bedrooms = sum(bedrooms, na.rm = TRUE),
+    bedrooms = sum(bedrooms, na.rm = TRUE), stories = max(stories),
     year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
     net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
     by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, taxparceln)]
@@ -344,7 +343,8 @@ prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(taxparceln = "par
 buildings_final <- prep_buildings[, .(
     building_id = 1:nrow(prep_buildings), 
     parcel_id, parcel_id_fips = taxparceln, gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
-    year_built, residential_units = units, non_residential_sqft, improvement_value,
+    year_built, residential_units = units, non_residential_sqft, stories, improvement_value, 
+    land_area = round(sqft/stories),
     use_code = primary_occupancy_code, building_type_id
 )]
 

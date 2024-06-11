@@ -94,7 +94,8 @@ parcels.base[unique(parcels.full[, .(parcel_id, base_usecode)]),
              usecode := i.base_usecode, on = "parcel_id"]
 
 # join with reclass table
-parcels.base[lu_reclass[county_id == county.id], land_use_type_id := i.land_use_type_id, 
+parcels.base[lu_reclass[county_id == county.id], `:=`(
+    land_use_type_id = i.land_use_type_id, county_use_code = i.county_land_use_code),
              on = c(usecode = "county_land_use_description")]
 
 cat("\nMatched", nrow(parcels.base[!is.na(land_use_type_id)]), "records with land use reclass table")
@@ -128,7 +129,7 @@ prep_parcels <- merge(parcels.base, parcels.aggr, by = "parcel_id", all.x = TRUE
 parcels_final <- prep_parcels[, .(parcel_id = 1:nrow(prep_parcels), parcel_id_fips = parcel_id, 
                                   land_value, improvement_value, total_value, gross_sqft = gis_sqft,
                                   x_coord_sp = point_x, y_coord_sp = point_y, land_use_type_id, 
-                                  exemption, county_id = county.id)]
+                                  use_code = county_use_code, exemption, county_id = county.id)]
 
 cat("\nTotal all:", nrow(parcels_final), "parcels")
 
@@ -401,6 +402,7 @@ buildings_final[stories %in% c("5353", "53", "053", "2022", "", "\x80P@", "-D@")
 buildings_final[stories %in% c("2.,0", "2+", "2..0", "2.-0", "2,0"), stories := "2"]
 buildings_final[stories == "1,5", stories := "1.5"]
 buildings_final[, stories := as.numeric(stories)]
+buildings_final[!is.na(stories) & stories > 0, land_area := round(gross_sqft/stories)]
 
 cat("\nTotal all: ", nrow(buildings_final), "buildings")
 

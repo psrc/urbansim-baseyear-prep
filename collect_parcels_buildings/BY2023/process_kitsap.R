@@ -17,7 +17,7 @@ misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings, building_type_crosstab
-write.result <- FALSE
+write.result <- TRUE
 
 if(write.result) source("mysql_connection.R")
 
@@ -368,7 +368,8 @@ cat("\nImputed", prep_buildings_in_pcl[, sum(residential_units) - sum(residentia
 buildings_final <- prep_buildings_in_pcl[, .(building_id = id, parcel_id,
                                              gross_sqft = total_sqft, year_built,
                                              parcel_id_fips = rp_acct_id, residential_units, 
-                                             building_type_id, improvement_value, stories, land_area = 0, 
+                                             building_type_id, improvement_value, stories, 
+                                             land_area = round(total_sqft/stories), 
                                              non_residential_sqft = ifelse(residential_units > 0, 0, total_sqft),
                                              use_code = paste(bldg_typ, improv_typ, sep = ";"), 
                                              use_desc)]
