@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/10/2024
+# Hana Sevcikova, last update 06/11/2024
 #
 
 library(data.table)
@@ -363,6 +363,19 @@ sumDUafter <- prep_buildings[,sum(residential_units)]
 
 cat("\nAdjustments with costar data yields a change of ",  sumDUafter - sumDU, "DUs.")
 
+# mark records for exclusion from further consolidation
+pclblds2 <- prep_buildings[, .(DUall = sum(residential_units), Nall = sum(is_residential),
+                              DUmf = sum(residential_units * is_mf_residential),
+                              Nmf = sum(is_mf_residential), DUsf = sum(is_sf_residential),
+                              costar = mean(costar_units, na.rm = TRUE),
+                              pud = mean(pud_units, na.rm = TRUE)
+                            ), 
+                            by = "parcel_id"][
+                                DUmf > 0 & ((!is.na(costar) & DUmf <= costar + 1) | (
+                                    !is.na(pud) & DUmf <= pud + 1))]
+prep_buildings[parcel_id %in% c(pclblds[, parcel_id], pclblds2[, parcel_id]),
+               exclude_from_consolidation := 1]
+prep_buildings[is.na(exclude_from_consolidation), exclude_from_consolidation := 0]
 
 # assemble columns for final buildings table by joining residential and non-res part
 # TODO: for non-res buildings is gross_sqft the same as non_residential_sqft?
@@ -371,15 +384,16 @@ buildings_final <- rbind(
     , .(building_id, parcel_id, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = round(finsize/residential_units),
         year_built = yrbuilt, residential_units, non_residential_sqft = 0,
-        improvement_value, use_code = usecode, stories
+        improvement_value, use_code = usecode, stories, exclude_from_consolidation
         )],
     prep_buildings_condo,
     prep_buildings[! building_type_id %in% c(4, 12, 19, 11)
     , .(building_id, parcel_id, building_type_id, gross_sqft = finsize, 
         sqft_per_unit = 1, year_built = yrbuilt, residential_units = 0,
         non_residential_sqft = finsize, improvement_value, use_code = usecode, 
-        stories
-        )])
+        stories, exclude_from_consolidation
+        )], fill = TRUE
+    )
 
 buildings_final[, parcel_id_fips := parcel_id]
 buildings_final[parcels_final, `:=`(parcel_id = i.parcel_id), on = "parcel_id_fips"]

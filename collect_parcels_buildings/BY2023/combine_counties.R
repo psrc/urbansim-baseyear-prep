@@ -4,7 +4,7 @@
 # This script creates datasets parcels_prelim and buildings_prelim and stores them 
 # in the psrc_2023_parcel_baseyear DB, as well as csv files.
 #
-# Hana Sevcikova, last update 06/10/2024
+# Hana Sevcikova, last update 06/11/2024
 #
 
 library(data.table)
