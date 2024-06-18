@@ -17,7 +17,7 @@ misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings, building_type_crosstab
-write.result <- TRUE
+write.result <- FALSE
 
 if(write.result) source("mysql_connection.R")
 
@@ -402,3 +402,35 @@ if(write.result){
     dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
+
+## Output on 2024/6/17
+##############################
+# Processing Kitsap parcels
+# =========================
+#   
+# Number of duplicates removed from parcels dataset:  1
+# Number of records in parcels that are not available in flatats (records dropped from parcels):  5
+# Number of records in flatats that are not available in updated parcels (records ignored):  49975
+# 710 of those have acres > 0, summing to 3553 acres.
+# Number of records in land that are not available in parcels (records ignored):  8242
+# Number of records in parcels that are not available in land:  408
+# Number of records in main that are not available in parcels (records ignored):  38146
+# Number of records in parcels that are not available in main:  408
+# Incorporated info for  5 fake parcels
+# All land use codes matched.
+# Total: 115191 parcels
+# 
+# Processing Kitsap buildings
+# =========================
+#   
+# Dropped  19350  buildings due to missing parcels.
+# Added  12  fake buidlings.
+# Number of duplicates removed from mobile homes:  137
+# Ignoring 2575 (out of 10164 ) mobile homes with no match to the buildings dataset.
+# Number of missed records in valuation:  0
+# Number of duplicates in valuation:  0
+# Matched 101554 records with building reclass table
+# Unmatched:  0 records.
+# All building use codes matched.
+# Imputed 12625 residential units. Total number of units is 106242 .
+# Total all:  101554 buildings

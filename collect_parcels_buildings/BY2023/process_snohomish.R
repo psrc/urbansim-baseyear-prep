@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/11/2024
+# Hana Sevcikova, last update 06/17/2024
 #
 
 library(data.table)
@@ -20,6 +20,16 @@ write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & 
 if(write.result) source("mysql_connection.R")
 
 set.seed(1234)
+
+############
+# Functions
+############
+fill.zeros <- function(values, l = 14){
+    prefix.length <- l - nchar(values)
+    prefix <- sapply(prefix.length, function(x) if(x == 0) "" else paste(rep(0, x), collapse = ""))
+    return(paste0(prefix, values))
+}
+
 
 ###############
 # Load all data
@@ -396,13 +406,15 @@ buildings_final <- rbind(
     )
 
 buildings_final[, parcel_id_fips := parcel_id]
-buildings_final[parcels_final, `:=`(parcel_id = i.parcel_id), on = "parcel_id_fips"]
+buildings_final[parcels_final, `:=`(parcel_id = i.parcel_id), on = "parcel_id_fips"][
+    , parcel_id_fips := fill.zeros(parcel_id_fips)]
 
 # column order
 setcolorder(buildings_final, c("building_id", "parcel_id", "parcel_id_fips"))
 
-# remove redundant columns from parcels_final
-parcels_final[, `:=`(improvement_value = NULL, total_value = NULL)]
+# remove redundant columns from parcels_final and add leading zeroes to parcel_id_fips
+parcels_final[, `:=`(improvement_value = NULL, total_value = NULL, 
+                     parcel_id_fips = fill.zeros(parcel_id_fips))]
 
 # replace NAs with zeros
 for(col in c("gross_sqft", "year_built", "non_residential_sqft")){
@@ -442,3 +454,34 @@ if(write.result){
     DBI::dbDisconnect(connection)
 }
 
+## Output on 2024/6/17
+##############################
+# Processing Snohomish parcels
+# =========================
+#     
+# Number of base parcels not found in MainData:  28
+# Matched 270678 records with land use reclass table
+# Unmatched:  30 records.
+# The following land use codes were not found:
+#     usecode N
+# 1:         2
+# 
+# Total all: 270708 parcels
+# 
+# Processing Snohomish buildings
+# =========================
+#     
+#     Dropped  453  buildings due to missing parcels.
+# 1439  RVs removed.
+# 
+# Matched 276062 records with building reclass table
+# Unmatched:  9 records.
+# The following building codes were not found:
+#     usecode                    usedesc N
+# 1: STGMAINT Storage - Maintenance Bldg 7
+# 2: TRUCKSTP                 Truck Stop 1
+# 3: BKSTRSCH        Bookstore - Schools 1
+# 
+# Dropped  39  building records representing building floors.
+# Adjustments with costar data yields a change of  -2792 DUs.
+# Total all:  260752 buildings

@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/10/2024
+# Hana Sevcikova, last update 06/17/2024
 #
 
 library(data.table)
@@ -47,6 +47,7 @@ construct_pin_from_major_minor_for_fakes <- function(dt){
     dt[is.na(new_major), new_pin := NA]
     return(dt)
 }
+
 
 ###############
 # Load all data
@@ -421,3 +422,35 @@ if(write.result){
     dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
+
+
+## Output on 2024/6/17
+##############################
+# Processing King parcels
+# =========================
+#     
+#     Incorporated info for  18 fake parcels
+# Matched 621335 records with land use reclass table
+# Unmatched:  0 records.
+# Missing  8776 land use codes due missing parcels in extr_parcel.
+# 109217 records from rpacct were not matched with parcels.
+# 14134 parcel records did not have a record in rpacct.
+# 1227 records from extr_parcel were not matched with base parcels.
+# 8776  base parcel records did not have a record in extr_parcel.
+# Total: 630111 parcels
+# 
+# Processing King buildings
+# =========================
+#     
+#     Number of apartments: 9801
+# Number of condo complexes: 4264
+# Number of commercial buildings: 42638
+# Added  4  fake buidlings.
+# Modified  49  fake buildings.
+# Number of buildings in both tables, apartment and commercial: 11068
+# Number of buildings in both tables, condo and commercial: 1046
+# Number of other residential buildings: 524973
+# 165 buildings removed due to missing parcels.
+# Matched 570890 records with building reclass table
+# Unmatched:  0 records.
+# Total:  570890 buildings

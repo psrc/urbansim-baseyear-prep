@@ -22,14 +22,27 @@ write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & 
 
 if(write.result) source("mysql_connection.R")
 
+############
+# Functions
+############
+fill.zeros <- function(values, l = 10){
+    prefix.length <- l - nchar(values)
+    prefix <- sapply(prefix.length, function(x) if(x == 0) "" else paste(rep(0, x), collapse = ""))
+    return(paste0(prefix, values))
+}
+
+
 ###############
 # Load all data
 ###############
 
 # parcels & tax accounts
-parcels.base <- fread(file.path(data.dir, "parcels23_pie_base.csv"))
-parcels.full <- fread(file.path(data.dir, "tax_parcels.csv")) # file with all attributes
-stacked <- fread(file.path(data.dir, "parcels23_stacked_pins.csv"))
+parcels.base <- fread(file.path(data.dir, "parcels23_pie_base.csv"), 
+                      colClasses = c(parcel_id = "character", taxparceln = "character"))
+parcels.full <- fread(file.path(data.dir, "tax_parcels.csv"),          
+                      colClasses = c(TaxParcelN = "character")) # file with all attributes
+stacked <- fread(file.path(data.dir, "parcels23_stacked_pins.csv"),
+                 colClasses = c(new_parcel_id = "character", taxparceln = "character"))
 tax <- fread(file.path(data.dir, "tax_account.txt"), sep = "|", quote = "") # 
 
 # reclass tables
@@ -41,8 +54,10 @@ raw_buildings <- fread(file.path(data.dir, "improvement_builtas.txt"))
 improvement <- fread(file.path(data.dir, "improvement.txt"))
 
 # Info about fake parcels and buildings (prepared by Mark)
-fake_parcels <- fread(file.path(data.dir, "pierce_fake_parcel_changes.csv"))
-fake_buildings <- fread(file.path(data.dir, "pierce_fake_building_changes.csv"))
+fake_parcels <- fread(file.path(data.dir, "pierce_fake_parcel_changes.csv"), 
+                      colClasses = c(Orig_TaxParcelN = "character", New_TaxParcelN = "character"))
+fake_buildings <- fread(file.path(data.dir, "pierce_fake_building_changes.csv"),
+                        colClasses = c(orig_parcel_number = "character", new_parcel_number = "character"))
 
 ###################
 # Process parcels
@@ -56,20 +71,20 @@ colnames(parcels.full) <- tolower(colnames(parcels.full))
 colnames(fake_parcels) <- tolower(colnames(fake_parcels))
 
 # type change & re-assignment to new parcel ids due to stacked parcels 
-parcels.base[, `:=`(taxparceln = as.character(taxparceln))]
-parcels.full[, `:=`(taxparceln = as.character(taxparceln), taxparceln_old = as.character(taxparceln))]
-stacked[, `:=`(taxparceln = as.character(taxparceln), new_parcel_id = as.character(new_parcel_id))]
+#parcels.base[, `:=`(taxparceln = as.character(taxparceln))]
+#parcels.full[, `:=`(taxparceln = as.character(taxparceln), taxparceln_old = as.character(taxparceln))]
+parcels.full[, `:=`(taxparceln_old = taxparceln)]
+#stacked[, `:=`(taxparceln = as.character(taxparceln), new_parcel_id = as.character(new_parcel_id))]
 parcels.full[stacked, taxparceln := i.new_parcel_id, on = c(taxparceln_old = "taxparceln")]
-fake_parcels[, `:=`(orig_taxparceln = as.character(orig_taxparceln),
-                    new_taxparceln = as.character(new_taxparceln))]
-
+#fake_parcels[, `:=`(orig_taxparceln = as.character(orig_taxparceln),
+#                    new_taxparceln = as.character(new_taxparceln))]
 
 # join fake parcels with the full attribute dataset
-if(nrow((old.fakes <- fake_parcels[!is.na(orig_taxparceln)])) > 0){ # this section is untested since there are no such parcels
+if(nrow((old.fakes <- fake_parcels[!is.na(orig_taxparceln) & orig_taxparceln != ""])) > 0){ # this section is untested since there are no such parcels
     fake_parcels[parcels.full[taxparceln %in% old.fakes[, orig_taxparceln]], 
                  `:=`(land_value = i.land_value * land_proportion,
                       improvemen = i.improvemen * land_proportion,
-                      exemption_ = i.exemption_,
+                      exemption_ = i.exemption_
                       ), 
              on = c(orig_taxparceln = "taxparceln")]
     parcels.full <- parcels.full[! taxparceln %in% unique(old.fakes[, orig_taxparceln])]
@@ -189,6 +204,7 @@ buildings_tmp <- merge(improvement, raw_buildings,
                        by = c("building_id", "parcel_number"),
                        all = TRUE)
 buildings_tmp[, `:=`(parcel_number_orig = as.character(parcel_number))][, parcel_number := NULL]
+buildings_tmp[, `:=`(parcel_number_orig = fill.zeros(buildings_tmp$parcel_number_orig))]
 
 # join with parcels and assign the right taxparceln
 buildings_tmp <- merge(buildings_tmp, stacked, by.x = "parcel_number_orig", by.y = "taxparceln", all.x = TRUE)
@@ -206,8 +222,8 @@ buildings_all <- buildings_tmp[, .(
     by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, taxparceln)]
 
 # add fake buildings
-new_fake_buildings <- fake_buildings[is.na(orig_parcel_number), 
-                                     .(taxparceln = as.character(new_parcel_number), 
+new_fake_buildings <- fake_buildings[is.na(orig_parcel_number) | orig_parcel_number == "", 
+                                     .(taxparceln = fill.zeros(fake_buildings$new_parcel_number), 
                                        primary_occupancy_code = new_primary_occupancy_code,
                                        primary_occupancy_description = new_primary_occupancy_description,
                                        built_as_id = new_primary_occupancy_code,
@@ -369,3 +385,38 @@ if(write.result){
     dbWriteTable(connection, "building_type_crosstab", bt.tab, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
+
+## Output on 2024/6/17
+##############################
+# Processing Pierce parcels
+# =========================
+#     
+#     Incorporated info for  12 fake parcels
+# Number of duplicates removed from Pierce parcels:  0
+# Imputed land value into 0 records.
+# Imputed improvement value into 0 records.
+# Imputed land value into additional 72 records using prior year info.
+# Imputed improvement value into additional 91 records using prior year info.
+# use_code is NA for 32 parcels.
+# All land use codes matched.
+# Total all: 309233 parcels
+# 
+# Processing Pierce buildings
+# =========================
+#     
+#     Added  16  fake buidlings.
+# Dropped 34394 detached garages.
+# Dropped 115 laundromats and clubhouses in residential buildings.
+# Dropped 13167 buildings due to missing representation in the parcels dataset.
+# Matched 285739 records with building reclass table
+# Unmatched:  0 records.
+# All building use codes matched.
+# Due to missing sqft units were not imputed into building with the following occupancy description:
+#     primary_occupancy_description N
+# 1:      Gen Warehouse up to 19,999 SF 1
+# 2: Gen Warehouse 20,000 to 199,999 SF 1
+# 3:                     Condo Low Rise 1
+# 4:                    Condo High Rise 2
+# 5:           Condo Apartment Low Rise 1
+# 
+# Total all:  285739 buildings

@@ -4,12 +4,12 @@
 # This script creates datasets parcels_prelim and buildings_prelim and stores them 
 # in the psrc_2023_parcel_baseyear DB, as well as csv files.
 #
-# Hana Sevcikova, last update 06/11/2024
+# Hana Sevcikova, last update 06/17/2024
 #
 
 library(data.table)
 
-write.result <- TRUE # it will overwrite the existing tables parcels & buildings
+write.result <- FALSE # it will overwrite the existing tables parcels & buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -20,12 +20,13 @@ for(county in c("king", "kitsap", "pierce", "snohomish")){
     pcl <- fread(paste0("urbansim_parcels_", county, ".csv"), 
                  colClasses = c(parcel_id_fips = "character"))
     pcl[, `:=`(land_use_type_id = as.integer(land_use_type_id), gross_sqft = as.numeric(gross_sqft))]
-    parcels <- rbind(parcels, pcl, fill = TRUE)
     
     bld <- fread(paste0("urbansim_buildings_", county, ".csv"), 
                  colClasses = c(parcel_id_fips = "character"))[
                      , `:=`(county_id = pcl[1, county_id], gross_sqft = as.numeric(gross_sqft))]
     if("use_desc" %in% colnames(bld)) bld[, use_desc := NULL]
+    
+    parcels <- rbind(parcels, pcl, fill = TRUE)
     buildings <- rbind(buildings, bld, fill = TRUE)
 }
 
