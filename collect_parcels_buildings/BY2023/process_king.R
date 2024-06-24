@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/17/2024
+# Hana Sevcikova, last update 06/24/2024
 #
 
 library(data.table)
@@ -75,6 +75,9 @@ resbldg <- fread(file.path(data.dir, "EXTR_ResBldg.csv"))
 fake_parcels <- fread(file.path(data.dir, "king_fake_parcel_changes.csv"))
 fake_buildings <- fread(file.path(data.dir, "king_fake_building_changes.csv"))
 
+# info about "tract" parcels to be removed
+parcels_to_remove <- fread(file.path(data.dir, "parcels23_kin_base_unkn_trct.csv"))
+
 ###################
 # Process parcels
 ###################
@@ -85,6 +88,11 @@ cat("\nProcessing King parcels\n=========================\n")
 # make column names lowercase
 colnames(parcels.full) <- tolower(colnames(parcels.full))
 colnames(fake_parcels) <- tolower(colnames(fake_parcels))
+
+# remove "tract" parcels from the base parcels
+npcl <- nrow(parcels.base)
+parcels.base <- parcels.base[!pinfips %in% parcels_to_remove[, pinfips]]
+cat("\nRemoved ", npcl - nrow(parcels.base), " 'tract' parcels from base parcels.")
 
 # fix types
 rpacct[, acctnbr := as.character(acctnbr)]
@@ -424,25 +432,26 @@ if(write.result){
 }
 
 
-## Output on 2024/6/17
+## Output on 2024/6/24
 ##############################
 # Processing King parcels
 # =========================
 #     
-#     Incorporated info for  18 fake parcels
+# Removed  59  'tract' parcels from base parcels.
+# Incorporated info for  18 fake parcels
 # Matched 621335 records with land use reclass table
 # Unmatched:  0 records.
-# Missing  8776 land use codes due missing parcels in extr_parcel.
+# Missing  8717 land use codes due missing parcels in extr_parcel.
 # 109217 records from rpacct were not matched with parcels.
-# 14134 parcel records did not have a record in rpacct.
+# 14075 parcel records did not have a record in rpacct.
 # 1227 records from extr_parcel were not matched with base parcels.
-# 8776  base parcel records did not have a record in extr_parcel.
-# Total: 630111 parcels
+# 8717  base parcel records did not have a record in extr_parcel.
+# Total: 630052 parcels
 # 
 # Processing King buildings
 # =========================
 #     
-#     Number of apartments: 9801
+# Number of apartments: 9801
 # Number of condo complexes: 4264
 # Number of commercial buildings: 42638
 # Added  4  fake buidlings.

@@ -4,12 +4,12 @@
 # This script creates datasets parcels_prelim and buildings_prelim and stores them 
 # in the psrc_2023_parcel_baseyear DB, as well as csv files.
 #
-# Hana Sevcikova, last update 06/17/2024
+# Hana Sevcikova, last update 06/24/2024
 #
 
 library(data.table)
 
-write.result <- FALSE # it will overwrite the existing tables parcels & buildings
+write.result <- TRUE # it will overwrite the existing tables parcels & buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -35,6 +35,12 @@ parcels[, parcel_id := 1:nrow(parcels)]
 buildings[, building_id := 1:nrow(buildings)]
 buildings[parcels, parcel_id := i.parcel_id, on = .(parcel_id_fips, county_id)] 
 
+# for parcels, assign 0 where NAs 
+for(attr in c('land_use_type_id', 'use_code', 'land_value', 'exemption')) {
+    if(attr %in% colnames(parcels))
+        parcels[is.na(parcels[[attr]]), attr] <- 0
+}
+
 fwrite(parcels, file = "parcels_4counties.csv")
 fwrite(buildings, file = "buildings_4counties.csv")
 
@@ -43,7 +49,7 @@ if(write.result){
     db <- "psrc_2023_parcel_baseyear"
     connection <- mysql.connection(db)
     dbWriteTable(connection, "parcels_prelim", parcels, overwrite = TRUE, row.names = FALSE)
-    dbWriteTable(connection, "buildings_prelim", buildings, overwrite = TRUE, row.names = FALSE)
+    #dbWriteTable(connection, "buildings_prelim", buildings, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
 

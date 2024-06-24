@@ -26,7 +26,7 @@ set.seed(1234)
 ############
 fill.zeros <- function(values, l = 14){
     prefix.length <- l - nchar(values)
-    prefix <- sapply(prefix.length, function(x) if(x == 0) "" else paste(rep(0, x), collapse = ""))
+    prefix <- sapply(prefix.length, function(x) if(is.na(x) || x == 0) "" else paste(rep(0, x), collapse = ""))
     return(paste0(prefix, values))
 }
 
@@ -37,27 +37,32 @@ fill.zeros <- function(values, l = 14){
 
 # parcels & MainData 
 parcels.base <- fread(file.path(data.dir, "parcels23_snoh_base.csv")) # contains all parcels
-parcels.full <- fread(file.path(data.dir, "MainData.txt")) # contains all parcels attributes
-stacked <- fread(file.path(data.dir, "parcels23_snoh_stacked_pins.csv"))
+parcels.full <- fread(file.path(data.dir, "MainData.txt"), # contains all parcels attributes
+                      colClasses = c(parcel_number = "character"))
+stacked <- fread(file.path(data.dir, "parcels23_snoh_stacked_pins.csv"),
+                 colClasses = c(parcel_id = "character", new_parcel_id = "character"))
 
 # exemptions
-exemptions <- fread(file.path(data.dir, "Exemptions.txt"))
+exemptions <- fread(file.path(data.dir, "Exemptions.txt"), colClasses = c(parcel_number = "character"))
 
 # reclass tables
 lu_reclass <- fread(file.path(misc.data.dir, "land_use_generic_reclass_2023.csv"))
 bt_reclass <- fread(file.path(misc.data.dir, "building_use_generic_reclass_2023.csv"))
 
 # buildings
-raw_buildings <- fread(file.path(data.dir, "improvement.txt"))
+raw_buildings <- fread(file.path(data.dir, "improvement.txt"), 
+                       colClasses = c(PIN = "character"))
 
 # RVs to remove
-rvs <- fread(file.path(data.dir, "snoh_rv_units.csv"))
+rvs <- fread(file.path(data.dir, "snoh_rv_units.csv"), 
+             colClasses = c(pin23 = "character", pin23_orig = "character"))
 
 # PUD data
-pud <- fread(file.path(data.dir, "pud_points_joined.csv"))
+pud <- fread(file.path(data.dir, "pud_points_joined.csv"), colClasses = c(PARCEL_ID = "character"))
 
 # CoStar data
-costar.all <- fread(file.path(data.dir, "CostarExport_Snoh_MF_subset.csv"))
+costar.all <- fread(file.path(data.dir, "CostarExport_Snoh_MF_subset.csv"),
+                    colClasses = c(Parcel_Min = "character", Parcel_Max = "character"))
 
 # Info about fake parcels and buildings (prepared by Mark)
 # (not needed as it was solved via stacked parcels)
@@ -74,23 +79,24 @@ cat("\nProcessing Snohomish parcels\n=========================\n")
 # make column names lowercase
 colnames(parcels.full) <- tolower(colnames(parcels.full))
 
-# remove parcel_id = 1
-parcels.base <- parcels.base[parcelid > 1]
-stacked <- stacked[new_parcel_id > 1]
+# fill stacked parcels with leading zero
+#stacked[!grepl("uni$", parcel_id), parcel_id := fill.zeros(parcel_id)]
+#stacked[!grepl("uni$", new_parcel_id), new_parcel_id := fill.zeros(new_parcel_id)]
 
 # type change & creating new id column from the Snohomish-specific id
 parcels.base[, `:=`(parcel_id = as.character(parcelid))]
-stacked[, `:=`(parcel_id = as.character(parcel_id), new_parcel_id = as.character(new_parcel_id))]
 parcels.full[, `:=`(parcel_number = as.character(parcel_number), parcel_id = as.character(parcel_number))]
 
 # join with stacked parcels
+cat("\nNumber of stacked parcels matched: ", nrow(stacked[new_parcel_id %in% parcels.base[, parcel_id]]),
+    " out of ", nrow(stacked))
 parcels.full[stacked, parcel_id := i.new_parcel_id, on = c(parcel_number = "parcel_id")]
 
 # base parcels that are not in parcels.full (should be zero!)
 cat("\nNumber of base parcels not found in MainData: ", nrow(parcels.base[! parcel_id %in% parcels.full[, parcel_id]]))
 
 # get exemption info
-parcels.full[, exemption := parcel_number %in% exemptions[, as.character(parcel_number)]]
+parcels.full[, exemption := parcel_number %in% exemptions[, parcel_number]]
              
 # assign land use code of the base parcel
 parcels.full[, is_base := parcel_id == parcel_number]
@@ -107,6 +113,9 @@ parcels.base[unique(parcels.full[, .(parcel_id, base_usecode)]),
 parcels.base[lu_reclass[county_id == county.id], `:=`(
     land_use_type_id = i.land_use_type_id, county_use_code = i.county_land_use_code),
              on = c(usecode = "county_land_use_description")]
+
+# assign no code id to "exploded" parcels
+parcels.base[is.na(land_use_type_id) & grepl("uni$", parcel_id), land_use_type_id := 17]
 
 cat("\nMatched", nrow(parcels.base[!is.na(land_use_type_id)]), "records with land use reclass table")
 cat("\nUnmatched: ", nrow(parcels.base[is.na(land_use_type_id)]), "records.")
@@ -154,6 +163,9 @@ colnames(raw_buildings) <- tolower(colnames(raw_buildings))
 colnames(pud) <- tolower(colnames(pud))
 colnames(costar.all) <- tolower(colnames(costar.all))
 
+# fill parcel id with leading zeros
+raw_buildings[!grepl("uni$", pin), pin := fill.zeros(pin)]
+
 buildings_tmp <- raw_buildings[, .(building_id = 1:nrow(raw_buildings),
                                     parcel_number_orig = as.character(pin), 
                                     imprtype, usecode, usedesc,
@@ -185,7 +197,7 @@ prep_buildings[, `:=`(improvement_value = round(sqft_tmp/total_sqft * total_impr
 
 # remove RVs in three areas: Port Susan, Gold Bar, Lake Connor
 nbld <- nrow(prep_buildings)
-prep_buildings <- prep_buildings[! parcel_number_orig %in% rvs[, as.character(pin23_orig)]]
+prep_buildings <- prep_buildings[! parcel_number_orig %in% rvs[, fill.zeros(pin23_orig)]]
 cat("\n", nbld - nrow(prep_buildings), " RVs removed.\n")
                
 # As there are no mobile homes in the reclass table,
@@ -195,14 +207,14 @@ prep_buildings[land_use_type_id == 13 &
                building_type_id := 11]
 
 # join with PUD data
-pud[, parcel_id := as.character(parcel_id)]
+pud[, parcel_id := fill.zeros(parcel_id)]
 prep_buildings[pud[, .(units = sum(first_count_address)), by = "parcel_id"], 
                pud_units := i.units, on = "parcel_id"]
 
 # join with costar data
-costar.all[, parcel_id := as.character(parcel_min)]
-costar <- costar.all[building_type %in% c("", "Apartments") & parcel_id == as.character(parcel_max)]
-costar[, ave_sqft_per_unit := as.numeric(gsub(",", "", ave_sqft_per_unit))]
+costar.all[, parcel_id := parcel_min]
+costar <- costar.all[building_type %in% c("", "Apartments") & parcel_id == parcel_max]
+costar[, ave_sqft_per_unit := as.numeric(gsub(",", "", ave_sqft_per_unit))][, parcel_id := fill.zeros(parcel_id)]
 costar.dusize <- costar[, .(ave_sqft_per_unit = mean(ave_sqft_per_unit, na.rm = TRUE),
                             ave_sqft_per_unit_comp = sum(sqft, na.rm = TRUE)/sum(number_units, na.rm = TRUE)),
                         by = "parcel_id"]
@@ -454,34 +466,35 @@ if(write.result){
     DBI::dbDisconnect(connection)
 }
 
-## Output on 2024/6/17
+## Output on 2024/6/24
 ##############################
 # Processing Snohomish parcels
 # =========================
 #     
-# Number of base parcels not found in MainData:  28
-# Matched 270678 records with land use reclass table
+# Number of stacked parcels matched:  37449  out of  37449
+# Number of base parcels not found in MainData:  4772
+# Matched 275422 records with land use reclass table
 # Unmatched:  30 records.
 # The following land use codes were not found:
 #     usecode N
 # 1:         2
 # 
-# Total all: 270708 parcels
+# Total all: 275452 parcels
 # 
 # Processing Snohomish buildings
 # =========================
 #     
-#     Dropped  453  buildings due to missing parcels.
+# Dropped  416  buildings due to missing parcels.
 # 1439  RVs removed.
 # 
-# Matched 276062 records with building reclass table
+# Matched 276099 records with building reclass table
 # Unmatched:  9 records.
 # The following building codes were not found:
 #     usecode                    usedesc N
 # 1: STGMAINT Storage - Maintenance Bldg 7
-# 2: TRUCKSTP                 Truck Stop 1
-# 3: BKSTRSCH        Bookstore - Schools 1
+# 2: BKSTRSCH        Bookstore - Schools 1
+# 3: TRUCKSTP                 Truck Stop 1
 # 
 # Dropped  39  building records representing building floors.
 # Adjustments with costar data yields a change of  -2792 DUs.
-# Total all:  260752 buildings
+# Total all:  260789 buildings
