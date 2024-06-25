@@ -1,7 +1,7 @@
 ---
 title: "Imputation of Building Attributes"
 author: "Hana Sevcikova"
-date: "06/24/2024"
+date: "06/25/2024"
 output: pdf_document
 ---
 
@@ -405,6 +405,8 @@ for(attr in c('building_type_id', 'gross_sqft', 'improvement_value', 'land_use_t
 	if(attr %in% colnames(bld))
 		bld[bld[[attr]]==0, attr] <- NA
 }
+#bld[, .N, by = "year_built"][order(year_built)] # check values of year_built
+bld[(year_built < 1800) | (year_built > 2023), year_built := NA]
 
 is.res <- bld$building_type_id %in% residential.bts
 is.nonres <- !is.res & !bld$building_type_id %in% c(2, 5, 6, 7, 9, 18) # exclude group quaters and government
@@ -420,6 +422,7 @@ bld[nounits &  is.na(bld$building_type_id), `:=`(residential_units = NA, non_res
     * residential_units in records in residential and mix-use buildings with zero residential_units (`r sum(is.na(bld$residential_units))`)
     * non_residential_sqft in records in non-residential and mix-use buildings (excluding group quarters and governmental buildings) with zero non_residential_sqft (`r format(sum(is.na(bld$non_residential_sqft)), big.mark = ",")`)
     * attributes 'building_type_id', 'gross_sqft', 'improvement_value', 'land_use_type_id', 'parcel_sqft', 'stories', 'year_built', 'land_value', 'sqft_per_unit' that equal to 0.
+    * attribute 'year_built' that is smaller than 1800 and larger than 2023.
     * attribute sqft_per_unit in residential records where sqft_per_unit is 1.
 
 ```{r, echo=FALSE}
