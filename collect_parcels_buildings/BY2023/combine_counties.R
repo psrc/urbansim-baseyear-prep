@@ -49,7 +49,7 @@ if(write.result){
     db <- "psrc_2023_parcel_baseyear"
     connection <- mysql.connection(db)
     dbWriteTable(connection, "parcels_prelim", parcels, overwrite = TRUE, row.names = FALSE)
-    #dbWriteTable(connection, "buildings_prelim", buildings, overwrite = TRUE, row.names = FALSE)
+    dbWriteTable(connection, "buildings_prelim", buildings, overwrite = TRUE, row.names = FALSE)
     DBI::dbDisconnect(connection)
 }
 

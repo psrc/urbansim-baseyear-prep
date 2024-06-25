@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/17/2024
+# Hana Sevcikova, last update 06/25/2024
 #
 
 library(data.table)
@@ -78,10 +78,6 @@ cat("\nProcessing Snohomish parcels\n=========================\n")
 
 # make column names lowercase
 colnames(parcels.full) <- tolower(colnames(parcels.full))
-
-# fill stacked parcels with leading zero
-#stacked[!grepl("uni$", parcel_id), parcel_id := fill.zeros(parcel_id)]
-#stacked[!grepl("uni$", new_parcel_id), new_parcel_id := fill.zeros(new_parcel_id)]
 
 # type change & creating new id column from the Snohomish-specific id
 parcels.base[, `:=`(parcel_id = as.character(parcelid))]
@@ -425,8 +421,8 @@ buildings_final[parcels_final, `:=`(parcel_id = i.parcel_id), on = "parcel_id_fi
 setcolorder(buildings_final, c("building_id", "parcel_id", "parcel_id_fips"))
 
 # remove redundant columns from parcels_final and add leading zeroes to parcel_id_fips
-parcels_final[, `:=`(improvement_value = NULL, total_value = NULL, 
-                     parcel_id_fips = fill.zeros(parcel_id_fips))]
+parcels_final[, `:=`(improvement_value = NULL, total_value = NULL)][!grepl("uni$", parcel_id_fips), 
+                     parcel_id_fips := fill.zeros(parcel_id_fips)]
 
 # replace NAs with zeros
 for(col in c("gross_sqft", "year_built", "non_residential_sqft")){
