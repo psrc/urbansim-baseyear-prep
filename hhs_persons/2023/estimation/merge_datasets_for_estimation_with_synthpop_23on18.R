@@ -7,7 +7,7 @@
 # (files 1_household.csv, 2_person.csv)
 #
 # Hana Sevcikova, PSRC
-# 06/25/2024
+# 04/09/2024
 
 library(data.table)
 library(magrittr)
@@ -18,17 +18,14 @@ output.dir.est <- "output"
 syntpop.dir <- "../output"
 if(!file.exists(output.dir.est)) dir.create(output.dir.est)
 
-imputation.dir <- "../../../imputation/data2023" # where is the latest imputed data and BG info
-
 set.seed(123)
-bld <- fread(file.path(imputation.dir, "buildings_imputed_phase3_lodes_20240625.csv")) # latest buildings dataset
-pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
-hhs.rawsurvey <- fread(file.path("surveydata", "1_household.csv")) 
-pers.rawsurvey <- fread(file.path("surveydata", "2_person.csv"))
+bld <- fread("../../../imputation/data2023on18/buildings_imputed_phase3_lodes_20240305.csv") # latest buildings dataset
+pcl18 <- fread("../../../imputation/data2023on18/ref2018/parcels.csv") # 2018 parcels
+hhs.rawsurvey <- fread(file.path("surveydata", "raw", "1_household.csv")) 
+pers.rawsurvey <- fread(file.path("surveydata", "raw", "2_person.csv"))
 hhs <- fread(file.path(syntpop.dir, "households_v1.csv")) # non-parcelized synthetic households
 pers <- fread(file.path(syntpop.dir, "persons_v1.csv")) # synthetic set of persons
-bs <- fread(file.path(imputation.dir, "census_blocks.csv"))
-bgs <- fread(file.path(imputation.dir, "census_block_groups.csv"))
+bgs <- fread("../../../imputation/data2023on18/census_2020_block_groups.csv")
 
 # remove the column types from names (if not present, skip these two lines)
 colnames(hhs) <- substr(colnames(hhs), 1, nchar(colnames(hhs))-3)
@@ -91,25 +88,17 @@ for(i in 1:nrow(hhbld2)) {
 }
 hhsest[is.na(building_id), building_id := -1]
 
-# add census_block_group_id to parcels
-if(!"census_block_group_id" %in% colnames(pcl))
-    pcl[bs, census_block_group_id := i.census_block_group_id, on = "census_block_id"]
 
 # identify households similar to the records in the survey within their respective census block groups
 # assign block group
-hhsest[pcl, census_block_group_id := i.census_block_group_id, on = "parcel_id"]
+hhsest[pcl18, census_2020_block_group_id := i.census_2020_block_group_id, on = "parcel_id"]
 
 # iterate over hhs
 selected <- rep(FALSE, nrow(hhs))
-bgskipped <- c()
 cat("\n")
 for (i in 1:nrow(hhsest)) {
     cat("\rProcessing ", round(i/nrow(hhsest)*100), "%")
-    hhbg <- hhs[census_block_group_id == hhsest[i, census_block_group_id] & !selected]
-    if(nrow(hhbg) == 0) {
-        bgskipped <- c(bgskipped, hhsest[i, census_block_group_id])
-        next
-    }
+    hhbg <- hhs[census_2020_block_group_id == hhsest[i, census_2020_block_group_id] & !selected]
     # First, match by HH size
     hhsel <- hhbg[persons == hhsest[i, persons]]
     if(nrow(hhsel) == 0 && hhsest[i, persons] > 6){
@@ -140,9 +129,6 @@ for (i in 1:nrow(hhsest)) {
 }
 cat("\n")
 
-if(length(bgskipped) > 0)
-    warning("Skipped BGs ", paste(bgskipped, collapse = ", "), " due to no households in these BGs.")
-
 # # create a dataset of survey persons to be replaced in the synthetic dataset
 # # race-related attributes
 # for(r in c("race_afam", "race_aiak", "race_asian", "race_hapi", "race_hisp", 
@@ -158,7 +144,7 @@ persest <- pers.rawsurvey[, .(id = id, hhno = hhno, member_id = pno,
                                #relate = relationship, 
                               relate = -1,
                                age_cat = pagey,
-                               sex = ifelse(pgend %in% c(1,2), pgend, -1), 
+                               sex = pgend, 
                                earnings = as.integer(0), 
                                employment_status = fcase(employment %in% c(
                                    "Employed full time (35+ hours/week, paid)", "Self-employed"), 1, 
@@ -177,7 +163,7 @@ persest <- pers.rawsurvey[, .(id = id, hhno = hhno, member_id = pno,
                                #edu = education, 
                               edu = -1,
                               hours = hours_work_value,
-                               race_id = ifelse(is.na(prace), -1, prace)
+                               race_id = prace
                                   # fcase(nrace < 2 &  race_white == 1 & race_hisp == 0, 1,
                                   #           nrace < 2 &  race_afam == 1 & race_hisp == 0, 2,
                                   #           nrace < 2 &  race_asian == 1 & race_hisp == 0, 3,
@@ -256,8 +242,7 @@ if(length(to.remove) == nrow(persest)){
 
 persest[hhsest, household_id := i.household_id, on = .(hhno)]
 
-hhsest2 <- hhsest[!is.na(household_id)]
-hhsest2 <- merge(hhsest2, bgs[, .(census_block_group_id, census_tract_id, county_id)], by = "census_block_group_id")
+hhsest2 <- merge(hhsest, bgs[, .(census_2020_block_group_id, census_2020_tract_id)], by = "census_2020_block_group_id")
 
 # put datasets together
 hhsest2 <- hhsest2[, intersect(colnames(hhs), colnames(hhsest2)), with = FALSE]
@@ -266,15 +251,16 @@ households <- rbind(households, hhsest2, fill = TRUE)
 households <- households[order(household_id)]
 households[is.na(puma), puma := -1]
 
-persest2 <- persest[!is.na(household_id)][, `:=`(hhno = NULL)]
-persest2 <- persest2[, intersect(colnames(pers), colnames(persest2)), with = FALSE]
+persest2 <- copy(persest)[, `:=`(hhno = NULL)]
+persest2 <- persest[, intersect(colnames(pers), colnames(persest2)), with = FALSE]
 persons <- pers[!person_id %in% to.remove]
 persons <- rbind(persons, persest2, fill = TRUE)
 persons <- persons[order(person_id)]
 persons[is.na(grade), grade := -1]
 
 # append column types for Opus	
-attr.types <- list()
+attr.types <- list(#pums_serialno="S13", census_2010_block_group_id="S12"
+                    )
 # default is integer
 colnames(households)[!colnames(households) %in% names(attr.types)] %<>% paste("i4", sep=":")
 colnames(persons)[!colnames(persons) %in% names(attr.types)] %<>% paste("i4", sep=":")

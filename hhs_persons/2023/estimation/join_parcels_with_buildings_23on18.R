@@ -3,13 +3,13 @@
 # It's used for filtering parcels when assigning locations of agents in HH travel survey 
 # (such as residence, work, school) to parcels.
 # Hana Sevcikova, PSRC
-# June 2024
+# February 2023
 
 library(data.table)
 setwd("~/psrc/urbansim-baseyear-prep/hhs_persons/2023/estimation")
 
-bld <- fread("../../../imputation/data2023/buildings_imputed_phase3_lodes_20240625.csv") # latest buildings table
-pcl <- fread("../../../imputation/data2023/parcels_prelim.csv") # parcels with attributes "parcel_id", "x_coord_sp", "y_coord_sp"
+bld <- fread("../../../imputation/data2023/buildings_imputed_phase3_lodes_20240226.csv") # latest buildings table
+pcl <- fread("../../../imputation/data2023/ref2018/parcels.csv") # parcels with attributes "parcel_id", "x_coord_sp", "y_coord_sp"
 
 pbld <- bld[, .(residential_units = sum(residential_units), number_of_buildings = .N), by = .(parcel_id)]
 

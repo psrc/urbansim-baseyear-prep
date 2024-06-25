@@ -32,7 +32,7 @@ if(!"census_block_group_id" %in% colnames(pcl))
         on = "census_block_id"]
 if(!"census_block_group_id" %in% colnames(bld))
     bld[pcl, census_block_group_id := i.census_block_group_id, on = "parcel_id"]
-
+stop("")
 # load qcew jobs data
 jobs <- fread(file.path(data.dir, "blockgroup_public_employers.csv"))
 setnames(jobs, "blockgroup_geoid", "census_2020_block_group_id")

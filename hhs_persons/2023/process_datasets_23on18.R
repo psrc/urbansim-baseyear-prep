@@ -20,7 +20,7 @@ hhs.seed <- fread('synthpop/seed_households.csv')
 pers.seed <- fread('synthpop/seed_persons.csv')
 
 # load Xwalk table of block groups
-bgs <- fread("../../imputation/data2023/census_block_groups.csv")
+bgs <- fread("../../imputation/data2023on18/census_2020_block_groups.csv")
 
 # where should results be stored
 output.dir <- "output"
@@ -39,12 +39,19 @@ colnames(pers.seed) %<>% tolower
 pers[, person_id := 1:nrow(pers)]
 
 # select the relevant variables for households
-households <- hhs[, .(household_id, puma, census_2020_block_group_id = block_group_id, tenure=ten, 
+households <- hhs[, .(household_id, puma, census_2020_block_group_geoid = block_group_id, tenure=ten, 
                       income=as.integer(hincp), building_id=-1)] 
 
 # join with block group ids and keep only the urbansim BG id
-households <- merge(households, bgs, by = "census_2020_block_group_id")[, census_2020_block_group_id := NULL]
+households <- merge(households, bgs, by = "census_2020_block_group_geoid")[, census_2020_block_group_geoid := NULL]
 
+# since we have a few fake parcels in JBLM that might not match the OFM BGs, we put the households into those BGs
+swaps <- list("530530729072" = "530530729073", "530530729082" = "530530729083")
+for(swapbg in names(swaps)){
+    bg1 <- bgs[census_2020_block_group_geoid == swapbg, census_2020_block_group_id]
+    bg2 <- bgs[census_2020_block_group_geoid == swaps[[swapbg]], census_2020_block_group_id]
+    households[census_2020_block_group_id == bg1, census_2020_block_group_id := bg2]
+}
 
 # get some aggregates from persons table needed in the households table
 households %<>% merge(pers[,list(persons = .N, 
@@ -79,7 +86,7 @@ hhs.fin <- copy(households)
 pers.fin <- copy(persons)
 
 # append column types for Opus	
-attr.types <- list() # for the purpose of having attributes of different type than integer
+attr.types <- list(census_2020_block_group_geoid="S12") # not used as this column was deleted
 # default is integer
 colnames(households)[!colnames(households) %in% names(attr.types)] %<>% paste("i4", sep=":")
 colnames(persons)[!colnames(persons) %in% names(attr.types)] %<>% paste("i4", sep=":")
