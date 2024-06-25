@@ -1,7 +1,7 @@
 ---
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
-date: "6/17/2024"
+date: "6/25/2024"
 output: pdf_document
 ---
 
@@ -38,7 +38,7 @@ The output is written into imputation/data2023/buildings_imputed_phase2_ofm_{dat
 Set the name of the buildings file and the household synthesizer file:
 
 ```{r, echo=TRUE}
-bld.file.name <- "buildings_imputed_phase1_20240611.csv"
+bld.file.name <- "buildings_imputed_phase1_20240624.csv"
 adjust.to.synthpop <- FALSE
 synth.file.name <- "summary_adjusted_urbansim_bg_id.csv" # used only if adjust.to.synthpop is TRUE
 ```
@@ -166,11 +166,12 @@ bld.imp[, residential_units1 := residential_units]
 bld <- copy(bld.imp)
 ```
 
-#### Imputing SF into JBLM 
+#### Imputing MF into JBLM 
 
 ```{r, echo=FALSE}
 # add SF buildings into JBLM (this step has been missed in the previous county-level steps)
-fake.data.dir <- "~/psrc/urbansim-baseyear-prep/collect_parcels_buildings/BY2023/Pierce_data"
+#fake.data.dir <- "~/J/UrbanSIM\\ Data/Projects/2023_Baseyear/Assessor/Extracts/Pierce/Urbansim_Processing"
+fake.data.dir <- "~/psrc/urbansim-baseyear-prep/collect_parcels_buildings/BY2023/Pierce_data" # Hana's local path
 fake.pierce.parcels <- fread(file.path(fake.data.dir, "pierce_fake_parcel_changes.csv"),
                              colClasses = c(New_TaxParcelN = "character"))
 jblm.pcl.id <- fake.pierce.parcels$New_TaxParcelN
@@ -191,7 +192,7 @@ for (attr in colnames(bld))
    bld[is.na(bld[[attr]]), attr] <- if(is.character(bld[[attr]])) "" else 0
 ```
 
-Imputed 1 SF building into each of the fake `r nrow(new)` JBLM parcels.
+Imputed 1 MF building into each of the fake `r nrow(new)` JBLM parcels.
 
 #### Assessing differences
 
@@ -377,7 +378,6 @@ if(nrow(s) > 0) {
     * **Result:** `r imputed.du - last.imputed.du` units imputed into `r imputed.bld-last.imputed.bld` buildings.
     
 ```{r, echo=FALSE}
-bld[parcel_id_fips %in% jblm.pcl.id, sum(residential_units), by = "census_block_group_id"]
 # 0 residential buildings (only non-residential type)
 last.imputed.du <- imputed.du
 last.imputed.bld <- imputed.bld
