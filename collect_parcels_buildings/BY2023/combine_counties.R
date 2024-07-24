@@ -4,12 +4,12 @@
 # This script creates datasets parcels_prelim and buildings_prelim and stores them 
 # in the psrc_2023_parcel_baseyear DB, as well as csv files.
 #
-# Hana Sevcikova, last update 06/24/2024
+# Hana Sevcikova, last update 07/24/2024
 #
 
 library(data.table)
 
-write.result <- TRUE # it will overwrite the existing tables parcels & buildings
+write.result <- FALSE # it will overwrite the existing tables parcels & buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -41,11 +41,10 @@ for(attr in c('land_use_type_id', 'use_code', 'land_value', 'exemption')) {
         parcels[is.na(parcels[[attr]]), attr] <- 0
 }
 
-fwrite(parcels, file = "parcels_4counties.csv")
-fwrite(buildings, file = "buildings_4counties.csv")
-
 
 if(write.result){
+    fwrite(parcels, file = "parcels_4counties.csv")
+    fwrite(buildings, file = "buildings_4counties.csv")
     db <- "psrc_2023_parcel_baseyear"
     connection <- mysql.connection(db)
     dbWriteTable(connection, "parcels_prelim", parcels, overwrite = TRUE, row.names = FALSE)

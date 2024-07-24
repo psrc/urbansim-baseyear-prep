@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/03/2024
+# Hana Sevcikova, last update 07/24/2024
 #
 
 library(data.table)
@@ -371,6 +371,7 @@ buildings_final <- prep_buildings_in_pcl[, .(building_id = id, parcel_id,
                                              building_type_id, improvement_value, stories, 
                                              land_area = round(total_sqft/stories), 
                                              non_residential_sqft = ifelse(residential_units > 0, 0, total_sqft),
+                                             sqft_per_unit = ifelse(residential_units == 0, 1, ceiling(total_sqft/residential_units)),
                                              use_code = paste(bldg_typ, improv_typ, sep = ";"), 
                                              use_desc)]
 

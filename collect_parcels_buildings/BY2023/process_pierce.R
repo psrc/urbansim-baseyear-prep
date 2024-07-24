@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/10/2024
+# Hana Sevcikova, last update 07/24/2024
 #
 
 library(data.table)
@@ -18,7 +18,7 @@ misc.data.dir <- "data" # path to the BY2023/data folder
 # write into mysql as well as csv; 
 # it will overwrite the existing mysql tables 
 # urbansim_parcels, urbansim_buildings urbansim_parcels_all, urbansim_buildings_all
-write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
+write.result <- FALSE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -228,7 +228,7 @@ new_fake_buildings <- fake_buildings[is.na(orig_parcel_number) | orig_parcel_num
                                        primary_occupancy_description = new_primary_occupancy_description,
                                        built_as_id = new_primary_occupancy_code,
                                        built_as_description = new_primary_occupancy_description,
-                                       square_feet = new_square_feet,
+                                       sqft = new_square_feet,
                                         year_built = NA)]
 
 nbld <- nrow(buildings_all)
@@ -303,7 +303,8 @@ index_residential <- with(prep_buildings, building_type_id %in% c(4, 11, 12, 19)
 prep_buildings[!index_residential, units := 0]
 
 # set non_residential_sqft
-prep_buildings[, non_residential_sqft := square_feet][index_residential, non_residential_sqft := 0]
+prep_buildings[, non_residential_sqft := sqft][index_residential, non_residential_sqft := 0]
+prep_buildings[!index_residential, sqft_per_unit := 1]
 
 # Impute units where residential & units is 0
 # SF & mobile homes
@@ -358,7 +359,8 @@ prep_buildings[parcels_final, parcel_id := i.parcel_id, on = c(taxparceln = "par
 # assemble columns for final buildings table
 buildings_final <- prep_buildings[, .(
     building_id = 1:nrow(prep_buildings), 
-    parcel_id, parcel_id_fips = taxparceln, gross_sqft = sqft, sqft_per_unit = ceiling(sqft/units),
+    parcel_id, parcel_id_fips = taxparceln, gross_sqft = sqft, 
+    sqft_per_unit = ifelse(is.na(sqft_per_unit), ceiling(sqft/units), sqft_per_unit),
     year_built, residential_units = units, non_residential_sqft, stories, improvement_value, 
     land_area = round(sqft/stories),
     use_code = primary_occupancy_code, building_type_id
