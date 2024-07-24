@@ -1,7 +1,7 @@
 # Script to re-classify non-home-based jobs into home-based
 # based on given geography x sector distribution using the HHTS 2023
 # Hana Sevcikova, PSRC
-# July 23, 2024
+# July 24, 2024
 
 setwd("~/psrc/urbansim-baseyear-prep/lodes")
 
@@ -53,14 +53,14 @@ hb.distr[FazDistrXwalk, district_id := i.district_id, on = geo.lookup.id]
 # prepare seed distribution for IPF
 seed.distr <- hb.distr[, .(seed_jobs = sum(home_based_jobs)), by = c("sector_id", aggr.geo.lookup.id)]
 seed.tbl <- dcast(seed.distr, district_id ~ sector_id, value.var = "seed_jobs")
-seed.tbl[, `13` := 1]
+#seed.tbl[, `13` := 1]
 
 seed.tbl.df <- data.frame(seed.tbl[, -1, with = FALSE])
 colnames(seed.tbl.df) <- colnames(seed.tbl)[-1]
 rownames(seed.tbl.df) <- seed.tbl$district_id
 
-sector.targets[sector_id == 13, HHTS23_Sector_Targets := sum(distr.targets$HHTS23_District_Targets) - sum(sector.targets$HHTS23_Sector_Targets)]
-targets <- list(sector.targets$HHTS23_Sector_Targets, distr.targets$HHTS23_District_Targets)
+targets <- list(round(sector.targets[sector_id < 13]$HHTS23_Sector_Targets), 
+                round(distr.targets$HHTS23_District_Targets))
 
 # generate join distribution of district x sector
 join.distr <- Ipfp(seed.tbl.df, list(2, 1), targets)$x.hat
@@ -87,7 +87,9 @@ nhb.jobs <- nhb.jobs[, c(colnames.wrk, aggr.geo.lookup.id, geo.lookup.id), with 
 marg <- nhb.jobs[, .N, by = .(home_based_status, sector_id)]
 marg[, tot := sum(N), by = "sector_id"]
 marg[, perc := N/tot * 100]
-marg[home_based_status == 1, sum(N)/sum(tot) * 100]
+cat("\nPercent home based jobs: ")
+cat(marg[home_based_status == 0, (1 - sum(N)/sum(tot)) * 100])
+cat("\n")
 
 setorder(marg, "home_based_status", "sector_id")
 nhb.jobs[, .N, by = home_based_status]
