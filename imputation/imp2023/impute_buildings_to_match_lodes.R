@@ -17,16 +17,18 @@ publutypes <- c(2, 7, 9, 11, 23)
 schlutypes <- 23
 
 # load buildings
-bld.file.name <- "buildings_imputed_phase2_ofm_20240625.csv"
+bld.file.name <- "buildings_imputed_phase2_ofm_20240724.csv"
 data.year <- 2023 # data files will be taken from "../data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
 bld <- fread(file.path(data.dir, bld.file.name))
-pcl <- fread(file.path(data.dir, 'parcels_prelim.csv'))
+#pcl <- fread(file.path(data.dir, 'parcels_prelim.csv'))
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
 
 # add census_block_group_id to parcels and buildings
 cb <- fread(file.path(data.dir, "census_blocks.csv"))
-cbg <- fread(file.path(data.dir, "census_block_groups.csv"))
+cbg <- fread(file.path(data.dir, "census_block_groups.csv"), 
+             colClasses = c(census_2020_block_group_id = "character"))
 if(!"census_block_group_id" %in% colnames(pcl))
     pcl[cb, census_block_group_id := i.census_block_group_id, 
         on = "census_block_id"]
@@ -34,8 +36,9 @@ if(!"census_block_group_id" %in% colnames(bld))
     bld[pcl, census_block_group_id := i.census_block_group_id, on = "parcel_id"]
 
 # load qcew jobs data
-jobs <- fread(file.path(data.dir, "blockgroup_public_employers.csv"))
-setnames(jobs, "blockgroup_geoid", "census_2020_block_group_id")
+jobs <- fread(file.path(data.dir, "blockgroup_public_employers_2023.csv"), colClasses = c(blockgroup_geoid = "character"))
+#jobs <- fread(file.path("~/psrc/urbansim-baseyear-prep/imputation/data2023on18", "blockgroup_public_employers.csv"), colClasses = c(blockgroup_geoid = "character"))
+jobs[, census_2020_block_group_id := as.character(blockgroup_geoid)][, blockgroup_geoid := NULL]
 setnames(jobs, "industry_id", "sector_id")
 
 jobs[cbg, census_block_group_id := i.census_block_group_id, on = "census_2020_block_group_id"]
@@ -50,12 +53,13 @@ bgjobs[is.na(Nedu), Nedu := 0]
 bgjobs[, Npriv := number_of_jobs - Npub] 
 
 # load Lodes data
-lodes.file.name <- "Lodes23adj20240206.csv"
-ljobs <- fread(file.path("../../lodes", lodes.file.name))
+lodes.file.name <- "Lodes23adj20240220.csv"
+ljobs <- fread(file.path("../../lodes", lodes.file.name), 
+               colClasses = c(census_2020_block_group_geoid = "character"))
 
 # update BGs
-ljobs[, census_block_group_id := NULL]
-ljobs[cbg, census_block_group_id := i.census_block_group_id, on = "census_2020_block_group_id"]
+#ljobs[, census_block_group_id := NULL]
+ljobs[cbg, census_block_group_id := i.census_block_group_id, on = c(census_2020_block_group_geoid = "census_2020_block_group_id")]
 
 # get number of jobs of public types by BGs
 lbgjobs <- ljobs[, .(number_of_jobs = sum(number_of_jobs)), by = .(census_block_group_id)]
