@@ -8,11 +8,12 @@ redistribute.negatives <- TRUE
 adjust.by.qcew <- TRUE
 
 data.dir <- "data"
+data23.dir <- "data2023"
 
 lodes.input.file <- file.path(data.dir, 'adjlodes_2023_bg.csv') # 2022 LODES adjusted to 2023 
 lodes <- fread(lodes.input.file, colClasses=c("numeric", "character", "numeric", "numeric")) # set block group to character and county to numeric
 
-lodes.output.file <- file.path(data.dir, paste0('Lodes23adj', format(Sys.Date(), "%Y%m%d"), '.csv'))
+lodes.output.file <- file.path(data23.dir, paste0('Lodes23adj', format(Sys.Date(), "%Y%m%d"), '.csv'))
 
 set.seed(12345)
 
@@ -87,20 +88,19 @@ if(adjust.by.qcew){
     adjutment.threshold <- 0.1 # determines which records should be adjusted
     lodesadj <- copy(lodes)
     # join lodes with US census block group id
-    cbg <- fread(file.path(data.dir, "census_2020_block_groups.csv"), colClasses = c("numeric", "character", "numeric"))
-    lodesadj[cbg, census_2020_block_group_id := i.census_2020_block_group_id, 
-             on = "census_2020_block_group_geoid"]
+    cbg <- fread(file.path(data23.dir, "census_block_groups.csv"), colClasses = c("numeric", "character", "numeric", "numeric"))
+    lodesadj[cbg, census_block_group_id := i.census_block_group_id, 
+             on = c(census_2020_block_group_geoid = "census_2020_block_group_id")]
     
     # load cities table
-    allcities <- fread(file.path(data.dir, "cities.csv"))
+    allcities <- fread(file.path(data23.dir, "cities.csv"))
     allcities[, acity_id := city_id]
-    #allcities[city_id > 1000, acity_id := city_id - 1000]
     allcities <- rbind(allcities, data.table(acity_id = c(9991:9994, 9999), 
                                              city_name = c(rep("Unincorporated", 4), "Region"),
                                              county_id = c(33, 35, 53, 61, 99)), fill = TRUE)
     allcities[city_name == "Sea Tac", city_name := "SeaTac"]
     
-    # check alignemnet of the cities
+    # check alignment of the cities
     #mcity <- merge(unique(allcities[, .(city_name, county_id, incity = 1)]), unique(qcew[, .(juris, county, inqcew = 1)]), by.x = c("city_name", "county_id"), by.y = c("juris", "county"), all = TRUE)
     #mcity[is.na(inqcew)]
     #mcity[is.na(incity)]
@@ -111,18 +111,18 @@ if(adjust.by.qcew){
     # read parcel file to get BG x city correspondence 
     # - the file should also have columns number_of_buildings_pcl (# buildings per parcel)
     #   and number_of_buildings_bg (# buildings per block group)
-    # It was created via data/prepare_parcels_for_adjustment.R
-    load(file.path(data.dir, "parcels_bldg_bg_share.rda"))
+    # It was created via data2023/prepare_parcels_for_adjustment.R
+    load(file.path(data23.dir, "parcels_bldg_bg_share.rda"))
     pcl[allcities, acity_id := i.acity_id, on = "city_id"]
     
     # compute the share of buildings per block group and number of cities the BG belongs to
-    pcl[, share_bg := ifelse(number_of_buildings_bg20 > 0, 
-                        number_of_buildings_pcl/number_of_buildings_bg20, 
-                        acres/acres_bg20)]
-    pcl[, ncity := length(unique(acity_id)), by = .(census_2020_block_group_id)]
+    pcl[, share_bg := ifelse(number_of_buildings_bg > 0, 
+                        number_of_buildings_pcl/number_of_buildings_bg, 
+                        acres/acres_bg)]
+    pcl[, ncity := length(unique(acity_id)), by = .(census_block_group_id)]
     
     # read qcew
-    qcew <- fread(file.path(data.dir, "alljobs_juris_2022.csv"))
+    qcew <- fread(file.path(data23.dir, "alljobs_juris_2023.csv"))
     # order rows so that sector totals are at the end of each city, and the region is at the very end
     qcew[county == 0, county := 99]
     qcew[industry == 0, industry := 99]
@@ -154,15 +154,15 @@ if(adjust.by.qcew){
     for(city in unique(qcew[, city_id])){
         if(is.na(city)) next
         if(city == 9999) { # whole region, i.e. all BGs
-            bglist[[city]] <- data.table(census_2020_block_group_id = unique(pcl[, census_2020_block_group_id]), factor = 1)
+            bglist[[city]] <- data.table(census_block_group_id = unique(pcl[, census_block_group_id]), factor = 1)
             next
         }
         if(city > 9990) { # unincorporated
             cityset <- uucities[county_id == allcities[acity_id == city, county_id], acity_id]
         } else cityset <- city
-        bglist[[city]] <- data.table(census_2020_block_group_id = unique(pcl[acity_id %in% cityset, census_2020_block_group_id]), factor = 1)
-        for(bg in unique(pcl[acity_id %in% cityset & ncity > 1, census_2020_block_group_id]))  # the factor should be < 1 for BGs shared among multiple cities
-            bglist[[city]][census_2020_block_group_id == bg, factor := pcl[census_2020_block_group_id == bg, sum(share_bg), by = "acity_id"][acity_id %in% cityset, sum(V1)]]
+        bglist[[city]] <- data.table(census_block_group_id = unique(pcl[acity_id %in% cityset, census_block_group_id]), factor = 1)
+        for(bg in unique(pcl[acity_id %in% cityset & ncity > 1, census_block_group_id]))  # the factor should be < 1 for BGs shared among multiple cities
+            bglist[[city]][census_block_group_id == bg, factor := pcl[census_block_group_id == bg, sum(share_bg), by = "acity_id"][acity_id %in% cityset, sum(V1)]]
     }
     
     # loop over rows in qcew
@@ -171,12 +171,12 @@ if(adjust.by.qcew){
         if(is.na(qcew[row, emp_all23]) || is.na(city)) next # ignore suppressed records
         #if(city == 24 & row == 282) stop("")
         # for the relevant BGs adjust # jobs by the factor
-        this.lodes <- lodesadj[census_2020_block_group_id %in% bglist[[city]][, census_2020_block_group_id], ]
+        this.lodes <- lodesadj[census_block_group_id %in% bglist[[city]][, census_block_group_id], ]
         this.lodes[bglist[[city]], `:=`(factor = i.factor, number_of_jobs_bgadj = number_of_jobs_adj * i.factor), 
-                       on = "census_2020_block_group_id"]
+                       on = "census_block_group_id"]
 
         sector <- qcew[row, industry]
-        joinon <- "census_2020_block_group_id"
+        joinon <- "census_block_group_id"
         if(sector < 99) {
             this.lodes <- this.lodes[sector_id == sector]
             joinon <- c(joinon, "sector_id")
@@ -209,10 +209,10 @@ if(adjust.by.qcew){
     for(row in seq_len(nrow(qcew))){
         city <- qcew[row, city_id]
         if(is.na(city)) next
-        this.lodes <- lodesadj[census_2020_block_group_id %in% bglist[[city]][, census_2020_block_group_id], ]
+        this.lodes <- lodesadj[census_block_group_id %in% bglist[[city]][, census_block_group_id], ]
         this.lodes[bglist[[city]], `:=`(number_of_jobs_adj = number_of_jobs_adj * i.factor,
                                         number_of_jobs_orig = number_of_jobs * i.factor), 
-                   on = "census_2020_block_group_id"]
+                   on = "census_block_group_id"]
         sector <- qcew[row, industry]
         if(sector != 0) this.lodes <- this.lodes[sector_id == sector]
         
