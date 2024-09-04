@@ -1,7 +1,7 @@
 # Script to re-classify non-home-based jobs into home-based
 # based on given geography x sector distribution
 # Hana Sevcikova, PSRC
-# June 25, 2024
+# August 27, 2024
 
 setwd("~/psrc/urbansim-baseyear-prep/lodes")
 
@@ -11,7 +11,7 @@ data.dir <- "data"
 data.dir.yearspec <- "data2023"
 
 # unrolled NHB jobs as created by unroll_adjusted_lodes.R
-nhb.job.file <- "jobs_nohb_2024-06-25.csv"
+nhb.job.file <- "jobs_nohb_2024-08-27.csv"
 
 save.as.csv <- TRUE
 save.into.mysql <- TRUE
@@ -56,7 +56,7 @@ nhb.jobs <- nhb.jobs[, c(colnames.wrk, geo.lookup.id), with = FALSE]
 # check marginals
 marg <- nhb.jobs[, .N, by = .(home_based_status, sector_id)]
 setorder(marg, "home_based_status", "sector_id")
-nhb.jobs[, .N, by = home_based_status]
+nhb.jobs[, .N, by = home_based_status][, tot := sum(N)][, perc := N/tot*100][]
 
 if(save.as.csv){
     file.out <- paste0(out.jobs.name, ".csv")

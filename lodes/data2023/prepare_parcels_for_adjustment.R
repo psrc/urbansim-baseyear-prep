@@ -4,8 +4,9 @@ setwd("~/psrc/urbansim-baseyear-prep/lodes/data2023")
 
 imputation.dir <- "../../imputation/data2023"
 
-bldgs <- fread(file.path(imputation.dir, "buildings_imputed_phase3_lodes_20240625.csv"))
-pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
+bldgs <- fread(file.path(imputation.dir, "buildings_imputed_phase3_lodes_20240826.csv"))
+#pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
+pcl <- fread(file.path(imputation.dir, "parcels.csv"))
 cb <- fread("census_blocks.csv")
 
 # add census_block_group_id to parcels

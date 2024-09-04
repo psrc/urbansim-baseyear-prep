@@ -12,7 +12,8 @@ imputation.dir <- "../../imputation/data2023"
 
 bg.column <- "census_block_group_id"
 
-pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
+#pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
+pcl <- fread(file.path(imputation.dir, "parcels.csv"))
 
 cb <- fread("census_blocks.csv")
 
