@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 07/24/2024
+# Hana Sevcikova, last update 09/03/2024
 #
 
 library(data.table)
@@ -214,12 +214,25 @@ buildings_tmp[, taxparceln := ifelse(is.na(new_parcel_id), parcel_number_orig, n
 # buildings_tmp[duplicated(buildings_tmp, by = c("building_id", "taxparceln"))]
 
 # group buildings since there were duplicate building_id values per parcel
-buildings_all <- buildings_tmp[, .(
-    sqft = sum(built_as_square_feet, na.rm = TRUE), units = sum(units, na.rm = TRUE), 
-    bedrooms = sum(bedrooms, na.rm = TRUE), stories = max(stories),
-    year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
-    net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
-    by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, taxparceln)]
+# make a difference if we take the max(units) (due to an error in the assessor) or the sum(units)
+max_units_index <- with(buildings_tmp, built_as_id %in% c(68, 300, 352, 1300) & !is.na(built_as_square_feet/units) & 
+                              built_as_square_feet/units >= 1 & built_as_square_feet/units <= 300 & units > 1)
+buildings_all <- rbind(
+    buildings_tmp[!max_units_index, .(
+        sqft = sum(built_as_square_feet, na.rm = TRUE), 
+        units = sum(units, na.rm = TRUE),
+        bedrooms = sum(bedrooms, na.rm = TRUE), stories = max(stories),
+        year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
+        net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
+        by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, taxparceln)],
+    buildings_tmp[max_units_index, .(
+        sqft = sum(built_as_square_feet, na.rm = TRUE), 
+        units = max(units, na.rm = TRUE),
+        bedrooms = sum(bedrooms, na.rm = TRUE), stories = max(stories),
+        year_built = min(year_built), square_feet = sum(square_feet, na.rm = TRUE),
+        net_square_feet = sum(net_square_feet, na.rm = TRUE)), 
+        by = .(primary_occupancy_code, primary_occupancy_description, built_as_id, built_as_description, taxparceln)]
+    )
 
 # add fake buildings
 new_fake_buildings <- fake_buildings[is.na(orig_parcel_number) | orig_parcel_number == "", 
@@ -388,7 +401,7 @@ if(write.result){
     DBI::dbDisconnect(connection)
 }
 
-## Output on 2024/6/17
+## Output on 2024/6/17 & 2024/9/3
 ##############################
 # Processing Pierce parcels
 # =========================

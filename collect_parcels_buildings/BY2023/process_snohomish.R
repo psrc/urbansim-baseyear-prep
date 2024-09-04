@@ -3,7 +3,7 @@
 # It generates 3 tables: 
 #    urbansim_parcels, urbansim_buildings, building_type_crosstab
 #
-# Hana Sevcikova, last update 06/25/2024
+# Hana Sevcikova, last update 09/03/2024
 #
 
 library(data.table)
@@ -15,7 +15,7 @@ county.id <- 61
 #data.dir <- "\\AWS-MODEL10\urbansim data\Projects\2023_Baseyear\Assessor\Extracts\Snohomish\Urbansim_Processing"
 data.dir <- "Snohomish_data" # Hana's local path
 misc.data.dir <- "data" # path to the BY2023/data folder
-write.result <- TRUE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
+write.result <- FALSE # it will overwrite the existing tables urbansim_parcels & urbansim_buildings
 
 if(write.result) source("mysql_connection.R")
 
@@ -245,6 +245,24 @@ prep_buildings[usecode == "APART" & numberrooms > 0,
 prep_buildings[usecode %in% c(2, 3, 4, 5, "APART") & is.na(building_type_id),
                building_type_id := 12]
 
+# remove apartment buildings with zero units where the parcel contains some non-zero apartments and the sqft per unit ratio supports it
+prep_buildings[usecode == "APART", `:=`(totrooms = sum(numberrooms, na.rm = TRUE), apart_totsqft = sum(finsize, na.rm = TRUE), Napart = .N), 
+               by = parcel_id][is.na(totrooms), totrooms := 0][is.na(apart_totsqft), apart_totsqft := 0]
+prep_buildings[usecode == "APART" & totrooms > 0, `:=`(tot_apart_sqft_per_units = apart_totsqft/totrooms, 
+                                                       sqft_per_unit = finsize/numberrooms)][
+                                                           , `:=`(has_small_ap = any(sqft_per_unit < 600)), by = .(parcel_id)]
+remove.bldgs <- prep_buildings[usecode == "APART" & totrooms > 0 & tot_apart_sqft_per_units < 1500 & numberrooms == 0 & has_small_ap]
+remove.pcl.sum <- remove.bldgs[, .(size = sum(finsize), value = sum(improvement_value), N = .N), by = "parcel_id"]
+
+nbld <- nrow(prep_buildings)
+prep_buildings <- prep_buildings[!building_id %in% remove.bldgs[, building_id]]
+# distribute sqft and improvement value from the removed buildings into the existing buildings
+prep_buildings[remove.pcl.sum, `:=`(size_added = i.size, value_added = i.value, Nremoved = i.N), on = "parcel_id"]
+prep_buildings[!is.na(size_added) & !is.na(Napart), `:=`(finsize = as.integer(round(finsize + size_added/(Napart - Nremoved))),
+                                                          improvement_value = as.integer(round(improvement_value + value_added/(Napart - Nremoved))))]
+
+cat("\n", nbld - nrow(prep_buildings), " building records integrated into another records on the same parcel.")
+
 # Assert 1 unit per each Condo unit and set building type as Condo if not already set otherwise
 prep_buildings[usecode %in% c(51, 52, 53, 61, 62), 
                `:=`(residential_units = 1, 
@@ -300,6 +318,7 @@ nbld <- nrow(prep_buildings)
 prep_buildings <- prep_buildings[!building_id %in% remove_bld[, building_id]]
 cat("\nDropped ", nbld - nrow(prep_buildings), " building records representing building floors.")
 
+
 # remove condos for now (they will be added later)
 prep_buildings <- prep_buildings[building_type_id != 4]
 
@@ -326,32 +345,36 @@ pclblds <- prep_buildings[, .(DUall = sum(residential_units), Nall = sum(is_resi
                               costar = mean(costar_units, na.rm = TRUE),
                               pud = mean(pud_units, na.rm = TRUE)
                               ), 
-                          by = "parcel_id"][!is.na(pud) & abs(pud - costar) < 2 & Nall > 0]
+                          by = "parcel_id"][!is.na(pud) & !is.na(costar)]
+pclblds <- pclblds[Nall > 0 & (abs(pud - costar) < 2 | DUmf > pmax(costar, pud))]
 
 # select records where there is a mismatch between our estimates and costar/pud
 adjpcl <- pclblds[DUmf != costar & DUmf != pud & DUall != costar & DUall != pud]
+
+# adjust to the larger value between costar and pud
+adjpcl[, control := ifelse(abs(pud - costar) > 1, pmax(pud, costar), costar)]
 
 # track processed parcel records
 processed <- rep(FALSE, nrow(adjpcl))
 
 # parcels with one building
 idx <- processed == FALSE & with(adjpcl, Nall == 1)
-prep_buildings[adjpcl[idx], residential_units := ifelse(is_residential, i.costar, residential_units), 
+prep_buildings[adjpcl[idx], residential_units := ifelse(is_residential, i.control, residential_units), 
                on = "parcel_id"]
 processed[idx] <- TRUE
 
 # parcels with one MF building
 idx <- processed == FALSE & with(adjpcl, Nmf == 1)
-prep_buildings[adjpcl[idx], residential_units := ifelse(is_mf_residential, pmax(1, i.costar - DUsf),
+prep_buildings[adjpcl[idx], residential_units := ifelse(is_mf_residential, pmax(1, i.control - DUsf),
                                                         residential_units), 
                on = "parcel_id"]
 processed[idx] <- TRUE
 
 # process buildings that don't have a MF building
 idx <- processed == FALSE & with(adjpcl, Nmf == 0)
-idx2 <- idx & with(adjpcl, DUall < costar) # only those where costar is larger
+idx2 <- idx & with(adjpcl, DUall < control) # only those where control is larger
 for(pcl in adjpcl[idx2, parcel_id]){
-    add <- adjpcl[parcel_id == pcl, costar - DUall]
+    add <- adjpcl[parcel_id == pcl, control - DUall]
     bidx <- which(with(prep_buildings, parcel_id == pcl & building_type_id == 19)) # index of affected buildings
     if(add %% length(bidx) == 0){ # try to distribute equally
         prep_buildings[bidx, residential_units := residential_units + add/length(bidx)]
@@ -367,7 +390,7 @@ processed[idx] <- TRUE
 idx <- processed == FALSE
 for(pcl in adjpcl[idx, parcel_id]){
     bidx <- which(with(prep_buildings, parcel_id == pcl & is_mf_residential))
-    dif <- adjpcl[parcel_id == pcl, costar - DUall]
+    dif <- adjpcl[parcel_id == pcl, control - DUall]
     sampled <- sample(bidx, abs(dif), replace = TRUE, prob = prep_buildings[bidx, residential_units])
     tsampled <- table(sampled)
     if(dif > 0){ # add units
@@ -379,7 +402,7 @@ for(pcl in adjpcl[idx, parcel_id]){
 
 sumDUafter <- prep_buildings[,sum(residential_units)]
 
-cat("\nAdjustments with costar data yields a change of ",  sumDUafter - sumDU, "DUs.")
+cat("\nAdjustments with costar/pud data yields a change of ",  sumDUafter - sumDU, "DUs.")
 
 # mark records for exclusion from further consolidation
 pclblds2 <- prep_buildings[, .(DUall = sum(residential_units), Nall = sum(is_residential),
@@ -462,7 +485,7 @@ if(write.result){
     DBI::dbDisconnect(connection)
 }
 
-## Output on 2024/6/24
+## Output on 2024/9/3
 ##############################
 # Processing Snohomish parcels
 # =========================
@@ -483,7 +506,8 @@ if(write.result){
 # Dropped  416  buildings due to missing parcels.
 # 1439  RVs removed.
 # 
-# Matched 276099 records with building reclass table
+# 88  building records integrated into another records on the same parcel.
+# Matched 276011 records with building reclass table
 # Unmatched:  9 records.
 # The following building codes were not found:
 #     usecode                    usedesc N
@@ -492,5 +516,5 @@ if(write.result){
 # 3: TRUCKSTP                 Truck Stop 1
 # 
 # Dropped  39  building records representing building floors.
-# Adjustments with costar data yields a change of  -2792 DUs.
-# Total all:  260789 buildings
+# Adjustments with costar/pud data yields a change of  -2325 DUs.
+# Total all:  260701 buildings
