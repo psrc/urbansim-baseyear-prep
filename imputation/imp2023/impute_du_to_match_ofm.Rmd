@@ -1,7 +1,7 @@
 ---
 title: "Impute DU to match OFM"
 author: "Hana Sevcikova"
-date: "7/24/2024"
+date: "09/04/2024"
 output: pdf_document
 ---
 
@@ -23,7 +23,7 @@ Input data are csv files exported from the database psrc_2023_parcel_baseyear.
 Input files should be placed in the [imputation/data2023]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/data2023) directory. The input datasets are:
 
 * buildings_imputed_phase1_{date}.csv (output of [buildings_imputation.Rmd]( https://github.com/psrc/urbansim-baseyear-prep/blob/master/imputation/imp2023/buildings_imputation.Rmd); name configurable)
-* parcels_prelim.csv (combined 4-counties parcels with info about census blocks)
+* parcels_prelim.csv or parcels.csv if newer (combined 4-counties parcels with info about census blocks)
 * one of:
     * summary_adjusted_urbansim_bg_id.csv (output of population synthesizer from R:/e2projects_two/2023_base_year/synthetic_population; name configurable)
     * saep_block20.csv (containing the OFM data)
@@ -38,7 +38,7 @@ The output is written into imputation/data2023/buildings_imputed_phase2_ofm_{dat
 Set the name of the buildings file and the household synthesizer file:
 
 ```{r, echo=TRUE}
-bld.file.name <- "buildings_imputed_phase1_20240724.csv"
+bld.file.name <- "buildings_imputed_phase1_20240904.csv"
 adjust.to.synthpop <- FALSE
 synth.file.name <- "summary_adjusted_urbansim_bg_id.csv" # used only if adjust.to.synthpop is TRUE
 ```
@@ -81,7 +81,8 @@ normalizePath(data.dir)
 ```{r, echo=FALSE}
 # load buildings, parcels and OFM
 bld.imp <- fread(file.path(data.dir, bld.file.name))
-pcl <- fread(file.path(data.dir, 'parcels_prelim.csv'))
+#pcl <- fread(file.path(data.dir, 'parcels_prelim.csv'))
+pcl <- fread(file.path(data.dir, 'parcels.csv'))
 
 # add census_block_group_id to parcels and buildings
 cb <- fread(file.path(data.dir, "census_blocks.csv"))

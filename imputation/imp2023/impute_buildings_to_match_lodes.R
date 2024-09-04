@@ -17,7 +17,7 @@ publutypes <- c(2, 7, 9, 11, 23)
 schlutypes <- 23
 
 # load buildings
-bld.file.name <- "buildings_imputed_phase2_ofm_20240724.csv"
+bld.file.name <- "buildings_imputed_phase2_ofm_20240904.csv"
 data.year <- 2023 # data files will be taken from "../data{data.year}"
 data.dir <- file.path("..", paste0("data", data.year))
 
