@@ -6,28 +6,33 @@ from datetime import date
 
 # config ----------------------------------------------------
 
-exec(open(r'C:\Users\CLam\github\urbansim-baseyear-prep\future_land_use\unroll_constraints_functions.py').read())
+#exec(open(r'C:\Users\CLam\github\urbansim-baseyear-prep\future_land_use\unroll_constraints_functions.py').read())
+exec(open('unroll_constraints_functions.py').read())
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 # root outdir
-dir = r"J:\Staff\Christy\usim-baseyear"
+#dir = r"J:\Staff\Christy\usim-baseyear"
+dir = "."
 
 # original flu shape
 flu_shp_path = r"W:\gis\projects\compplan_zoning\flu19_reviewed.shp" 
+#flu_shp_path = r"/Users/hana/W/gis/projects/compplan_zoning/flu19_reviewed.shp" 
 
-# imputed data
-flu_imp = os.path.join(dir, r'flu\final_flu_postprocessed_2023-01-10.csv') #old 09-22
+# imputed FLU data
+flu_imp = os.path.join(dir, 'flu', r'final_flu_postprocessed_2023-01-10.csv') #old 09-22
 
 # parcels file
-base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp"
+#base_year_prcl_path = r"J:\Projects\2018_base_year\Region\prclpt18.shp" # BY 2018
+base_year_prcl_path = r"J:\Projects\2023_Baseyear\Assessor\Extracts\Region\parcels23_region_pt.shp" # BY 2023
+#base_year_prcl_path = "~/J/Projects/2023_Baseyear/Assessor/Extracts/Region/parcels23_region_pt.shp"
 
 # read/process files ----------------------------------------------------
 
 flu_shp = gpd.read_file(flu_shp_path)
-f = pd.read_csv(flu_imp) # 1921 rows
+f = pd.read_csv(flu_imp) # 1921 rows (BY 2018)
 
 # clean up f; remove extra/unecessary fields before join
 f_col_keep = [col for col in f.columns if col not in ['Jurisdicti', 'Key', 'Zone_adj', 'Definition'] + list(f.columns[f.columns.str.endswith("src")])]
@@ -43,44 +48,52 @@ flu = flu_shp.merge(f, on = ['Juris_zn'], how = 'left')
 
 # read parcels file & lu type file
 prcls = gpd.read_file(base_year_prcl_path)
+#pin_name = "PIN" # BY 2018
+pin_name = "PARCEL_ID" # BY 2023
 
-cache = r'N:\base_year_2018_inputs\gold_standard_inputs\2018\parcels'
-prcls_pin = np.fromfile(os.path.join(cache, 'parcel_id.li4'), np.int32)
-prcls_lu = np.fromfile(os.path.join(cache, 'land_use_type_id.li4'), np.int32)
+#cache = r'N:\base_year_2018_inputs\gold_standard_inputs\2018\parcels'  # BY 2018
+cache = r'N:\base_year_2023_inputs\JobParcel\base_year_data\2023\parcels'  # BY 2023
+#cache = r'/Users/hana/n$/base_year_2023_inputs/JobParcel/base_year_data/2023/parcels'  # BY 2023
+
+#prcls_pin = np.fromfile(os.path.join(cache, 'parcel_id.li4'), np.int32) # BY 2018
+#prcls_lu = np.fromfile(os.path.join(cache, 'land_use_type_id.li4'), np.int32) # BY 2018
+prcls_pin = np.fromfile(os.path.join(cache, 'parcel_id.li8'), np.int64) # BY 2023
+prcls_lu = np.fromfile(os.path.join(cache, 'land_use_type_id.li8'), np.int64) # BY 2023
 prcls_tod = np.fromfile(os.path.join(cache, 'tod_id.li4'), np.int32)
-lu_type = pd.DataFrame({'PIN':prcls_pin, 'lu_type':prcls_lu, 'tod_id':prcls_tod}, index = prcls_pin)
-lu_type['PIN'] = lu_type['PIN'].astype(np.int64)
+lu_type = pd.DataFrame({pin_name:prcls_pin, 'lu_type':prcls_lu, 'tod_id':prcls_tod}, index = prcls_pin)
+#lu_type['PIN'] = lu_type['PIN'].astype(np.int64) # BY 2018
 
-prcls = prcls.merge(lu_type, on = 'PIN')
+prcls[pin_name] = prcls[pin_name].astype(np.int64)
+prcls = prcls.merge(lu_type, on = pin_name)
 
 prcls_flu = gpd.sjoin(prcls, flu)
 
 # QC FLU shapefile------------------------------------------------------------------
 
-check_multi_pins(prcls_flu, dir) #check code
+check_multi_pins(prcls_flu, dir, pin_name = pin_name) #check code
 
 # check for one-to-many records in flu overlay
-prcls_flu['PIN'].duplicated().any()
-duplicate = prcls_flu[prcls_flu.duplicated('PIN')][['PIN']] #221
-dup_df = prcls_flu[prcls_flu['PIN'].isin(duplicate['PIN'])].sort_values(by=['PIN']) #417
+prcls_flu[pin_name].duplicated().any()
+duplicate = prcls_flu[prcls_flu.duplicated(pin_name)][[pin_name]] #221
+dup_df = prcls_flu[prcls_flu[pin_name].isin(duplicate[pin_name])].sort_values(by=[pin_name]) #417 (BY 2018)
 
 #dup_df.to_csv(os.path.join(dir, r'flu_qc\pins_dup_'+ str(date.today()) +'.csv'), index=False) 
 #dup_df.to_file(os.path.join(dir, r'flu_qc\prcls_pins_dup_'+ str(date.today()) +'.shp'))
 
 # count frequency of PINs
-dup_pin_freq = dup_df.groupby(['PIN'])['PIN'].count().reset_index(name='counts')
+dup_pin_freq = dup_df.groupby([pin_name])[pin_name].count().reset_index(name='counts')
 triple_pin = dup_pin_freq[dup_pin_freq['counts']>2] # handle triple count pins separately
 
 # re-assemble all parcels
 
-unjoined = prcls[~prcls['PIN'].isin(prcls_flu['PIN'])] # 4237 recs
-x1 = prcls_flu[~prcls_flu['PIN'].isin(dup_df['PIN'])] # no duplicates
+unjoined = prcls[~prcls[pin_name].isin(prcls_flu[pin_name])] # 4237 recs (BY 2018)
+x1 = prcls_flu[~prcls_flu[pin_name].isin(dup_df[pin_name])] # records with no duplicates
 
-x2 = dup_df[~dup_df['plan_type_id'].isnull() & ~dup_df['PIN'].isin(triple_pin['PIN'])] # duplicates where plan_type_id is not null. Excludes triple_pin
-x2a = dup_df[dup_df['PIN'].isin(triple_pin['PIN']) & ~dup_df['plan_type_id'].isnull()] # triple_pin where plan_type_id is not null
+x2 = dup_df[~dup_df['plan_type_id'].isnull() & ~dup_df[pin_name].isin(triple_pin[pin_name])] # duplicates where plan_type_id is not null. Excludes triple_pin
+x2a = dup_df[dup_df[pin_name].isin(triple_pin[pin_name]) & ~dup_df['plan_type_id'].isnull()] # triple_pin where plan_type_id is not null
 
-x2_kp_first = x2.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates (keep first)
-x2a_kp_first = x2a.drop_duplicates(subset=['PIN'], keep='first') # remove duplicates amongst triple pins (keep first)
+x2_kp_first = x2.drop_duplicates(subset=[pin_name], keep='first') # remove duplicates (keep first)
+x2a_kp_first = x2a.drop_duplicates(subset=[pin_name], keep='first') # remove duplicates amongst triple pins (keep first)
 
 ### works with old final flu post-processing-2022-09-22 --------------------------------------------------
 ### contained duplicates of null ptids
@@ -158,17 +171,23 @@ lockout_id = 9999
 devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du], sort=False)
 
 ## consistency check (ptids)
+ptid_qc_dir = os.path.join(dir, "ptid_qc")
+os.makedirs(ptid_qc_dir, exist_ok = True)
+
 common = f.merge(devconstr,on=['plan_type_id','plan_type_id'])
 not_in_devconstr = f.loc[(~f.plan_type_id.isin(common.plan_type_id)), ['plan_type_id', 'FLU_master_ID', 'Juris_zn']]
+# The reason for being in f but not devcostr is that they did not fit into any of the categories above (sf, mf, com ...).
+# This could happen if instead of "Yes" in the use column, these records have some text.
+# After reviewing these records we decided to lock them out.
 print('WARNING: The following ptids are in object f but not devconstr:\n')
 print(not_in_devconstr)
-not_in_devconstr.to_csv(os.path.join(dir, r'ptid_qc\ptid_consistency_qc_notindevconstr_' + str(date.today()) + '.csv'), index=False)
+not_in_devconstr.to_csv(os.path.join(ptid_qc_dir, r'ptid_consistency_qc_notindevconstr_' + str(date.today()) + '.csv'), index=False)
 
 max_zero_devconstr = devconstr.groupby(["plan_type_id"]).maximum.sum().reset_index()
 max_zero = max_zero_devconstr[max_zero_devconstr['maximum'] == 0]
 print('The following are non-9*** lockout plan types')
 print(max_zero)
-max_zero.to_csv(os.path.join(dir, r'ptid_qc\ptid_consistency_qc_maxzero_' + str(date.today()) + '.csv'), index=False)
+max_zero.to_csv(os.path.join(ptid_qc_dir, r'ptid_consistency_qc_maxzero_' + str(date.today()) + '.csv'), index=False)
 
 # create df of plan_type_id 9999
 lockout_df = pd.DataFrame({'plan_type_id': np.repeat(lockout_id, 7),
@@ -190,11 +209,17 @@ devconstr.loc[devconstr['maxht'].isnull(), 'maxht'] = 0
 devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
 
 # export files ---------------------------------------------------------------------
-devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_' + str(date.today()) + '.csv'), index=False) 
-f.to_csv(os.path.join(dir, r'flu\flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False) # flu imputed kitchen sink file
+res_constr_dir = os.path.join(dir, "dev_constraints")
+os.makedirs(res_constr_dir, exist_ok = True)
 
-prcls_flu_ptid = all_df[['PIN', 'plan_type_id', 'tod_id']]
-prcls_flu_ptid.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_' + str(date.today()) + '.csv'), index=False)
+res_flu_dir = os.path.join(dir, "flu")
+os.makedirs(res_flu_dir, exist_ok = True)
+
+devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_' + str(date.today()) + '.csv'), index=False) 
+f.to_csv(os.path.join(res_flu_dir, r'flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False) # flu imputed kitchen sink file
+
+prcls_flu_ptid = all_df[[pin_name, 'plan_type_id', 'tod_id']]
+prcls_flu_ptid.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_' + str(date.today()) + '.csv'), index=False)
 #all_df.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp')) # Warning! Takes a long time to write!
 
 #### post-processing lockouts ----------------------------------------------------------
@@ -219,7 +244,8 @@ lo_df['development_constraint_id'] = list(np.arange(dci+1, dci+len(lo_df)+1))
 devconstr = pd.concat([devconstr, lo_df]) 
 
 # update plan_type_ids
-all_df.loc[all_df['plan_type_id'].isnull(), 'plan_type_id'] = 9999
+all_df.loc[all_df['plan_type_id'].isnull(), 'plan_type_id'] = lockout_id
+all_df.loc[all_df['plan_type_id'].isin(not_in_devconstr['plan_type_id']), 'plan_type_id'] = lockout_id  # lock plan types not found in devconstr
 all_df.loc[all_df['lu_type'] == 23, 'plan_type_id'] = 9001 # Schools/universities
 all_df.loc[all_df['lu_type'] == 7, 'plan_type_id'] = 9002 # Government
 all_df.loc[all_df['lu_type'] == 9, 'plan_type_id'] = 9003 # Hospitals, convalescent center
@@ -229,6 +255,6 @@ all_df.loc[all_df['lu_type'] == 1, 'plan_type_id'] = 9006 # Agriculture
 all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 9007 # Vacant undevelopable
 
 # export post-processing lockouts version
-prcls_flu_ptid_lockouts = all_df[['PIN', 'plan_type_id', 'tod_id']]
-prcls_flu_ptid_lockouts.to_csv(os.path.join(dir, r'dev_constraints\prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
-devconstr.to_csv(os.path.join(dir, r'dev_constraints\devconstr_v2_' + str(date.today()) + '.csv'), index=False)
+prcls_flu_ptid_lockouts = all_df[[pin_name, 'plan_type_id', 'tod_id']]
+prcls_flu_ptid_lockouts.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
+devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_v2_' + str(date.today()) + '.csv'), index=False)
