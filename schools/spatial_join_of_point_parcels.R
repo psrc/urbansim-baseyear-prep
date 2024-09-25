@@ -23,9 +23,15 @@ nf.index <- st_nearest_feature(sfobj23, sfobj18)
 
 joined <- data.table(parcel2023_id = unlist(st_drop_geometry(sfobj23)[, "parcel_id"]),
                      parcel2018_id = unlist(st_drop_geometry(sfobj18)[nf.index, "parcel_id"]))
-fwrite(joined, file = "parcel2018to2023.csv")
+fwrite(joined, file = "parcel2023to2018.csv")
 
 #ind1 <- which(unlist(st_drop_geometry(sfobj23)[, "parcel_id"]) %in% joined[duplicated(parcel2018_id)][, parcel2023_id])
 #ind2 <- which(unlist(st_drop_geometry(sfobj18)[, "parcel_id"]) %in% joined[duplicated(parcel2018_id)][, parcel2018_id])
 #plot(st_geometry(sfobj23[ind1,]))
 #plot(st_geometry(sfobj18[ind2,]), col = "red", add = TRUE)
+
+nf.index <- st_nearest_feature(sfobj18, sfobj23)
+
+joined <- data.table(parcel2018_id = unlist(st_drop_geometry(sfobj18)[, "parcel_id"]),
+                     parcel2023_id = unlist(st_drop_geometry(sfobj23)[nf.index, "parcel_id"]))
+fwrite(joined, file = "parcel2018to2023.csv")
