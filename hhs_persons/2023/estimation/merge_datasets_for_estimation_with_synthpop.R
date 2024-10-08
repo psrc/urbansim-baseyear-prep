@@ -7,7 +7,7 @@
 # (files 1_household.csv, 2_person.csv)
 #
 # Hana Sevcikova, PSRC
-# 06/25/2024
+# 09/30/2024
 
 library(data.table)
 library(magrittr)
@@ -21,8 +21,9 @@ if(!file.exists(output.dir.est)) dir.create(output.dir.est)
 imputation.dir <- "../../../imputation/data2023" # where is the latest imputed data and BG info
 
 set.seed(123)
-bld <- fread(file.path(imputation.dir, "buildings_imputed_phase3_lodes_20240625.csv")) # latest buildings dataset
-pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
+bld <- fread(file.path(imputation.dir, "buildings_imputed_phase3_lodes_20240904.csv")) # latest buildings dataset
+#pcl <- fread(file.path(imputation.dir, "parcels_prelim.csv"))
+pcl <- fread(file.path(imputation.dir, "parcels.csv"))
 hhs.rawsurvey <- fread(file.path("surveydata", "1_household.csv")) 
 pers.rawsurvey <- fread(file.path("surveydata", "2_person.csv"))
 hhs <- fread(file.path(syntpop.dir, "households_v1.csv")) # non-parcelized synthetic households
@@ -38,7 +39,7 @@ colnames(pers) <- substr(colnames(pers), 1, nchar(colnames(pers))-3)
 #colnames(pers) <- tolower(colnames(pers))
 
 # create the various estimation columns
-hhsest <- hhs.rawsurvey[!is.na(hhparcel), .(hhno, #puma = final_home_puma10,
+hhsest <- hhs.rawsurvey[survey_year == 2023 & !is.na(hhparcel), .(hhno, #puma = final_home_puma10,
                          parcel_id = hhparcel,
                          #previous_parcel_id = prev_home_parcel,
                          workers = hhwkrs, 
@@ -152,9 +153,9 @@ if(length(bgskipped) > 0)
 # pers.rawsurvey[, nrace := race_afam + race_aiak + race_asian + race_hapi + race_white + race_other]
 # pers.rawsurvey[nrace == 0 & race_hisp == 1, `:=`(race_white = 1, nrace = 1)]
 # pers.rawsurvey[is.na(nrace), nrace := 0]
-pers.rawsurvey[, id := 1:nrow(pers.rawsurvey)]
-
-persest <- pers.rawsurvey[, .(id = id, hhno = hhno, member_id = pno,
+persest <- pers.rawsurvey[survey_year == 2023]
+persest[, id := 1:nrow(persest)]
+persest <- persest[, .(id = id, hhno = hhno, member_id = pno,
                                #relate = relationship, 
                               relate = -1,
                                age_cat = pagey,
@@ -203,6 +204,7 @@ for(icat in 1:(length(age.categories)-1)){
 persest[hours > 900 | is.na(hours), hours := -1]
 #persest[edu > 900 | is.na(edu), edu := -1]
 persest[sex > 2, sex := -1]
+persest[sex < 0, sex := sample(c(1,2), sum(sex < 0), replace = TRUE)] # sample to impute the missing gender
 
 # work-related stuff
 persest[, is_worker := as.integer(employment_status > 0)]

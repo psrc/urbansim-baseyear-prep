@@ -10,6 +10,9 @@ pcl18 <- readRDS("~/psrc/R/shinyserver/baseyear2018explorer/data/parcels.rds")
 # read Xwalk between 2018 and 2023 parcels
 xwalk <- fread("parcel2018to2023.csv")
 
+# read school replacements
+updates <- fread("school_catchment_changes.csv")
+
 # merge together
 res <- merge(xwalk, pcl18[, .(parcel_id, elem_id, mschool_id, hschool_id)], all.x = TRUE,
              by.x = "parcel2018_id", by.y = "parcel_id", sort = FALSE)
@@ -23,6 +26,10 @@ schools <- fread("schools.csv")
 res[schools, elem_id := i.school_id, on = c(elem_id_old = "schoolcode")][is.na(elem_id), elem_id := 0]
 res[schools, mschool_id := i.school_id, on = c(mschool_id_old = "schoolcode")][is.na(mschool_id), mschool_id := 0]
 res[schools, hschool_id := i.school_id, on = c(hschool_id_old = "schoolcode")][is.na(hschool_id), hschool_id := 0]
+
+# replace missing schools with nearest schools
+res[updates[category == "elem"], elem_id := i.id_new, on = c(elem_id_old = "id_old")]
+res[updates[category == "mschool"], mschool_id := i.id_new, on = c(mschool_id_old = "id_old")]
 
 # write results
 fwrite(res, file = "parcels_catchment_areas.csv")
