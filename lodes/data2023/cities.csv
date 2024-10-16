@@ -1,0 +1,96 @@
+county_id,city_id,"city_name","rg_proposed","fips_rgs_proposed_id",rgs_id
+33,1,"Algona","CitiesTowns","3304",4
+33,2,"Auburn","Core","3302",2
+33,3,"Beaux Arts","CitiesTowns","3304",4
+33,4,"Bellevue","Metro","3301",1
+33,5,"Black Diamond","CitiesTowns","3304",4
+33,6,"Bothell","Core","3302",2
+33,7,"Burien","Core","3302",2
+33,8,"Carnation","CitiesTowns","3304",4
+33,9,"Clyde Hill","CitiesTowns","3304",4
+33,10,"Covington","CitiesTowns","3304",4
+33,11,"Des Moines","HCT","3303",3
+33,12,"Duvall","CitiesTowns","3304",4
+33,13,"Enumclaw","CitiesTowns","3304",4
+33,14,"Federal Way","Core","3302",2
+33,15,"Hunts Point","CitiesTowns","3304",4
+33,16,"Issaquah","Core","3302",2
+33,17,"Kenmore","HCT","3303",3
+33,18,"Kent","Core","3302",2
+33,19,"King Rural","Rural","3306",6
+33,20,"Kirkland","Core","3302",2
+33,21,"Lake Forest Park","HCT","3303",3
+33,22,"Maple Valley","CitiesTowns","3304",4
+33,23,"Medina","CitiesTowns","3304",4
+33,24,"Mercer Island","HCT","3303",3
+33,25,"Milton","CitiesTowns","3304",4
+33,26,"Newcastle","HCT","3303",3
+33,27,"Normandy Park","CitiesTowns","3304",4
+33,28,"North Bend","CitiesTowns","3304",4
+33,29,"Pacific","CitiesTowns","3304",4
+33,30,"Redmond","Core","3302",2
+33,31,"Renton","Core","3302",2
+33,32,"Sammamish","CitiesTowns","3304",4
+33,33,"Sea Tac","Core","3302",2
+33,34,"Seattle","Metro","3301",1
+33,35,"Shoreline","HCT","3303",3
+33,36,"Skykomish","CitiesTowns","3304",4
+33,37,"Snoqualmie","CitiesTowns","3304",4
+33,38,"Tukwila","Core","3302",2
+33,39,"Uninc Urban King","HCT","3303",3
+33,40,"Woodinville","HCT","3303",3
+33,41,"Yarrow Point","CitiesTowns","3304",4
+35,42,"Bainbridge Island","HCT","3503",3
+35,43,"Bremerton","Metro","3501",1
+35,44,"Kitsap Rural","Rural","3506",6
+35,45,"Port Orchard","HCT","3503",3
+35,46,"Poulsbo","HCT","3503",3
+35,47,"Silverdale UGA","Core","3502",2
+35,48,"Uninc Urban Kitsap","Metro","3501",1
+53,49,"Auburn","Core","5302",2
+53,50,"Bonney Lake","CitiesTowns","5304",4
+53,51,"Buckley","CitiesTowns","5304",4
+53,52,"Carbonado","CitiesTowns","5304",4
+53,53,"DuPont","HCT","5303",3
+53,54,"Eatonville","CitiesTowns","5304",4
+53,55,"Edgewood","CitiesTowns","5304",4
+53,57,"Fife","HCT","5303",3
+53,58,"Fircrest","HCT","5303",3
+53,59,"Gig Harbor","CitiesTowns","5304",4
+53,60,"Lakewood","Core","5302",2
+53,61,"Milton","CitiesTowns","5304",4
+53,62,"Orting","CitiesTowns","5304",4
+53,63,"Pacific","CitiesTowns","5304",4
+53,64,"Pierce Rural","Rural","5306",6
+53,65,"Puyallup","Core","5302",2
+53,66,"Roy","CitiesTowns","5304",4
+53,67,"Ruston","CitiesTowns","5304",4
+53,68,"South Prairie","CitiesTowns","5304",4
+53,69,"Steilacoom","CitiesTowns","5304",4
+53,70,"Sumner","HCT","5303",3
+53,71,"Tacoma","Metro","5301",1
+53,72,"Uninc Urban Pierce","HCT","5305",3
+53,73,"University Place","Core","5302",2
+53,74,"Wilkeson","CitiesTowns","5304",4
+61,75,"Arlington","HCT","6103",3
+61,76,"Bothell","Core","6102",2
+61,77,"Brier","CitiesTowns","6104",4
+61,78,"Darrington","CitiesTowns","6104",4
+61,79,"Edmonds","HCT","6103",3
+61,80,"Everett","Metro","6101",1
+61,81,"Gold Bar","CitiesTowns","6104",4
+61,82,"Granite Falls","CitiesTowns","6104",4
+61,83,"Index","CitiesTowns","6104",4
+61,84,"Lake Stevens","CitiesTowns","6104",4
+61,85,"Lynnwood","Core","6102",2
+61,86,"Marysville","HCT","6103",3
+61,87,"Mill Creek","HCT","6103",3
+61,88,"Monroe","CitiesTowns","6104",4
+61,89,"Mountlake Terrace","HCT","6103",3
+61,90,"Mukilteo","HCT","6103",3
+61,91,"Snohomish","CitiesTowns","6104",4
+61,92,"Snohomish Rural","Rural","6106",6
+61,93,"Stanwood","CitiesTowns","6104",4
+61,94,"Sultan","CitiesTowns","6104",4
+61,96,"Uninc Urban Snoh","HCT","6103",3
+61,97,"Woodway","CitiesTowns","6104",4
