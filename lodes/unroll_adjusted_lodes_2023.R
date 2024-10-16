@@ -5,7 +5,7 @@ library(data.table)
 data.dir <- "data"
 data.dir.yearspec <- "data2023"
 
-lodes.file <- file.path(data.dir.yearspec, 'Lodes23adj20240827.csv') # 2023 LODES
+lodes.file <- file.path(data.dir.yearspec, 'Lodes23adj20241016.csv') # 2023 LODES
 lodes <- fread(lodes.file, colClasses=c(census_2020_block_group_geoid = "character")) # set block group to character and county to numeric
 bg <- fread(file.path(data.dir.yearspec, "census_block_groups.csv"), 
             colClasses = c("numeric", "character", "numeric", "numeric"))

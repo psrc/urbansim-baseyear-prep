@@ -2,7 +2,7 @@ library(data.table)
 library(readxl)
 setwd("~/psrc/urbansim-baseyear-prep/lodes")
 
-adjust.uw <- FALSE # not needed anymore
+adjust.uw <- TRUE
 adjust.amazon <- TRUE 
 redistribute.negatives <- TRUE
 adjust.by.qcew <- TRUE
@@ -27,12 +27,12 @@ lodes.county.totals <- lodes[, .(emp_lodes = sum(number_of_jobs)), by = "county_
 
 # adjust two UW BGs
 if(adjust.uw){
-    uw.change <- 24139
-    if(nrow(lodes[census_2020_block_group_geoid == "530330053032" & sector_id == 13]) == 0)
-        lodes <- rbind(lodes, data.table(county_id = 33, census_2020_block_group_geoid = "530330053032",
-                                         sector_id = 13, number_of_jobs = 0))
-    lodes[census_2020_block_group_geoid == "530330053031" & sector_id == 13, number_of_jobs := number_of_jobs - uw.change]
-    lodes[census_2020_block_group_geoid == "530330053032" & sector_id == 13, number_of_jobs := number_of_jobs + uw.change]
+    uw.change <- 6000
+    if(nrow(lodes[census_2020_block_group_geoid == "530330053031" & sector_id == 12]) == 0)
+        lodes <- rbind(lodes, data.table(county_id = 33, census_2020_block_group_geoid = "530330053031",
+                                         sector_id = 12, number_of_jobs = 0))
+    lodes[census_2020_block_group_geoid == "530330053031" & sector_id == 12, number_of_jobs := number_of_jobs + uw.change]
+    lodes[census_2020_block_group_geoid == "530330053032" & sector_id == 13, number_of_jobs := number_of_jobs - uw.change]
     cat("\nUW block groups adjusted.")
 }
 
@@ -131,6 +131,10 @@ if(adjust.by.qcew){
     qcew <- qcew[order(county, city_id, industry)]
     qcew[emp_all==-99, emp_all := NA]
     qcew[, emp_all := as.numeric(emp_all)]
+    if(adjust.uw){ # switch the adjusted jobs from sector 13 to 12 in order not to adjust back here
+        qcew[juris %in% c("Seattle", "Region") & industry == 13, emp_all := emp_all - uw.change]
+        qcew[juris %in% c("Seattle", "Region") & industry == 12, emp_all := emp_all + uw.change]
+    }
     qcew.county.totals <- qcew[county != 99 & industry == 99, .(emp_qcew = sum(emp_all, na.rm = TRUE)), by = "county"]
     county.totals <- merge(lodes.county.totals, qcew.county.totals, by.x = "county_id", by.y = "county")
     county.totals <- rbind(county.totals, data.table(county_id = 99, 

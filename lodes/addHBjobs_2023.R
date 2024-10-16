@@ -1,7 +1,7 @@
 # Script to re-classify non-home-based jobs into home-based
 # based on given geography x sector distribution
 # Hana Sevcikova, PSRC
-# August 27, 2024
+# modified October 16, 2024
 
 setwd("~/psrc/urbansim-baseyear-prep/lodes")
 
@@ -11,7 +11,7 @@ data.dir <- "data"
 data.dir.yearspec <- "data2023"
 
 # unrolled NHB jobs as created by unroll_adjusted_lodes.R
-nhb.job.file <- "jobs_nohb_2024-08-27.csv"
+nhb.job.file <- "jobs_nohb_2024-10-16.csv"
 
 save.as.csv <- TRUE
 save.into.mysql <- TRUE
