@@ -1,3 +1,7 @@
+# This script adds preliminary capacity to the buildings table and 
+# processes hotspot changes
+# Hana Sevcikova, 2024/10/22
+
 library(data.table)
 
 setwd("~/psrc/urbansim-baseyear-prep/imputation/imp2023")
@@ -9,8 +13,9 @@ process.hotspots <- TRUE
 process.capacity <- TRUE
 
 bld.file.name <- "buildings_imputed_phase3_lodes_20240904.csv" # latest buildings table
-bld.outname <- "buildings_with_prelim_capacity"
-
+bld.outname <- paste0("buildings_imputed_phase4_capacity_", format(Sys.Date(), '%Y%m%d'))
+bld.outname.clean <- "buildings_with_prelim_capacity"
+  
 # The following datasets are only used if process.capacity is TRUE.
 # That section of the code can be run only after the lodes data are unrolled, i.e. pre-parcelized
 jobs.file.name <- "../../lodes/jobs_preparcelized_20241016.csv" # use the full path
@@ -93,11 +98,12 @@ if(save.into.mysql) {
   source("../../collect_parcels_buildings/BY2023/mysql_connection.R")
   db <- "psrc_2023_parcel_baseyear"
   connection <- mysql.connection(db)
-  dbWriteTable(connection, bld.outname, bld.clean, overwrite = TRUE, row.names = FALSE)
+  dbWriteTable(connection, bld.outname, bld, overwrite = TRUE, row.names = FALSE)
+  dbWriteTable(connection, bld.outname.clean, bld.clean, overwrite = TRUE, row.names = FALSE)
   DBI::dbDisconnect(connection)
 }
 if(save.as.csv) {
-  fwrite(bld.clean, file.path(data.dir, paste0(bld.outname, ".csv")))
+  fwrite(bld, file.path(data.dir, paste0(bld.outname, ".csv")))
 }
 
 
