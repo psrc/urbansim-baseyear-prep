@@ -6,8 +6,8 @@ library(data.table)
 
 setwd("~/psrc/urbansim-baseyear-prep/imputation/imp2023")
 
-save.into.mysql <- TRUE
-save.as.csv <- TRUE
+save.into.mysql <- FALSE
+save.as.csv <- FALSE
 
 process.hotspots <- TRUE
 process.capacity <- TRUE
@@ -41,6 +41,22 @@ if(process.hotspots) {
     id <- bld[parcel_id %in% parcel, building_id] # 1213111, 1213151
     if(! all(id == c(1213111, 1213151))) stop("Check parcel_id or building_id for Boeing changes")
     bld[building_id %in% id, `:=`(building_type_id = 8, non_residential_sqft = 4200000)]
+    
+    # public hospitals - reclassify as government
+    parcel <- c(256443,
+                630036,
+                558613,
+                127807,
+                239592,
+                239596,
+                580067,
+                7488,
+                15373,
+                684983,
+                580072)
+    id <- bld[parcel_id %in% parcel & building_type_id == 7, building_id]
+    bld[building_id %in% id, building_type_id := 5]
+
 }
 
 if(process.capacity) {
@@ -59,10 +75,17 @@ if(process.capacity) {
     # determine sqft per job for each building
     bld[bspj, bsqft_per_job := i.building_sqft_per_job, on = c("building_type_id", "zone_id")]
     # bld[!is.na(bsqft_per_job), .N, by = .(building_type_id)][order(building_type_id)] # for checking purposes
+
     # set mixed-use (use the value for commercial BT)
     bld[bspj[building_type_id == 3], bsqft_per_job := ifelse(building_type_id == 10 & is.na(bsqft_per_job), 
                                                              i.building_sqft_per_job, bsqft_per_job),
         on = "zone_id"]
+    
+    # set hospitals (use the value for office BT)
+    bld[bspj[building_type_id == 13], bsqft_per_job := ifelse(building_type_id == 7 & is.na(bsqft_per_job), 
+                                                             i.building_sqft_per_job, bsqft_per_job),
+        on = "zone_id"]
+    
     # get the max value for each zone
     bspj.max <- bspj[, .(max_value = max(building_sqft_per_job)), by = "zone_id"]
     # set building types 1, 17, and 23 to the max value
