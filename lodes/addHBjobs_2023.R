@@ -11,7 +11,7 @@ data.dir <- "data"
 data.dir.yearspec <- "data2023"
 
 # unrolled NHB jobs as created by unroll_adjusted_lodes.R
-nhb.job.file <- "jobs_nohb_2024-10-16.csv"
+nhb.job.file <- "jobs_nohb_2024-11-04.csv"
 
 save.as.csv <- TRUE
 save.into.mysql <- TRUE

@@ -42,6 +42,24 @@ if(adjust.amazon){
     lodes[census_2020_block_group_geoid == "530330073031" & sector_id == 5, number_of_jobs := number_of_jobs - amazon.change]
     lodes[census_2020_block_group_geoid == "530330073031" & sector_id == 7, number_of_jobs := number_of_jobs + amazon.change]
     cat("\nAmazon sectors adjusted.")
+    adjbg <- c('530330072011', 1607,
+               '530330072013', 463,
+               '530330072022', 6322,
+               '530330072023', 13238,
+               '530330072031', 12738,
+               '530330073021', 7492, 
+               '530330073022', 13608,
+               '530330073023', 1913,
+               '530330073031', 12021,
+               '530330073032', 2862,
+               '530330073033', 5946)
+    adjbgdf <- data.table(matrix(adjbg, ncol = 2, byrow = TRUE))
+    colnames(adjbgdf) <- c("census_2020_block_group_geoid", "should_be")
+    adjbgdf[, `:=`(sector_id = 7, should_be = as.numeric(should_be))]
+    adjbgdf[lodes, noj := i.number_of_jobs, on = c("census_2020_block_group_geoid", "sector_id")][
+        , dif := should_be - noj]
+    lodes[adjbgdf, number_of_jobs := i.should_be, on = c("census_2020_block_group_geoid", "sector_id")]
+    cat("\nAmazon block groups adjusted.")
 }
 
 # add ID

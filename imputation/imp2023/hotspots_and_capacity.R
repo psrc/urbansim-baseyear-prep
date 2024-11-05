@@ -18,7 +18,7 @@ bld.outname.clean <- "buildings_with_prelim_capacity"
   
 # The following datasets are only used if process.capacity is TRUE.
 # That section of the code can be run only after the lodes data are unrolled, i.e. pre-parcelized
-jobs.file.name <- "../../lodes/jobs_preparcelized_20241016.csv" # use the full path
+jobs.file.name <- "../../lodes/jobs_preparcelized_20241104.csv" # use the full path
 bspj.name <- "building_sqft_per_job.csv"
 parcels.file.name <- "parcels.csv" # we only need zone_id from it
 
