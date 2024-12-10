@@ -18,6 +18,7 @@ find.templates <- function(mpds, templates, template.comps, parcels){
     template.comps.cand[, this_number_of_components := .N, by = "template_id"]
     template.comps.cand <- template.comps.cand[number_of_components == this_number_of_components]
     templates.cand <- templates[template_id %in% template.comps.cand$template_id]
+    
     if(nrow(templates.cand) == 0){
       cat("\nNo template found for building type(s) ", paste(mpd[bidx, building_type_id], collapse = ","),
           "due to building type mismatch")
@@ -55,9 +56,9 @@ find.templates <- function(mpds, templates, template.comps, parcels){
       if(nrow(winners.lu) > 0)
         all.winners <- winners.lu
       if(nrow(all.winners) > 1) # more still multiple winners choose one that matches improvement value
-        winners.impr <- all.winners[which.min(abs(improvement_value - sum(mpd[bidx]$improvement_value)))]
+        all.winners <- all.winners[which.min(abs(improvement_value - sum(mpd[bidx]$improvement_value)))]
     }
-    mpd[bidx, template_id := winners.impr$template_id] # assign the final template
+    mpd[bidx, template_id := all.winners$template_id] # assign the final template
   }
   if(nrow(miss <- mpd[is.na(template_id) | template_id == 0]) > 0)
     cat("\nNo template found for ", nrow(miss), "MPDs on", length(unique(miss$parcel_id)), "parcels.\n")
