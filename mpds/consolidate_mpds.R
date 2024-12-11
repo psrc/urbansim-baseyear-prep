@@ -6,7 +6,14 @@
 #     - removes records that have a high probability that they were already built
 #.    - finds template_id for new records
 #.    - converts MPDs into project proposal format and exports 
-# # Hana Sevcikova, 2024/12/02
+#     - identifies if an MPD is an addition or replacement and 
+#       adds a column not_demolish to the buildings table
+#
+# Datasets needed - can be read directly from mysql (from 2 different DBs) or from csv files:
+#     buildings_mpd_in, parcels, buildings, development_project_proposals (old proposals assigned to new parcels),
+#     development_templates, development_template_components
+# 
+# Hana Sevcikova, 2024/12/02
 #
 #options(error=quote(dump.frames("last.dump", TRUE)))
 #load("last.dump.rda"); debugger()
@@ -21,17 +28,16 @@ save.into.mysql <- TRUE
 read.from.mysql <- FALSE
 
 mpd.table.name.in <- "buildings_mpd_in"
-mpd.table.name.out <- "buildings_mpd_cons_in"
+mpd.table.name.out <- "buildings_mpd_cons" # table name of the consolidated CoStar records (will also be exported) 
 buildings.name.out <- "buildings_with_not_demolish" # output table of the buildings that will have the column not_demolish attached
 proposal.name.out <- "development_project_proposals"
 
-# this directory needs parcels.csv and possibly the mpd buildings table
 data.dir <- "data2023" # used if read.from.mysql is FALSE
 
 if(save.into.mysql || read.from.mysql){
   source("../collect_parcels_buildings/BY2023/mysql_connection.R")
-  db <- "psrc_2023_parcel_baseyear_working" # where to take the MPD table from
-  db.main <- "psrc_2023_parcel_baseyear" # where to take parcels and buildings tables from
+  db <- "psrc_2023_parcel_baseyear_working" # where to take the MPD tables from (old and new)
+  db.main <- "psrc_2023_parcel_baseyear" # where to take parcels, buildings and templates tables from
   connection <- mysql.connection(db)
   connection.main <- mysql.connection(db.main)
 }
