@@ -8,12 +8,13 @@
 #.    - converts MPDs into project proposal format and exports 
 #     - identifies if an MPD is an addition or replacement and 
 #       adds a column not_demolish to the buildings table
+#     - creates a table of mpds in a building format that is needed for urbansim2
 #
 # Datasets needed - can be read directly from mysql (from 2 different DBs) or from csv files:
 #     buildings_mpd_in, parcels, buildings, development_project_proposals (old proposals assigned to new parcels),
 #     development_templates, development_template_components
 # 
-# Hana Sevcikova, 2024/12/02
+# Hana Sevcikova, 2024/12/17
 #
 #options(error=quote(dump.frames("last.dump", TRUE)))
 #load("last.dump.rda"); debugger()
@@ -24,13 +25,14 @@ setwd("~/psrc/urbansim-baseyear-prep/mpds")
 
 source("mpd_functions.R") # contains function for finding template_id
 
-save.into.mysql <- TRUE
-read.from.mysql <- FALSE
+save.into.mysql <- FALSE
+read.from.mysql <- TRUE
 
 mpd.table.name.in <- "buildings_mpd_in"
 mpd.table.name.out <- "buildings_mpd_cons" # table name of the consolidated CoStar records (will also be exported) 
 buildings.name.out <- "buildings_with_not_demolish" # output table of the buildings that will have the column not_demolish attached
 proposal.name.out <- "development_project_proposals"
+mpd.buildings.name.out <- "mpds"
 
 data.dir <- "data2023" # used if read.from.mysql is FALSE
 
@@ -172,12 +174,14 @@ props.final <- rbind(prevprops[! (parcel_id %in% props.new$parcel_id) & parcel_i
                      )
 props.final[, proposal_id := 1:nrow(props.final)]
 mpds.new <- mpds.props[[1]]
+mpds.all <- mpds.final[parcel_id %in% props.final$parcel_id][, template_id := NULL]
 
 # export MPD and the buildings table
 if(save.into.mysql) {
   dbWriteTable(connection, mpd.table.name.out, mpds.new, overwrite = TRUE, row.names = FALSE)
   dbWriteTable(connection.main, buildings.name.out, updbld, overwrite = TRUE, row.names = FALSE)
   dbWriteTable(connection.main, proposal.name.out, props.final, overwrite = TRUE, row.names = FALSE)
+  dbWriteTable(connection.main, mpd.buildings.name.out, mpds.all, overwrite = TRUE, row.names = FALSE)
 }
 
 if(save.into.mysql || read.from.mysql) {
