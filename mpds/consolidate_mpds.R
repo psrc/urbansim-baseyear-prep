@@ -14,7 +14,7 @@
 #     buildings_mpd_in, parcels, buildings, development_project_proposals (old proposals assigned to new parcels),
 #     development_templates, development_template_components
 # 
-# Hana Sevcikova, 2024/12/17
+# Hana Sevcikova, 2025/01/08
 #
 #options(error=quote(dump.frames("last.dump", TRUE)))
 #load("last.dump.rda"); debugger()
@@ -25,7 +25,7 @@ setwd("~/psrc/urbansim-baseyear-prep/mpds")
 
 source("mpd_functions.R") # contains function for finding template_id
 
-save.into.mysql <- FALSE
+save.into.mysql <- TRUE
 read.from.mysql <- TRUE
 
 mpd.table.name.in <- "buildings_mpd_in"
@@ -175,9 +175,11 @@ props.new <- mpds.props[[2]][, `:=`(is_redevelopment = parcel_id %in%
 props.final <- rbind(prevprops[! (parcel_id %in% props.new$parcel_id) & parcel_id %in% mpds.final$parcel_id],
                      props.new[template_id > 0]
                      )
+props.final[, start_year := pmax(2024, start_year)]
 props.final[, proposal_id := 1:nrow(props.final)]
 mpds.new <- mpds.props[[1]]
 mpds.all <- mpds.final[parcel_id %in% props.final$parcel_id][, template_id := NULL]
+mpds.all[, year_built := pmax(2024, year_built)]
 
 # export MPD and the buildings table
 if(save.into.mysql) {
