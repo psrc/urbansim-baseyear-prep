@@ -62,8 +62,11 @@ if(read.from.mysql){
 
 # preprocess previous proposals
 # disaggregate into components by merging with template components
+templcomp <- merge(templcomp, templ[, .(template_id, density_type)], by = "template_id")
 prevpropcomp <- merge(prevprops, templcomp, by = "template_id")[start_year > 2022] # alternatively investigate if the old proposals were actually built
 prevpropcomp[, is_residential := ifelse(building_type_id %in% c(12, 19, 4), TRUE, FALSE)]
+prevpropcomp[, units_proposed := units_proposed * percent_building_sqft/100]
+prevpropcomp[is_residential == TRUE & density_type == "far" & units_proposed > 5000, units_proposed := units_proposed/building_sqft_per_unit]
 #prevpropcomp[templ, land_area := (i.land_sqft_max - i.land_sqft_min)/2, by = "template_id"]
 prevpropcomp[, `:=`(residential_units = ifelse(is_residential == TRUE, units_proposed, 0.0),
                     non_residential_sqft = ifelse(is_residential == TRUE, 0.0, as.double(units_proposed)),
