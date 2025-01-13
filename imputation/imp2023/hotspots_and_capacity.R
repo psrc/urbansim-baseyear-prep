@@ -1,6 +1,6 @@
 # This script adds preliminary capacity to the buildings table and 
 # processes hotspot changes
-# Hana Sevcikova, 2024/10/22
+# Hana Sevcikova, 2025/01/13
 
 library(data.table)
 
@@ -114,7 +114,7 @@ if(process.capacity) {
 
 bld.clean <- bld[, .(building_id, parcel_id, gross_sqft, non_residential_sqft, sqft_per_unit, 
                      year_built, residential_units, improvement_value, building_type_id, 
-                     stories, land_area, capacity_prelim)]
+                     stories, land_area, capacity_prelim, template_id = 0)]
 
 # export buildings table
 if(save.into.mysql) {
