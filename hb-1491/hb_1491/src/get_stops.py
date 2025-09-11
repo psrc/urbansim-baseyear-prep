@@ -157,7 +157,12 @@ def merge_dfs(
     )
     stops = pd.concat([current_dfs.stops, future_dfs.stops], ignore_index=True)
     stops.insert(0, "new_id", range(1, 1 + len(stops)))
-
+    # Flag duplicates except for the first occurrence
+    stops['duplicate_station_name'] = stops.duplicated(subset=["stop_name"], keep='first').astype(int)
+    # If you want to keep only the first occurrence, uncomment the next line:
+    # stops = stops.groupby("stop_name").first().reset_index()
+    stops['duplicate_station_name'] = np.where(stops.stop_name == 'Untitled Stop', 0, stops['duplicate_station_name'])
+    
     return transit_data_frames(
         year=current_dfs.year, routes=routes, route_stops=route_stops, stops=stops
     )
@@ -175,6 +180,8 @@ def get_city_pop_by_stop(stops, population_year) -> gpd.GeoDataFrame:
     cities = cities.to_crs(2285)
     uga = eg_conn.read_geolayer("urban_growth_area")
     uga = uga.to_crs(2285)
+    counties = eg_conn.read_geolayer("county_background")
+    counties = counties.to_crs(2285)
     # filter the cities to only those in the UGA
     stops = stops.loc[stops.within(uga.geometry.unary_union)]
 
@@ -188,14 +195,21 @@ def get_city_pop_by_stop(stops, population_year) -> gpd.GeoDataFrame:
 
     # get the city population from the OFM April 1 estimate facts table
     e_conn = psrcelmerpy.ElmerConn()
+    qry = f"""select max(publication_dim_id) as pub_id
+            from ofm.april_1_estimate_facts f 
+            where f.estimate_year = {population_year}"""
+    pub_dim_df = e_conn.get_query(qry)
+    publication_dim_id = pub_dim_df.iloc[0,0]
+    
     cities_pop = e_conn.get_table(schema="ofm", table_name="april_1_estimate_facts")
     cities_pop = cities_pop[cities_pop["estimate_year"] == population_year]
+    cities_pop = cities_pop[cities_pop["publication_dim_id"] == publication_dim_id]
     cities_pop = (
         cities_pop.groupby(["jurisdiction_dim_id"])["total_population"]
         .sum()
         .reset_index()
     )
-    jurisdictions = e_conn.get_table(schema="ofm", table_name="jurisdiction_dim")
+    jurisdictions = e_conn.get_table(schema="ofm", table_name="jurisdiction_dim") 
 
     # merge the city population with the jurisdictions
     cities_pop = cities_pop.merge(jurisdictions, on="jurisdiction_dim_id", how="left")
@@ -224,6 +238,26 @@ def get_city_pop_by_stop(stops, population_year) -> gpd.GeoDataFrame:
             "city_name",
             "jurisdiction_dim_id",
             "total_population",
+            'duplicate_station_name'
+        ]
+    ]
+
+    stops = gpd.sjoin(stops, counties, how="left", predicate="intersects")
+    
+    stops = stops[
+        [
+            "stop_id",
+            "new_id",
+            "stop_name",
+            "stop_type",
+            "year",
+            "geometry",
+            "city_name",
+            "jurisdiction_dim_id",
+            "total_population",
+            "county_nm",
+            "county_fip",
+            'duplicate_station_name'
         ]
     ]
 
@@ -232,6 +266,7 @@ def get_city_pop_by_stop(stops, population_year) -> gpd.GeoDataFrame:
     #     stops.at[index, 'city_place_code'] = get_place_fips_by_name_and_state_fips(city_name, 53)
     #     stops.at[index, 'city_population'] = get_city_population(stops.at[index, 'city_place_code'], 53)
     # print ('done')
+    stops = stops.groupby('new_id').first().reset_index()
     return stops
 
 
@@ -299,6 +334,41 @@ def run(config):
 
     dfs_merged.stops = get_city_pop_by_stop(dfs_merged.stops, config["population_year"])
     dfs_merged.stops = get_buffer_size_by_stop_type(dfs_merged.stops)
+    
+    # dfs_merged.stops['discard'] = 0
+    # skip = []
+
+    # for index, stop in dfs_merged.stops.iterrows():
+    #     if stop.stop_id not in skip:
+    #         buffer = stop.geometry.buffer(400)
+    #         stops_in_buffer = dfs_merged.stops[dfs_merged.stops.geometry.within(buffer)]
+    #         if len(stops_in_buffer) > 1:
+    #             stops_in_buffer = stops_in_buffer[stops_in_buffer['stop_type'] == stop.stop_type]
+    #             stops_in_buffer = stops_in_buffer[stops_in_buffer['stop_id'] != stop.stop_id]
+    #             skip.extend(stops_in_buffer.stop_id.to_list())
+    #             if len(stops_in_buffer) > 0:
+    #                 dfs_merged.stops['discard'].loc[stops_in_buffer.index] = 1
+    #             else:
+    #                 print("here")
+    #     else:
+    #         print("here")
+
+    dfs_merged.stops['dissolve'] = 0
+    skip = []
+    dissolve_id = 1
+    for index, stop in dfs_merged.stops.iterrows():
+        if stop.stop_type==5:
+            dfs_merged.stops.loc[dfs_merged.stops.stop_id == stop.stop_id, 'dissolve'] = dissolve_id
+            dissolve_id = dissolve_id + 1
+        elif stop.stop_id not in skip:
+            buffer = stop.geometry.buffer(400)
+            stops_in_buffer = dfs_merged.stops[dfs_merged.stops.geometry.within(buffer)]
+            stops_in_buffer = stops_in_buffer[stops_in_buffer['stop_type'] == stop.stop_type]
+            dfs_merged.stops['dissolve'].loc[stops_in_buffer.index] = dissolve_id
+            skip.extend(stops_in_buffer.stop_id.to_list())
+            dissolve_id = dissolve_id + 1
+            
+
     dfs_merged.stops.to_file(
         Path(config["output_gdb"]), driver="OpenFileGDB", layer="stations_1491"
     )
@@ -308,6 +378,8 @@ def run(config):
     dfs_merged.routes.to_file(
         config["output_gdb"], driver="OpenFileGDB", layer="route_1491"
     )
+    
+
     return dfs_merged.stops
 
     print("done")

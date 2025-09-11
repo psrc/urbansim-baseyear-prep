@@ -1,7 +1,9 @@
-import numpy as np
 from pathlib import Path
-import pandas as pd
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+import psrcelmerpy
 
 
 def buffer_stops(stops, crs):
@@ -182,7 +184,14 @@ def run(config):
     # parcels
     parcels = store["parcels"]
     parcels.reset_index(inplace=True)
+    parcels = gpd.GeoDataFrame(parcels, geometry=gpd.points_from_xy(parcels.x_coord_sp, parcels.y_coord_sp))
+    parcels = parcels.set_crs(epsg=2285)
 
+    # only parcels in cities
+    eg_conn = psrcelmerpy.ElmerGeoConn()
+    cities = eg_conn.read_geolayer("cities")
+    cities = cities.to_crs(2285)
+    parcels = parcels.loc[parcels.within(cities.geometry.unary_union)]
     # builduings
     buildings = store["buildings"]
     buildings.reset_index(inplace=True)
@@ -193,11 +202,16 @@ def run(config):
     # walksheds have been created for the 1491 stops
     if config["use_walksheds"]:
         stops_gdf = gpd.read_file(config["output_gdb"], layer="stations_1491_walksheds")
+        first_records = stops_gdf.groupby('dissolve').first()
+        first_records.to_csv(Path(config["output_file_dir"]) / "station_first_records.csv", index=False)
+        stops_gdf = stops_gdf.dissolve(by="dissolve")
+        stops_gdf = stops_gdf.loc[stops_gdf.intersects(cities.geometry.unary_union)]
     else:
         stops_gdf = gpd.read_file(config["output_gdb"], layer="stations_1491")
 
     stops_gdf = stops_gdf[
-        ["stop_name", "new_id", "geometry", "stop_type", "buffer_size"]
+        ["stop_name", "new_id", "geometry", "stop_type", "buffer_size", "year", "city_name", "county_nm", 
+         "county_fip", "duplicate_station_name", "total_population"]
     ]
 
     # stops_gdf = stops_gdf[stops_gdf["stop_name"] != "Untitled Stop"]
@@ -333,6 +347,9 @@ def run(config):
                 "percent_weights_by_mf": percent_weights_by_mf,
                 "percent_weights_by_mixed_use": percent_weights_by_mixed_use,
                 "percent_meets_far": percent_meets,
+                "parcels_count": len(parcels_in_buffer),
+                "total_acreage": parcels_in_buffer["parcel_sqft"].sum() / 43560,
+                "total_buffer_acreage": buffer.geometry.area / 43560,
             }
         )
         parcels_in_buffer["stop_name"] = buffer.stop_name
@@ -342,14 +359,36 @@ def run(config):
 
         print("done with buffer")
     results = pd.DataFrame(data)
-    stops_gdf = stops_gdf.merge(results, on="new_id", how="left")
+    stops_gdf = stops_gdf.merge(results, on="new_id", how="left"
+    )
     stops_gdf.crs = 2285
     # gpd.options.io_engine = "fiona"
-
+    
+    # create a df for each parcel within each buffer
     station_parcels = pd.concat(df_list)
     station_parcels = gpd.GeoDataFrame(
         station_parcels, geometry="geometry", crs=parcels_gdf.crs
     )
+    
+    # get unique parcels for each station & summarize by county
+    unique_stations = parcels[parcels['parcel_id'].isin(station_parcels['parcel_id'].unique())]
+    unique_stations = unique_stations.groupby('county_id').agg({'parcel_sqft':'sum', 'parcel_id':'size'}).reset_index()
+    unique_stations['total_acreage'] = unique_stations['parcel_sqft']/43560
+    unique_stations.rename(columns={'parcel_id':'total_parcels'}, inplace=True)
+    unique_stations.to_csv(Path(config["output_file_dir"]) / "station_parcels_summary.csv", index=False)
+
+    
+    # keep track of multipart polygons
+    stops_gdf["multipart_polygon"] = np.where(stops_gdf.geometry.type == "MultiPolygon", 1, 0)
+    
+    # convert gdf to df and drop geometry for csv output
+    stops_df = pd.DataFrame(stops_gdf)
+    stops_df = stops_df.drop(columns=["geometry"])
+    # export to csv
+    stops_df.to_csv(Path(config["output_file_dir"]) / "station_far_summary.csv", index=False)
+    
+    # need to explode the multipart polygons before exporting to file geodatabase
+    stops_gdf = stops_gdf.explode()
     if config["use_walksheds"]:
         station_parcels.to_file(
             config["output_gdb"],

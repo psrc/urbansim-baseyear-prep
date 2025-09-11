@@ -10,7 +10,7 @@
             "type": "debugpy",
             "request": "launch",
             "console": "integratedTerminal",
-            "args": ["-c", "R:\\e2projects_two\\Stefan\\hb_1491\\scripts\\hb_1491\\configs"]
+            "args": ["-c", "R:\\e2projects_two\\Stefan\\urbansim-baseyear-prep\\hb-1491\\hb_1491\\configs"]
 
 
         }
