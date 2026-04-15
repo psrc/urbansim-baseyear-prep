@@ -3,7 +3,7 @@ import re
 import pandas as pd
 from pathlib import Path
 
-SPATIAL_EXTENSIONS = {'.shp', '.gpkg', '.geojson', '.gdb'}
+GDB_EXTENSION = '.gdb'
 TABLE_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 
 
@@ -17,17 +17,20 @@ def clean_id(value):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Clean a unique ID field in a spatial layer or table.")
-    parser.add_argument("file", help="Path to the input file (.shp, .gpkg, .geojson, .csv, .xlsx)")
-    parser.add_argument("id_column", help="Name of the unique ID column to clean")
+    parser = argparse.ArgumentParser(description="Clean a unique ID field in a geodatabase layer or table.")
+    parser.add_argument("file", help="Path to the input file (.gdb, .csv, .xlsx)")
+    parser.add_argument("id_columns", nargs='+', help="Name(s) of the column(s) to clean")
+    parser.add_argument("--layer", help="Layer name (required for .gdb files)")
     args = parser.parse_args()
 
     file_path = Path(args.file)
     ext = file_path.suffix.lower()
 
-    if ext in SPATIAL_EXTENSIONS:
+    if ext == GDB_EXTENSION:
         import geopandas as gpd
-        df = gpd.read_file(args.file)
+        if not args.layer:
+            raise ValueError("--layer is required for geodatabase (.gdb) files")
+        df = gpd.read_file(args.file, layer=args.layer)
         is_spatial = True
     elif ext in TABLE_EXTENSIONS:
         if ext in ('.xlsx', '.xls'):
@@ -39,21 +42,21 @@ def main():
                 df = pd.read_csv(args.file, encoding='latin-1')
         is_spatial = False
     else:
-        raise ValueError(f"Unsupported file extension '{ext}'. Supported: {SPATIAL_EXTENSIONS | TABLE_EXTENSIONS}")
+        raise ValueError(f"Unsupported file extension '{ext}'. Supported: {{'{GDB_EXTENSION}'}} | {TABLE_EXTENSIONS}")
 
-    if args.id_column not in df.columns:
-        raise ValueError(f"Column '{args.id_column}' not found. Available: {list(df.columns)}")
-
-    df[args.id_column] = df[args.id_column].apply(clean_id)
+    for col in args.id_columns:
+        if col not in df.columns:
+            raise ValueError(f"Column '{col}' not found. Available: {list(df.columns)}")
+        df[col] = df[col].apply(clean_id)
 
     if is_spatial:
-        out_path = str(file_path.with_suffix('')) + '_cleaned.gpkg'
-        df.to_file(out_path, driver='GPKG')
+        out_layer = args.layer + '_cleaned'
+        df.to_file(args.file, driver='OpenFileGDB', layer=out_layer)
+        print(f"Output: {args.file} / {out_layer} ({len(df)} rows)")
     else:
         out_path = str(file_path.with_suffix('')) + '_cleaned.csv'
         df.to_csv(out_path, index=False)
-
-    print(f"Output: {out_path} ({len(df)} rows)")
+        print(f"Output: {out_path} ({len(df)} rows)")
 
 
 if __name__ == '__main__':
