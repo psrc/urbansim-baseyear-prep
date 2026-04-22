@@ -14,11 +14,12 @@ data.path <- file.path(in.path, "data2026")
 #fluall <- fread(file.path(data.path, "Zoning_2026_d2.csv"))
 fluall <- data.table(read_xlsx(file.path(data.path, "Zoning_2026_d2.xlsx")))
 flubonus <- fluall[Bonus_included == "Y"]
-flunobonus <- fluall[Bonus_included == ""]
+flunobonus <- fluall[is.na(Bonus_included) | Bonus_included == ""]
 dim(fluall)
 dim(flubonus)
 dim(flunobonus)
 dim(flunobonus[!juris_zn %in% flubonus$juris_zn])
+dim(flu)
 
 # put together bonus zones and those that don't have bonuses
 flu <- rbind(flubonus, flunobonus[!juris_zn %in% flubonus$juris_zn])
@@ -71,7 +72,7 @@ flu[!is.na(rng2), (col) := round(rng1 + (rng2 - rng1)/2)][, `:=`(rng1 = NULL, rn
 # by setting options(warn = 2) & flu[,.N, by = col]
 for(col in num.cols)
     flu[, (col) := as.numeric(get(col))]
-stop("")
+
 # clean the "rural" column
 flu[, .N, by = "rural"]
 flu[, rural := ifelse(rural == "Y", TRUE, ifelse(rural %in% c("N", "not"), FALSE, NA))]

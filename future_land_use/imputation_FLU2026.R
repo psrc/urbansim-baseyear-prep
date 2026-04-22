@@ -1,4 +1,5 @@
-# Clean 2026 FLU table and impute various measures.
+# Clean 2026 FLU table and impute various measures, using coefficients 
+# estimated via the estimation_FLU2026.R script.
 # Adapted from development_constraints_imputation.R (originally written by Christy Lam)
 # Hana Sevcikova (PSRC)
 # 04/22/2026
@@ -28,7 +29,7 @@ lu <- read.xlsx(master.lookup) %>% as.data.table
 
 # extract bonus/no-bonus records
 flubonus <- fluall[Bonus_included == "Y"]
-flunobonus <- fluall[Bonus_included == ""]
+flunobonus <- fluall[is.na(Bonus_included) | Bonus_included == ""]
 flu <- rbind(flubonus, flunobonus[!juris_zn %in% flubonus$juris_zn])[Zone != "ERROR"]
 
 # collect columnn names
@@ -293,7 +294,7 @@ adj2 <- with(flu.imp, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed_imp) & MaxFAR_Res
 flu.imp[adj1, MaxHt_Res_imp := round(MaxHt_Res_imp * MaxFAR_Res/MaxFAR_Mixed_imp)]
 flu.imp[adj2, MaxHt_Res_imp := round(MaxHt_Res_imp * MaxFAR_Res/(MaxFAR_Mixed_imp + MaxFAR_Res))]
 
-# coefficients
+# coefficients (estimated via estimation_FLU2026.R)
 #coeff <- list(a = 1.403, b = 0.654, c = 2.121, q = -0.980, d = -2.880, e = 1.448, r = -2.187)
 coeff <- list(a = -1.856659, b = 1.004703, c = 0.016398, q = -0.865158, 
               d = -2.5284, e = 1.4307, r = -0.9589)
