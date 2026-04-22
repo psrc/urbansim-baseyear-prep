@@ -17,7 +17,7 @@ out.path <- in.path
 #out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
 
 master.lookup <- file.path(in.path, "data2026", "Full_FLU_Master_Corres_File.xlsx")
-new.flu.name <- file.path(in.path, "data2026", "Zoning_2026_d2.xlsx")
+new.flu.name <- file.path(in.path, "data2026", "Zoning_2026_d3.xlsx")
 old.flu.name <- file.path(in.path, "data", "final_flu_postprocessed_2023-01-10.csv")
 #old.flu.name <- file.path(in.path, "density_table_4_gis.csv")
 
@@ -88,7 +88,8 @@ for(col in clean.cols){
 col <- "MaxDU_Res"
 flu[, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
 flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
-flu[!is.na(rng2), (col) := round(rng1 + (rng2 - rng1)/2)][, `:=`(rng1 = NULL, rng2 = NULL)]
+flu[!is.na(rng2), (col) := round(rng1 + (rng2 - rng1)/2)][
+                         , `:=`(rng1 = NULL, rng2 = NULL)]
 
 for (col in clean.cols) {
   # convert cols to double type
@@ -145,18 +146,18 @@ for(use in c("Res", "Comm", "Office", "Indust")){
 
 # for residential records without MaxDU_Res, MaxFAR_Res, ResDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
 flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed), 
-    `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'imputed')]
+    `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'asserted')]
 # similarly for missing MinDU_Res - take it from MinDU_Mixed
 flu[Res_Use == "Y" & !is.na(MinDU_Mixed) & is.na(ResDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
-    `:=`(MinDU_Res = MinDU_Mixed, MinDU_Res_src = 'imputed')]
+    `:=`(MinDU_Res = MinDU_Mixed, MinDU_Res_src = 'asserted')]
 
 # for residential records without MaxHt_Res but with MaxHt_Mixed, use that for MaxHt_Res
 flu[Res_Use == "Y" & is.na(MaxHt_Res) & !is.na(MaxHt_Mixed), 
-    `:=`(MaxHt_Res = MaxHt_Mixed, MaxDU_Res_src = 'imputed')]
+    `:=`(MaxHt_Res = MaxHt_Mixed, MaxDU_Res_src = 'asserted')]
 
 # for mobile home parks with missing DU/acre, impute 5
 flu[Zone == "MHP" & Res_Use == "Y" & is.na(MaxDU_Res) & is.na(ResDU_lot), 
-    `:=`(MaxDU_Res = 5, MaxDU_Res_src = 'imputed')]
+    `:=`(MaxDU_Res = 5, MaxDU_Res_src = 'asserted')]
 
 # convert FAR to DU/acre
 # first compute floors to get efficiency (from ChatGPT)
@@ -167,13 +168,13 @@ flu[idx, eff := ifelse(is.na(floors) | floors < 12, 0.8, 0.7)]
 flu[idx & Mixed_Use == "Y", MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 800)]
 # for SF (if Mixed use is not allowed), use 1000sf per unit
 flu[idx & Mixed_Use != "Y", MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 1000)]
-flu[idx, MaxDU_Res_src := "imputed"]
+flu[idx, MaxDU_Res_src := "estimated"]
 flu[, `:=`(floors = NULL, eff = NULL)]
 
 # something simpler and more conservative for MinFAR_Res -> MinDU_Res
 flu[Res_Use == "Y" & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(ResDU_lot),
     `:=`(MinDU_Res = pmin(round(MinFAR_Res * 43560 * 0.8 / 1200), MaxDU_Res, na.rm = TRUE),
-         MinDU_Res_src = 'imputed')]
+         MinDU_Res_src = 'estimated')]
 
 # check which records are only Mixed use and nothing else
 unique(flu[Mixed_Use == "Y" & Res_Use != "Y" & Comm_Use != "Y" & Indust_Use != "Y" & Office_Use != "Y" & grepl("residential", Definition), Juris])
@@ -288,11 +289,13 @@ for (stype in names(cols.sets)) {
 flu.imp <- flu.imp[!is.na(Juris_new)]
  
 # adjust MaxHt_Res column prior to imputation (retain original)
-flu.imp[, MaxHt_Res_orig := MaxHt_Res_imp]
+flu.imp[, MaxHt_Res_orig := MaxHt_Res_imp] # TODO: is it needed? It should be in MaxHt_Res_new
 adj1 <- with(flu.imp, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed_imp) & MaxFAR_Res < MaxFAR_Mixed_imp & MaxFAR_Res > 0)
 adj2 <- with(flu.imp, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed_imp) & MaxFAR_Res > MaxFAR_Mixed_imp)
-flu.imp[adj1, MaxHt_Res_imp := round(MaxHt_Res_imp * MaxFAR_Res/MaxFAR_Mixed_imp)]
-flu.imp[adj2, MaxHt_Res_imp := round(MaxHt_Res_imp * MaxFAR_Res/(MaxFAR_Mixed_imp + MaxFAR_Res))]
+flu.imp[adj1, `:=`(MaxHt_Res_imp = round(MaxHt_Res_imp * MaxFAR_Res/MaxFAR_Mixed_imp), 
+                   MaxHt_Res_src = 'adjusted')]
+flu.imp[adj2, `:=`(MaxHt_Res_imp = round(MaxHt_Res_imp * MaxFAR_Res/(MaxFAR_Mixed_imp + MaxFAR_Res)),
+                   MaxHt_Res_src = 'adjusted')]
 
 # coefficients (estimated via estimation_FLU2026.R)
 #coeff <- list(a = 1.403, b = 0.654, c = 2.121, q = -0.980, d = -2.880, e = 1.448, r = -2.187)

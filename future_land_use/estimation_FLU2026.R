@@ -12,7 +12,7 @@ data.path <- file.path(in.path, "data2026")
 
 # read the FLU file
 #fluall <- fread(file.path(data.path, "Zoning_2026_d2.csv"))
-fluall <- data.table(read_xlsx(file.path(data.path, "Zoning_2026_d2.xlsx")))
+fluall <- data.table(read_xlsx(file.path(data.path, "Zoning_2026_d3.xlsx")))
 flubonus <- fluall[Bonus_included == "Y"]
 flunobonus <- fluall[is.na(Bonus_included) | Bonus_included == ""]
 dim(fluall)
