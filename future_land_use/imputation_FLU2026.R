@@ -46,6 +46,11 @@ cols.sets <- pmap(list(use.cols, min.cols, max.cols, maxht.cols, lc.cols), list)
   map(~set_names(.x, c("use", "min_dens", "max_dens", "height", "lc"))) %>% 
   set_names(c("Res", "Comm", "Office", "Indust", "Mixed"))
 
+# clean Use columns
+for(col in use.cols){
+  flu[, (col) := as.logical(ifelse(!is.na(get(col)) & tolower(get(col)) == "y", TRUE, FALSE))]
+}
+
 # add missing density items
 cols.sets[['Mixed']][['max_dens']] <- list(du = "MaxDU_Mixed", far = cols.sets[['Mixed']][['max_dens']])
 cols.sets[['Mixed']][['min_dens']] <- list(du = "MinDU_Mixed", far = cols.sets[['Mixed']][['min_dens']])
@@ -116,68 +121,71 @@ for (i in 1:length(cols.sets)) {
 
 flu[, .N, by = "rural"] # very few records have this info
 flu[, rural := ifelse(rural == "Y", TRUE, ifelse(rural %in% c("N", "not"), FALSE, NA))]
-# set various zones as "rural" (20 records)
+# set various zones as "rural" (21 records)
 # found via flu[grepl("rural", Definition) & is.na(rural)]
 flu[(Zone %in% c("FL", "EPF-RAN", "RIC", "RNC", "RSR", "RR", "RW", "RCO", "SVLR", "FRL", "ARL", "RSep") |
        juris_zn %in% c("Pierce_County_GC", "Kenmore_GC", "Kenmore_P", "Kent_A-10", "Kitsap_RP",
-                       "Kitsap_RI", "Kitsap_REC", "Kitsap_TTEC")) 
+                       "Kitsap_RI", "Kitsap_REC", "Kitsap_TTEC", "Arlington_RULC")) 
     & is.na(rural), rural := TRUE]
 # set NA rural records to FALSE 
 flu[is.na(rural), rural := FALSE]
 
+# set rural to FALSE if MaxDU_Res > 20 (3 records)
+flu[rural == TRUE & MaxDU_Res > 20, rural := FALSE]
+
 # set to residential use if ResDU_lot or MaxDU_Res given
 flu[!is.na(ResDU_lot) & ResDU_lot > 100, ResDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
-flu[((!is.na(ResDU_lot)  & ResDU_lot > 0)  | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use != "Y", Res_Use := "Y"]
+flu[((!is.na(ResDU_lot)  & ResDU_lot > 0)  | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
 # Check Auburn_R-3 (ResDU_lot = 40) Should it be MaxDU_Res?
 
-paste(sort(setdiff(unique(flu[Res_Use == "Y" & (is.na(rural) | rural == TRUE), Juris]), 
+paste(sort(setdiff(unique(flu[Res_Use == TRUE & (is.na(rural) | rural == TRUE), Juris]), 
         flu[!is.na(ResDU_lot)  & ResDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
 
 # if "missing middle" is in the description but neither ResDU_lot nor MaxDU_Res given,
 # set ResDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
-flu[grepl("missing middle", Definition) & Res_Use == "Y" & is.na(ResDU_lot) & is.na(MaxDU_Res),
+flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(ResDU_lot) & is.na(MaxDU_Res),
     `:=`(ResDU_lot = -1, ResDU_lot_src = 'imputed')]
 
 # if use-specific LC not given but LC_Mixed given, set the use-specific LC to that
 for(use in c("Res", "Comm", "Office", "Indust")){
-  flu[get(paste0(use, "_Use")) == "Y" & is.na(get(paste0("LC_", use))) & !is.na(LC_Mixed),
+  flu[get(paste0(use, "_Use")) == TRUE & is.na(get(paste0("LC_", use))) & !is.na(LC_Mixed),
       (paste0("LC_", use)) := LC_Mixed]
 }
 
 # for residential records without MaxDU_Res, MaxFAR_Res, ResDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
-flu[Res_Use == "Y" & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed), 
+flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed), 
     `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'asserted')]
 # similarly for missing MinDU_Res - take it from MinDU_Mixed
-flu[Res_Use == "Y" & !is.na(MinDU_Mixed) & is.na(ResDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
+flu[Res_Use == TRUE & !is.na(MinDU_Mixed) & is.na(ResDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
     `:=`(MinDU_Res = MinDU_Mixed, MinDU_Res_src = 'asserted')]
 
 # for residential records without MaxHt_Res but with MaxHt_Mixed, use that for MaxHt_Res
-flu[Res_Use == "Y" & is.na(MaxHt_Res) & !is.na(MaxHt_Mixed), 
+flu[Res_Use == TRUE & is.na(MaxHt_Res) & !is.na(MaxHt_Mixed), 
     `:=`(MaxHt_Res = MaxHt_Mixed, MaxDU_Res_src = 'asserted')]
 
 # for mobile home parks with missing DU/acre, impute 5
-flu[Zone == "MHP" & Res_Use == "Y" & is.na(MaxDU_Res) & is.na(ResDU_lot), 
+flu[Zone == "MHP" & Res_Use == TRUE & is.na(MaxDU_Res) & is.na(ResDU_lot), 
     `:=`(MaxDU_Res = 5, MaxDU_Res_src = 'asserted')]
 
 # convert FAR to DU/acre
 # first compute floors to get efficiency (from ChatGPT)
-idx <- with(flu, Res_Use == "Y" & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(ResDU_lot))
+idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(ResDU_lot))
 flu[idx & !is.na(MaxHt_Res), floors := round(MaxHt_Res/12)]
 flu[idx, eff := ifelse(is.na(floors) | floors < 12, 0.8, 0.7)]
 # for MF (if it allows Mixed use), use 800sf per unit
-flu[idx & Mixed_Use == "Y", MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 800)]
+flu[idx & Mixed_Use == TRUE, MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 800)]
 # for SF (if Mixed use is not allowed), use 1000sf per unit
-flu[idx & Mixed_Use != "Y", MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 1000)]
+flu[idx & Mixed_Use == FALSE, MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 1000)]
 flu[idx, MaxDU_Res_src := "estimated"]
 flu[, `:=`(floors = NULL, eff = NULL)]
 
 # something simpler and more conservative for MinFAR_Res -> MinDU_Res
-flu[Res_Use == "Y" & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(ResDU_lot),
+flu[Res_Use == TRUE & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(ResDU_lot),
     `:=`(MinDU_Res = pmin(round(MinFAR_Res * 43560 * 0.8 / 1200), MaxDU_Res, na.rm = TRUE),
          MinDU_Res_src = 'estimated')]
 
 # check which records are only Mixed use and nothing else
-unique(flu[Mixed_Use == "Y" & Res_Use != "Y" & Comm_Use != "Y" & Indust_Use != "Y" & Office_Use != "Y" & grepl("residential", Definition), Juris])
+unique(flu[Mixed_Use == TRUE & Res_Use == FALSE & Comm_Use == FALSE & Indust_Use == FALSE & Office_Use == FALSE & grepl("residential", Definition), Juris])
 
 
 # Compile previous flu ----------------------------------------------------
@@ -211,7 +219,6 @@ flu.join <- merge(flu[!duplicated(FLU_master_id)], oflu, by = c("FLU_master_id")
 
 # Collected & previous values -------------------------------------------
 
-
 flu.imp <- copy(flu.join)
 
 ## densities ----
@@ -235,12 +242,12 @@ for (i in 1:length(cols.sets)) {
 
      # update col ending '_imp' with original du/far
      flu.imp[!is.na(Juris_new) &
-               get(use.col) == "Y" &
+               get(use.col) == TRUE &
                !is.na(get(new.dens.col)) & get(new.dens.col) > 0, eval(orig.equat)]
 
     # update col ending '_imp' with prev du/far
     flu.imp[!is.na(Juris_new) & # is not null (flu.imp is a union)
-              get(use.col) == "Y" &
+              get(use.col) == TRUE &
               (is.na(get(new.dens.col)) | get(new.dens.col) == 0) &
               !is.na(get(prev.dens.col)) & get(prev.dens.col) > 0, eval(prev.equat)]
    }
@@ -270,14 +277,14 @@ for (stype in names(cols.sets)) {
    orig.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, " = ", new.ht.col, ")"))
    
    flu.imp[!is.na(Juris_new) &
-             get(use.col) == "Y" &
+             get(use.col) == TRUE &
              !is.na(get(new.ht.col)) & get(new.ht.col) > 0, eval(orig.equat)]
    
   # update col ending '_imp' with prev height
   prev.equat <- parse(text = paste0("\`:=\`(", imp.ht.col, "= ", prev.ht.col, ",", newcolnm_tag, "= 'prev')"))
 
   flu.imp[!is.na(Juris_new) &
-            get(eval(use.col)) == "Y" &
+            get(eval(use.col)) == TRUE &
             is.na(get(imp.ht.col)) &
             is.na(get(new.ht.col)) &
             !is.na(get(prev.ht.col)) & get(prev.ht.col) > 0, eval(prev.equat)]
@@ -303,7 +310,7 @@ coeff <- list(a = -1.856659, b = 1.004703, c = 0.016398, q = -0.865158,
               d = -2.5284, e = 1.4307, r = -0.9589)
 
 
-no.info.rows <- flu.imp[Res_Use == "Y" & is.na(LC_Res) & is.na(MaxHt_Res_imp) & 
+no.info.rows <- flu.imp[Res_Use == TRUE & is.na(LC_Res) & is.na(MaxHt_Res_imp) & 
                           is.na(MaxFAR_Res) & is.na(MaxDU_Res_imp) & is.na(ResDU_lot)]
 
 # Impute max DU/ac, height, and FAR
@@ -344,7 +351,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$q, "*I(rural))),",
                                     newcolnm_tag, "= 'imputed')"))
       
-      flu.imp[get(use.col) == "Y" & is.na(ResDU_lot) &
+      flu.imp[get(use.col) == TRUE & is.na(ResDU_lot) &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)) & get(newcolnm.ht) > 0 &
             !is.na(get(lc.col)) & get(lc.col) > 0 & 
@@ -357,7 +364,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$r, "*I(rural))),",
                                     newcolnm_tag, "= 'imputed')"))
 
-      flu.imp[get(use.col) == "Y"  & is.na(ResDU_lot) &
+      flu.imp[get(use.col) == TRUE  & is.na(ResDU_lot) &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)) & 
               is.na(get(lc.col)) & get(lc.col) > 0 &
@@ -371,7 +378,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$r, "*I(rural))/",
                                     coeff$b ,")),",
                                     newcolnm_tag.ht, "= 'imputed')"))
-      flu.imp[get(use.col) == "Y" & 
+      flu.imp[get(use.col) == TRUE & 
             (is.na(get(newcolnm.ht)) | get(newcolnm.ht) == 0) &
             (!is.na(get(density.col)) | get(density.col) != 0) &
             (!is.na(get(lc.col)) | get(lc.col) != 0), eval(equat3)]
@@ -383,34 +390,38 @@ for (i in 1:length(cols.sets)) {
                                     coeff$r, "*I(rural))/",
                                     coeff$e,")),",
                                     newcolnm_tag.ht, "= 'imputed')"))
-      flu.imp[get(eval(use.col)) == "Y" &
+      flu.imp[get(eval(use.col)) == TRUE &
             (is.na(get(newcolnm.ht)) | get(newcolnm.ht) == 0) &
             (!is.na(get(density.col)) | get(density.col) != 0) &
             (is.na(get(lc.col)) | get(lc.col) == 0), eval(equat4)]
 
-    } else {
-      equat <- parse(text = paste0("\`:=\`(", newcolnm, "= ", newcolnm.ht, "/20,", newcolnm_tag, "= 'imputed')"))
-      stop("")
-      flu.imp[get(eval(use.col)) == "Y" &
-            (is.na(get(eval(density.col))) | get(eval(density.col)) == 0) &
-            !is.na(get(eval(newcolnm.ht))) &
-              is.na(get(eval(newcolnm))), eval(equat)]
+    } else { # non-residential imputation
+      # for missing lot coverage values, use its median 
+      med_lc <- flu.imp[get(use.col) == TRUE & !is.na(get(lc.col)) & get(lc.col) > 0, median(get(lc.col))]
+      flu.imp[get(use.col) == TRUE & is.na(get(lc.col)) | get(lc.col) == 0, (lc.col) := med_lc]
+
+      # impute FAR for non-res use via
+      # FAR = height * lot_coverage / 12
+      equat <- parse(text = paste0("\`:=\`(", newcolnm, " = ", newcolnm.ht, 
+                                   " * 0.01 * ", lc.col, " / 12, ", newcolnm_tag, "= 'imputed')"))
+      flu.imp[get(use.col) == TRUE &
+            (is.na(get(density.col)) | get(density.col) == 0) &
+            !is.na(get(newcolnm.ht)) &
+              is.na(get(newcolnm)), eval(equat)]
       
       # impute height for non-res use
       # height = pmax(12, 12*FAR/lot_coverage)
-      # missing lot_coverage fill in with 1
-      flu.imp[get(eval(use.col)) == "Y" &
-                (is.na(get(eval(newcolnm.ht))) | get(eval(newcolnm.ht)) == 0) &
-                is.na(get(eval(lc.col))), (lc.col) := 1]
-      
-      equat.nonres.ht <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= pmax(12, 12*", newcolnm,"/", lc.col,"), ", newcolnm_tag.ht, "= 'imputed')"))
-      flu.imp[get(eval(use.col)) == "Y" &
-                (is.na(get(eval(newcolnm.ht))) | get(eval(newcolnm.ht)) == 0), eval(equat.nonres.ht)]
+      equat.nonres.ht <- parse(text = paste0("\`:=\`(", newcolnm.ht, "= pmax(12, 12 * ", newcolnm,"/(", lc.col,"/100)), ", newcolnm_tag.ht, "= 'imputed')"))
+      flu.imp[get(use.col) == TRUE & !is.na(get(newcolnm)) &
+                (is.na(get(newcolnm.ht)) | get(newcolnm.ht) == 0), eval(equat.nonres.ht)]
+      miss <- flu.imp[get(use.col) == TRUE & is.na(get(newcolnm))]
+      cat("Missing info for ", nrow(miss),
+          " records: ", paste(unique(miss[, juris_zn_new]), collapse = ", "))
     }
   }
 }
 
-
+stop("")
 # exclude _prev records that didn't match current flu records
 flu.fin.prep <- flu.imp[!is.na(Juris_new)]
 
