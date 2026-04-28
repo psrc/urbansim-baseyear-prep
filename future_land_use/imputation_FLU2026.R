@@ -9,7 +9,7 @@ library(purrr)
 library(magrittr)
 library(data.table)
 library(foreign)
-library(openxlsx)
+library(readxl)
 
 in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
 #in.path <- "J:/Staff/Christy/usim-baseyear/flu"
@@ -22,87 +22,9 @@ old.flu.name <- file.path(in.path, "data", "final_flu_postprocessed_2023-01-10.c
 #old.flu.name <- file.path(in.path, "density_table_4_gis.csv")
 
 # read new FLU and old FLU files
-#fluall <- fread(new.flu.name)
-fluall <- data.table(read_xlsx(new.flu.name))
+source("load_FLU2026.R")
 ofluall <- fread(old.flu.name)
-lu <- read.xlsx(master.lookup) %>% as.data.table
-
-# extract bonus/no-bonus records
-flubonus <- fluall[Bonus_included == "Y"]
-flunobonus <- fluall[is.na(Bonus_included) | Bonus_included == ""]
-flu <- rbind(flubonus, flunobonus[!juris_zn %in% flubonus$juris_zn])[Zone != "ERROR"]
-
-# collect columnn names
-id.cols <- intersect(colnames(flu), c(str_subset(colnames(flu), "^Juris|Zone"), "Key", "Definition"))
-use.cols <- str_subset(colnames(flu), "^[R|C|O|I|M].*_Use$")
-max.cols <- c(str_subset(colnames(flu), "^MaxD.*_[R].*"), str_subset(colnames(flu), "^MaxF.*_[C|O|I|M].*"))
-min.cols <- c(str_subset(colnames(flu), "^MinD.*_[R].*"), str_subset(colnames(flu), "^MinF.*_[C|O|I|M].*"))
-maxht.cols <- str_subset(colnames(flu), "^MaxHt.*_[R|C|O|I|M].*")
-lc.cols <- str_subset(colnames(flu), "^LC_[R|C|O|I|M].*")
-
-# organize column names into sets of lists
-# an iterator for loops
-cols.sets <- pmap(list(use.cols, min.cols, max.cols, maxht.cols, lc.cols), list) %>% 
-  map(~set_names(.x, c("use", "min_dens", "max_dens", "height", "lc"))) %>% 
-  set_names(c("Res", "Comm", "Office", "Indust", "Mixed"))
-
-# clean Use columns
-for(col in use.cols){
-  flu[, (col) := as.logical(ifelse(!is.na(get(col)) & tolower(get(col)) == "y", TRUE, FALSE))]
-}
-
-# add missing density items
-cols.sets[['Mixed']][['max_dens']] <- list(du = "MaxDU_Mixed", far = cols.sets[['Mixed']][['max_dens']])
-cols.sets[['Mixed']][['min_dens']] <- list(du = "MinDU_Mixed", far = cols.sets[['Mixed']][['min_dens']])
-cols.sets[['Res']][['max_dens']] <- list(du = cols.sets[['Res']][['max_dens']], far = "MaxFAR_Res", lot = "ResDU_lot")
-cols.sets[['Res']][['min_dens']] <- list(du = cols.sets[['Res']][['min_dens']], far = "MinFAR_Res")
-
-
-# Clean FLU ---------------------------------------------------------------
-
-clean.cols <- unique(c(maxht.cols, min.cols, max.cols, lc.cols, 
-                       unlist(cols.sets$Mixed[c('max_dens', 'min_dens')]),
-                       unlist(cols.sets$Res[c('max_dens', 'min_dens')])))
-
-# which columns should be considered to identify duplicates
-cols.for.dupl <- c(clean.cols, use.cols, "Juris", "juris_zn", "rural")
-# check for duplicates
-flu[, .N, by = "juris_zn"][order(-N)]
-nflu <- nrow(flu)
-flu <- flu[!duplicated(flu, by = cols.for.dupl)] # removes duplicates
-cat("\nRemoved ", nflu - nrow(flu), " duplicate rows.\n")
-
-for (col in clean.cols) {
-  # clean various numeric columns (set "None" to NA & "unlimited" to -1)
-  if(is.character(flu[[col]]))
-    flu[get(col) %in% c("", "None"), (col) := NA]
-    flu[get(col) == "unlimited", (col) := -1]   
-}
-
-# fix Ht (some records have info in terms of stories, e.g. "3 story")
-for(col in maxht.cols)
-  flu[grepl(" story", get(col)), (col) := as.integer(gsub(" story", "", get(col))) * 12]
-
-# there are some values in parentheses, remove it (but double check if it makes sense)
-#flu[,.N, by = "MaxFAR_Mixed"]
-for(col in clean.cols){
-  flu[, (col) := gsub("\\s*\\([^\\)]+\\)", "", get(col))]
-}
-
-# In Sumner MaxDU_Res there are values defined as ranges, take the middle
-col <- "MaxDU_Res"
-flu[, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
-flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
-flu[!is.na(rng2), (col) := round(rng1 + (rng2 - rng1)/2)][
-                         , `:=`(rng1 = NULL, rng2 = NULL)]
-
-for (col in clean.cols) {
-  # convert cols to double type
-  # if there is a warning, investigate in which column and why, 
-  # by setting options(warn = 2) & flu[,.N, by = col]
-  if(is.character(flu[[col]]))
-    flu[ , (col) := as.double(get(col))]
-}
+lu <- read_xlsx(master.lookup) %>% as.data.table
 
 # set the source of the density columns to "collected"
 for (i in 1:length(cols.sets)) {
@@ -120,18 +42,7 @@ for (i in 1:length(cols.sets)) {
 
 
 flu[, .N, by = "rural"] # very few records have this info
-flu[, rural := ifelse(rural == "Y", TRUE, ifelse(rural %in% c("N", "not"), FALSE, NA))]
-# set various zones as "rural" (21 records)
-# found via flu[grepl("rural", Definition) & is.na(rural)]
-flu[(Zone %in% c("FL", "EPF-RAN", "RIC", "RNC", "RSR", "RR", "RW", "RCO", "SVLR", "FRL", "ARL", "RSep") |
-       juris_zn %in% c("Pierce_County_GC", "Kenmore_GC", "Kenmore_P", "Kent_A-10", "Kitsap_RP",
-                       "Kitsap_RI", "Kitsap_REC", "Kitsap_TTEC", "Arlington_RULC")) 
-    & is.na(rural), rural := TRUE]
-# set NA rural records to FALSE 
-flu[is.na(rural), rural := FALSE]
-
-# set rural to FALSE if MaxDU_Res > 20 (3 records)
-flu[rural == TRUE & MaxDU_Res > 20, rural := FALSE]
+process_rural(flu)
 
 # set to residential use if ResDU_lot or MaxDU_Res given
 flu[!is.na(ResDU_lot) & ResDU_lot > 100, ResDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
@@ -146,22 +57,24 @@ paste(sort(setdiff(unique(flu[Res_Use == TRUE & (is.na(rural) | rural == TRUE), 
 flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(ResDU_lot) & is.na(MaxDU_Res),
     `:=`(ResDU_lot = -1, ResDU_lot_src = 'imputed')]
 
-# if use-specific LC not given but LC_Mixed given, set the use-specific LC to that
+# if use-specific LC not given but LC_Mixed given, set the use-specific LC to that;
+# the same for heights
 for(use in c("Res", "Comm", "Office", "Indust")){
   flu[get(paste0(use, "_Use")) == TRUE & is.na(get(paste0("LC_", use))) & !is.na(LC_Mixed),
       (paste0("LC_", use)) := LC_Mixed]
+  equat <- parse(text = paste0("\`:=\`( MaxHt_", use, " = MaxHt_Mixed, MaxHt_",  
+                               use, "_src = 'asserted')"))
+  flu[get(paste0(use, "_Use")) == TRUE & is.na(get(paste0("MaxHt_", use))) & !is.na(MaxHt_Mixed),
+      eval(equat)]
 }
 
 # for residential records without MaxDU_Res, MaxFAR_Res, ResDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
-flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed), 
+flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed) & MaxDU_Mixed != 0, 
     `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'asserted')]
+
 # similarly for missing MinDU_Res - take it from MinDU_Mixed
 flu[Res_Use == TRUE & !is.na(MinDU_Mixed) & is.na(ResDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
     `:=`(MinDU_Res = MinDU_Mixed, MinDU_Res_src = 'asserted')]
-
-# for residential records without MaxHt_Res but with MaxHt_Mixed, use that for MaxHt_Res
-flu[Res_Use == TRUE & is.na(MaxHt_Res) & !is.na(MaxHt_Mixed), 
-    `:=`(MaxHt_Res = MaxHt_Mixed, MaxDU_Res_src = 'asserted')]
 
 # for mobile home parks with missing DU/acre, impute 5
 flu[Zone == "MHP" & Res_Use == TRUE & is.na(MaxDU_Res) & is.na(ResDU_lot), 
@@ -416,7 +329,7 @@ for (i in 1:length(cols.sets)) {
                 (is.na(get(newcolnm.ht)) | get(newcolnm.ht) == 0), eval(equat.nonres.ht)]
       miss <- flu.imp[get(use.col) == TRUE & is.na(get(newcolnm))]
       cat("Missing info for ", nrow(miss),
-          " records: ", paste(unique(miss[, juris_zn_new]), collapse = ", "))
+          " records: ", paste(unique(miss[, juris_zn_new]), collapse = ", "), "\n")
     }
   }
 }

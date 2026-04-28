@@ -9,91 +9,12 @@ library(readxl)
 # paths and file names
 in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
 data.path <- file.path(in.path, "data2026")
+new.flu.name <- file.path(in.path, "data2026", "Zoning_2026_d3.xlsx")
 
 # read the FLU file
-#fluall <- fread(file.path(data.path, "Zoning_2026_d2.csv"))
-fluall <- data.table(read_xlsx(file.path(data.path, "Zoning_2026_d3.xlsx")))
-flubonus <- fluall[Bonus_included == "Y"]
-flunobonus <- fluall[is.na(Bonus_included) | Bonus_included == ""]
-dim(fluall)
-dim(flubonus)
-dim(flunobonus)
-dim(flunobonus[!juris_zn %in% flubonus$juris_zn])
-dim(fluall)
+source("load_FLU2026.R")
 
-# put together bonus zones and those that don't have bonuses
-flu <- rbind(flubonus, flunobonus[!juris_zn %in% flubonus$juris_zn])
-
-# remove error records
-flu <- flu[Zone != "ERROR"]
-
-# clean Use columns
-for(col in c("Res_Use", "Comm_Use", "Office_Use", "Indust_Use", "Mixed_Use")){
-    flu[, (col) := as.logical(ifelse(!is.na(get(col)) & tolower(get(col)) == "y", TRUE, FALSE))]
-}
-
-
-# check for duplicates
-flu[, .N, by = "juris_zn"][order(-N)]
-
-# which columns should be considered to identify duplicates
-cols.for.dupl <- setdiff(colnames(flu), c("Zone", "Definition", "Bonus_avail", "Bonus_included", "ADU notes", 
-                                          colnames(flu)[startsWith(colnames(flu), "Unnamed")], "V48", "V49", "V50"))
-uflu <- flu[!duplicated(flu, by = cols.for.dupl)] # removes true duplicates
-# still contains duplicate juris_zn, but rows differ in other columns
-paste(uflu[, .N, by = "juris_zn"][order(-N)][N > 1][, juris_zn], collapse = ", ")
-
-# removed duplicates that are the same in all values except the column Zone
-#uflu2 <- flu[!duplicated(flu, by = c("Zone", cols.for.dupl))]
-#fluall[juris_zn %in% uflu2[, .N, by = "juris_zn"][N > 1, juris_zn] & !juris_zn %in% uflu[, .N, by = "juris_zn"][N > 1, juris_zn], .(Zone, juris_zn)][order(juris_zn)]
-
-flu <- copy(uflu)
-
-# clean various numeric columns
-num.cols <- colnames(flu)[grepl("^Min|^Max|^ResDU|^LC", colnames(flu))]
-for(col in num.cols){
-    if(is.character(flu[[col]])){
-        flu[get(col) %in% c("", "None"), (col) := NA]
-        flu[get(col) == "unlimited", (col) := -1]   
-    }
-}
-
-# fix Ht (some records have info in terms of stories, e.g. "3 story")
-for(col in c("MaxHt_Res", "MaxHt_Comm", "MaxHt_Office", "MaxHt_Mixed"))
-    flu[grepl(" story", get(col)), (col) := as.integer(gsub(" story", "", get(col))) * 12]
-
-# there are some values in parentheses, remove it (but double check if it makes sense)
-flu[,.N, by = "MaxFAR_Mixed"]
-for(col in num.cols){
-    flu[, (col) := gsub("\\s*\\([^\\)]+\\)", "", get(col))]
-}
-# In Sumner MaxDU_Res there are values defined as ranges, take the middle
-col <- "MaxDU_Res"
-flu[, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
-flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
-flu[!is.na(rng2), (col) := round(rng1 + (rng2 - rng1)/2)][, `:=`(rng1 = NULL, rng2 = NULL)]
-
-# convert numeric columns to numeric
-# if there is a warning, investigate in which column and why, 
-# by setting options(warn = 2) & flu[,.N, by = col]
-for(col in num.cols)
-    flu[, (col) := as.numeric(get(col))]
-
-# clean the "rural" column
-flu[, .N, by = "rural"]
-flu[, rural := ifelse(rural == "Y", TRUE, ifelse(rural %in% c("N", "not"), FALSE, NA))]
-# set various zones as "rural" (21 records)
-# found via flu[grepl("rural", Definition) & is.na(rural)]
-flu[(Zone %in% c("FL", "EPF-RAN", "RIC", "RNC", "RSR", "RR", "RW", "RCO", "SVLR", "FRL", "ARL", "RSep") |
-          juris_zn %in% c("Pierce_County_GC", "Kenmore_GC", "Kenmore_P", "Kent_A-10", "Kitsap_RP",
-                          "Kitsap_RI", "Kitsap_REC", "Kitsap_TTEC", "Arlington_RULC")) 
-    & is.na(rural), rural := TRUE]
-
-# set NA rural records to FALSE 
-flu[is.na(rural), rural := FALSE]
-
-# set rural to FALSE if MaxDU_Res > 20 (3 records)
-flu[rural == TRUE & MaxDU_Res > 20, rural := FALSE]
+process_rural(flu)
 
 # set to residential use if ResDU_lot given (three records found)
 flu[((!is.na(ResDU_lot) & ResDU_lot > 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
