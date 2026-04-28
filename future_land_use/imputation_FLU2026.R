@@ -44,24 +44,15 @@ for (i in 1:length(cols.sets)) {
 flu[, .N, by = "rural"] # very few records have this info
 process_rural(flu)
 
-# set to residential use if ResDU_lot or MaxDU_Res given
-flu[!is.na(ResDU_lot) & ResDU_lot > 100, ResDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
-flu[((!is.na(ResDU_lot)  & ResDU_lot > 0)  | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
-# Check Auburn_R-3 (ResDU_lot = 40) Should it be MaxDU_Res?
+more_cleaning(flu)
+
 
 paste(sort(setdiff(unique(flu[Res_Use == TRUE & (is.na(rural) | rural == TRUE), Juris]), 
         flu[!is.na(ResDU_lot)  & ResDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
 
-# if "missing middle" is in the description but neither ResDU_lot nor MaxDU_Res given,
-# set ResDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
-flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(ResDU_lot) & is.na(MaxDU_Res),
-    `:=`(ResDU_lot = -1, ResDU_lot_src = 'imputed')]
 
-# if use-specific LC not given but LC_Mixed given, set the use-specific LC to that;
-# the same for heights
+# if use-specific Height not given but MaxHt_Mixed given, set the use-specific height to that
 for(use in c("Res", "Comm", "Office", "Indust")){
-  flu[get(paste0(use, "_Use")) == TRUE & is.na(get(paste0("LC_", use))) & !is.na(LC_Mixed),
-      (paste0("LC_", use)) := LC_Mixed]
   equat <- parse(text = paste0("\`:=\`( MaxHt_", use, " = MaxHt_Mixed, MaxHt_",  
                                use, "_src = 'asserted')"))
   flu[get(paste0(use, "_Use")) == TRUE & is.na(get(paste0("MaxHt_", use))) & !is.na(MaxHt_Mixed),
