@@ -44,10 +44,20 @@ def main():
     else:
         raise ValueError(f"Unsupported file extension '{ext}'. Supported: {{'{GDB_EXTENSION}'}} | {TABLE_EXTENSIONS}")
 
+    crosswalk_cols = {}
     for col in args.id_columns:
         if col not in df.columns:
             raise ValueError(f"Column '{col}' not found. Available: {list(df.columns)}")
-        df[col] = df[col].apply(clean_id)
+        original = df[col]
+        cleaned = original.apply(clean_id)
+        crosswalk_cols[f"{col}_original"] = original
+        crosswalk_cols[f"{col}_cleaned"] = cleaned
+        df[col] = cleaned
+
+    crosswalk_df = pd.DataFrame(crosswalk_cols).drop_duplicates().reset_index(drop=True)
+    crosswalk_path = str(file_path.with_suffix('')) + '_id_crosswalk.csv'
+    crosswalk_df.to_csv(crosswalk_path, index=False)
+    print(f"Crosswalk: {crosswalk_path} ({len(crosswalk_df)} rows)")
 
     if is_spatial:
         out_layer = args.layer + '_cleaned'
