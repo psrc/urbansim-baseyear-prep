@@ -1,0 +1,206 @@
+# Script for estimating coefficients to impute DU/acre and heights
+# Hana Sevcikova (PSRC)
+# 04/22/2026
+
+
+library(data.table)
+library(readxl)
+
+# paths and file names
+in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
+data.path <- file.path(in.path, "data2026")
+new.flu.name <- file.path(in.path, "data2026", "Zoning_2026_d3.xlsx")
+
+# read the FLU file
+source("load_FLU2026.R")
+
+process_rural(flu)
+
+more_cleaning(flu)
+
+# check which records are only Mixed use and nothing else
+unique(flu[Mixed_Use == TRUE & Res_Use == FALSE & Comm_Use == FALSE & Indust_Use == FALSE & Office_Use == FALSE & grepl("residential", Definition), Juris])
+
+# subset of residential records
+rflu <- subset(flu, Res_Use == TRUE)[, `ADU notes` := NULL]
+
+# adjust height
+rflu[, MaxHt_Res_orig := MaxHt_Res]
+
+# additive FAR in Tacoma, Auburn, Kent
+adj1 <- with (rflu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res < MaxFAR_Mixed & MaxFAR_Res > 0)
+adj2 <- with (rflu, !is.na(MaxFAR_Res) & !is.na(MaxFAR_Mixed) & MaxFAR_Res > MaxFAR_Mixed & MaxFAR_Mixed > 0) # one record
+rflu[adj1, .(juris_zn, #MinFAR_Res, MinFAR_Mixed, 
+             MaxFAR_Res, MaxFAR_Mixed, MaxHt_Res, MaxHt_Mixed, MaxHt_Res_orig)]
+rflu[adj1, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/MaxFAR_Mixed)]
+rflu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))]
+
+# for residential records without MaxDU_Res, MaxFAR_Res, ResDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
+rflu[is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed), MaxDU_Res := MaxDU_Mixed]
+
+# for residential records without MaxHt_Res but with MaxHt_Mixed, use that for MaxHt_Res
+rflu[is.na(MaxHt_Res) & !is.na(MaxHt_Mixed), MaxHt_Res := MaxHt_Mixed]
+
+# for mobile home parks with missing DU/acre, impute 5
+rflu[Zone == "MHP" & is.na(MaxDU_Res) & is.na(ResDU_lot), MaxDU_Res := 5]
+
+# subset of residential records that will get DU/acre imputed
+rflu.pred <- subset(rflu, is.na(MaxDU_Res) & is.na(ResDU_lot) & is.na(MaxFAR_Res))
+
+# summarize those records
+rflu.pred[, .N, by = .(hasLC = !is.na(LC_Res), hasHt = !is.na(MaxHt_Res), rural
+                        )][order(hasLC, hasHt, rural, decreasing = TRUE)][]
+rflu.pred[, .N, by = .(hasLC = !is.na(LC_Res), hasHt = !is.na(MaxHt_Res)
+                        )][order(hasLC, hasHt, decreasing = TRUE)][]
+rflu.pred[is.na(LC_Res) & is.na(MaxHt_Res)]
+
+# records with no information
+no.info.rows <- rflu.pred[is.na(LC_Res) & is.na(MaxHt_Res)]
+#paste(no.info.rows[, juris_zn], collapse = ", ")
+
+
+# subset of residential records to be used in the estimation, i.e. DU/acre is not missing
+rflu.est <- subset(rflu, !is.na(MaxDU_Res) & MaxDU_Res > 0)
+# summarize those records
+rflu.est[, .N, by = .(hasLC = !is.na(LC_Res), hasHt = !is.na(MaxHt_Res))][order(hasLC, hasHt, decreasing = TRUE)][]
+rflu.est[, .N, by = .(hasLC = !is.na(LC_Res), hasHt = !is.na(MaxHt_Res), rural = rural)][order(hasLC, hasHt, decreasing = TRUE)][]
+
+# the estimation set needs to be reduced to those records that have non-missing height
+sflu <- subset(rflu.est, !is.na(MaxHt_Res) & MaxHt_Res > 0)
+
+# DU/acre to be handled on the log scale
+# remove outliers and keep only unique records
+#sflu <- subset(sflu, !(MaxHt_Res > 50 & MaxDU_Res < 9 | log(MaxDU_Res) < 0))
+sflu <- subset(sflu, log(MaxDU_Res) > 0)
+sflu <- unique(sflu[, .(MaxHt_Res, MaxDU_Res, LC_Res, rural)])
+sflu[, logMaxDU_Res := log(MaxDU_Res)]
+
+# subset to be used in the estimation if lot coverage is not missing
+sflu1 <- subset(sflu, !is.na(LC_Res))
+
+# library(BMA)
+# bma <- bic.glm(data.frame(height = sflu1$MaxHt_Res,
+#                           lheight = log(sflu1$MaxHt_Res), coverage = sflu1$LC_Res,
+#                           lcoverage = log(sflu1$LC_Res), rural = sflu1$rural),
+#                sflu1$logMaxDU_Res, glm.family = gaussian())
+# summary(bma)
+# model with highest probability: lheight + coverage + rural
+
+# estimation of DU/acre using heights, coverage and rural
+fitall <- lm(logMaxDU_Res ~ log(MaxHt_Res) + LC_Res + I(rural), data = sflu1)
+summary(fitall)
+
+# estimation of DU/acre using heights and rural only
+fitlt <- lm(logMaxDU_Res ~ log(MaxHt_Res) + I(rural), data = sflu)
+summary(fitlt)
+
+with(sflu, plot(log(MaxHt_Res), logMaxDU_Res))
+with(sflu[is.na(rural) | rural == FALSE], plot(log(MaxHt_Res), logMaxDU_Res))
+abline(fitlt)
+
+
+result <- list(a = fitall$coefficients[1], b = fitall$coefficients[2], 
+               c = fitall$coefficients[3], q = fitall$coefficients[4],
+               d = fitlt$coefficients[1], e = fitlt$coefficients[2], 
+               r = fitlt$coefficients[3])
+result
+
+stop("")
+############################################
+# Below are some diagnostics plots and experimentation code
+############################################
+# plot results, including test specifications
+fitl <- lm(logMaxDU_Res ~ log(MaxHt_Res), data = sflu)
+fitl.rural <- lm(logMaxDU_Res ~ -1 + I(rural), data = sflu)
+fitl.urban <- lm(logMaxDU_Res ~ -1 + I(!rural), data = sflu)
+fit.const <- lm(MaxDU_Res ~ -1 + MaxHt_Res, data = sflu)
+
+plot(logMaxDU_Res ~ jitter(log(MaxHt_Res)), data = sflu, xlab = "log(max height)", ylab = "log(max DU/acre)")
+abline(fitl$coefficients)
+abline(fitl.urban$coefficients, lty = 2)
+abline(fitl.rural$coefficients, lty = 3)
+
+# records to be imputed grouped depending if they have lot coverage missing and the imputing attribute:
+# to be used for imputation of DU/acre from heights
+sflu1.pred <- subset(rflu, !is.na(MaxHt_Res) & MaxHt_Res > 0 & !is.na(LC_Res) & is.na(MaxDU_Res))
+sflu.pred <- subset(rflu, !is.na(MaxHt_Res) & MaxHt_Res > 0 & is.na(LC_Res) & is.na(MaxDU_Res))
+# have nothing to support the imputation
+rflu.pred.rest <- rflu.pred[!juris_zn %in% c(sflu1.pred$juris_zn, sflu.pred$juris_zn)]
+
+# to be used for imputation of heights from DU/acre
+sfluI1.pred <- subset(rflu, !is.na(MaxDU_Res) & !is.na(LC_Res) & is.na(MaxHt_Res))
+sfluI.pred <- subset(rflu, !is.na(MaxDU_Res) & is.na(LC_Res) & is.na(MaxHt_Res))
+
+# impute test specification
+sflu.pred[, MaxDU_ResPred := exp(fitl$coefficients[1] + fitl$coefficients[2]*log(MaxHt_Res))]
+
+
+#pdf("dua_height_2026.pdf")
+plot(MaxDU_Res ~ MaxHt_Res, data = sflu, xlab = "max height", ylab = "max DU/acre", 
+     main = "DU/acre vs Height", 
+     xlim = range(sflu$MaxHt_Res, min(max(sflu.pred$MaxHt_Res), 400))
+     )
+rng <- range(sflu[["MaxHt_Res"]], sflu.pred$MaxHt_Res)
+rngarr <- rng[1]:rng[2]
+lines(rngarr, (rngarr/15)^2) # previous imputation formula, for comparison here
+lines(rngarr, exp(fitl$coefficients[1] + fitl$coefficients[2]*log(rngarr)), col = "red")
+lines(rngarr, exp(fitl.urban$coefficients[1] + fitl.urban$coefficients[2]*log(rngarr)), col = "red", lty = 2)
+lines(rngarr, exp(fitl.rural$coefficients[1] + fitl.rural$coefficients[2]*log(rngarr)), col = "red", lty = 3)
+abline(c(0, fit.const$coefficients), col = "blue")
+legend("topleft", legend = c("(H/15)^2", paste0(round(fit.const$coefficients[1], 2), "*H"), 
+                             paste0("exp(", round(fitl$coefficients[1], 2), " + ", 
+                                round(fitl$coefficients[2], 2), "*log(H))")), 
+                             col = c("black", "blue", "red"), lty = 1, bty = "n")
+points(subset(sflu.pred, rural == FALSE)$MaxHt_Res, rep(0, sum(!sflu.pred$rural)), col = "red")
+points(subset(sflu.pred, rural == TRUE)$MaxHt_Res, rep(0, sum(sflu.pred$rural)), col = "orange")
+#dev.off()
+
+
+# plot results from the estimation model with lot coverage
+fitl1 <- lm(logMaxDU_Res ~ log(MaxHt_Res) + log(LC_Res), data = sflu1) # rural is ignored here
+sflu1.pred[, MaxDU_ResPred := exp(fitl1$coefficients[1] + fitl1$coefficients[2]*log(MaxHt_Res) + fitl1$coefficients[3]*log(LC_Res))]
+plot(MaxDU_Res ~ MaxHt_Res, data = sflu, xlab = "max height", ylab = "max DU/acre", 
+     main = "DU/acre vs Height", xlim = range(sflu$MaxHt_Res, min(max(sflu1.pred$MaxHt_Res), 600)))
+rng <- range(sflu[["MaxHt_Res"]], sflu1.pred$MaxHt_Res)
+rngarr <- rng[1]:rng[2]
+lines(rngarr, exp(fitl$coefficients[1] + fitl$coefficients[2]*log(rngarr)), col = "red")
+points(sflu1.pred$MaxHt_Res, sflu1.pred$MaxDU_ResPred, col = "red")
+
+legend("topleft", legend = c(paste0("exp(", round(fitl$coefficients[1], 2), " + ", 
+                                    round(fitl$coefficients[2], 2), "*log(H))"),
+                            ), 
+       col = c("black", "blue", "red"), lty = 1, bty = "n")
+
+
+sfluI1.pred[, MaxHt_ResPred := exp((log(MaxDU_Res) - fitl1$coefficients[1] - fitl1$coefficients[3] * log(LC_Res))/fitl1$coefficients[2])]
+sfluI.pred[, MaxHt_ResPred := exp((log(MaxDU_Res) - fitl$coefficients[1])/fitl$coefficients[2])]
+
+
+
+#pdf("far_height_2026.pdf", width = 10, height = 8)
+par(mfrow = c(2,2))
+for(lutype in c("Comm", "Indust", "Office", "Mixed")) {
+    height.attr <- paste0("MaxHt_", lutype)
+    far.attr <- paste0("MaxFAR_", lutype)
+    far.imp.attr <- paste0("MaxFAR_", lutype, "_imp")
+    idx <- flu[[paste0(lutype, "_Use")]] == TRUE & !is.na(flu[[height.attr]]) & !is.na(flu[[far.imp.attr]])
+    sflu <- flu[flu[[paste0(lutype, "_Use")]] == TRUE & !is.na(flu[[height.attr]]) & !is.na(flu[[paste0(far.attr)]]),]
+    plot(sflu[[height.attr]], sflu[[far.attr]], xlab = "max height", ylab = "max FAR", main = lutype,
+         ylim = range(sflu[[paste0(far.attr)]], flu[[paste0(far.imp.attr)]][idx], na.rm = TRUE))
+    abline(c(0, 0.05))
+    points(flu[[height.attr]][idx], flu[[far.imp.attr]][idx], col = "red")
+    legend("topright", legend = c("observed", "imputed"), col = c("black", "red"), bty = "n", pch = 1)
+}
+#dev.off()
+
+
+
+lutype <- "Res"
+sflu <- flu[flu[[paste0(lutype, "_Use")]] == TRUE & !is.na(flu[[paste0("MaxHt_", lutype)]]) & !is.na(flu[[paste0("MaxDU_", lutype)]]),]
+sflu<- sflu[Mixed_Use == FALSE]
+plot(sflu[["MaxHt_Res"]], sflu[["MaxDU_Res"]], xlab = "max height", ylab = "max DU/acre", main = "DU/acre vs Height")
+
+
+# checking
+rflu[MinDU_Res > MaxDU_Res]
+rflu[!is.na(ResDU_lot)][order(-ResDU_lot)]
