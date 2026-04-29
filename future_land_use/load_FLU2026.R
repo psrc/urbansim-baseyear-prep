@@ -1,3 +1,6 @@
+library(stringr)
+library(purrr)
+
 # read new FLU and old FLU files
 #fluall <- fread(new.flu.name)
 fluall <- data.table(read_xlsx(new.flu.name))

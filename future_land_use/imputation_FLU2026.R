@@ -210,8 +210,8 @@ flu.imp[adj2, `:=`(MaxHt_Res_imp = round(MaxHt_Res_imp * MaxFAR_Res/(MaxFAR_Mixe
 
 # coefficients (estimated via estimation_FLU2026.R)
 #coeff <- list(a = 1.403, b = 0.654, c = 2.121, q = -0.980, d = -2.880, e = 1.448, r = -2.187)
-coeff <- list(a = -1.856659, b = 1.004703, c = 0.016398, q = -0.865158, 
-              d = -2.5284, e = 1.4307, r = -0.9589)
+coeff <- list(a = -1.361970, b = 0.863448, c = 0.017021, q = -0.775149, 
+              d = -1.899722, e = 1.268643, r = -1.212198)
 
 
 no.info.rows <- flu.imp[Res_Use == TRUE & is.na(LC_Res) & is.na(MaxHt_Res_imp) & 
@@ -325,9 +325,15 @@ for (i in 1:length(cols.sets)) {
   }
 }
 
-stop("")
+#stop("")
 # exclude _prev records that didn't match current flu records
 flu.fin.prep <- flu.imp[!is.na(Juris_new)]
+
+# convert logical types to integer
+for(col in use.cols){
+  flu.fin.prep[, (col) := as.integer(get(col))]
+}
+flu.fin.prep[, rural := as.integer(rural)]
 
 ## temp output for QC (kitchen sink file) ----
 fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(), ".csv")))
@@ -339,18 +345,25 @@ fwrite(flu.fin.prep, file.path(out.path, paste0("temp_flu_imputed_", Sys.Date(),
 ff.types <- c("Res", "Mixed", "Office", "Indust", "Comm")
 ff.max.cols <- c(paste0("MaxDU_", ff.types), paste0("MaxFAR_", ff.types), paste0("MaxHt_", ff.types))
 ff.excl.cols <- c(str_subset(colnames(flu.fin.prep), "_prev"), ff.max.cols,
-                  "MaxHt_Res_orig")
+                  "MaxHt_Res_orig", "edit", "Key", "ADU notes", "Public_Use", "PUD_Use", 
+                  str_subset(colnames(flu.fin.prep), "Unnamed"))
 
 ff.cols <- setdiff(colnames(flu.fin.prep), ff.excl.cols)
 flu.fin.prep <- flu.fin.prep[, ..ff.cols] 
 
 # remove '_imp' from col name
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_imp", ""))
+ff.excl.new.cols <- intersect(colnames(flu.fin.prep), 
+                              str_trim(str_replace_all(str_subset(colnames(flu.fin.prep), "_new"), "_new", "")))
+ff.cols <- setdiff(colnames(flu.fin.prep), paste0(ff.excl.new.cols, "_new"))
+flu.fin.prep <- flu.fin.prep[, ..ff.cols]
 colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new", ""))
 
 # remove duplicate rows (in preparation for assigning plan_type_ids in unroll_constraints.py)
-gb.cols <- setdiff(colnames(flu.fin.prep), "Zone_adj")
+#gb.cols <- setdiff(colnames(flu.fin.prep), "Definition")
+gb.cols <- colnames(flu.fin.prep)
 flu.fin <- unique(flu.fin.prep, by = gb.cols, fromLast = T)
+
 
 ## output for use with unroll_constraints.py ----
 fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
