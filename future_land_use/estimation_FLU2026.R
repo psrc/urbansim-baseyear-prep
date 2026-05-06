@@ -36,16 +36,18 @@ rflu[adj1, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/MaxFAR_Mixed)]
 rflu[adj2, MaxHt_Res := round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res))]
 
 # for residential records without MaxDU_Res, MaxFAR_Res, ResDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
-rflu[is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed), MaxDU_Res := MaxDU_Mixed]
+rflu[is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & 
+         !is.na(MaxDU_Mixed) & MaxDU_Mixed > 0, MaxDU_Res := MaxDU_Mixed]
 
 # for residential records without MaxHt_Res but with MaxHt_Mixed, use that for MaxHt_Res
-rflu[is.na(MaxHt_Res) & !is.na(MaxHt_Mixed), MaxHt_Res := MaxHt_Mixed]
+rflu[is.na(MaxHt_Res) & !is.na(MaxHt_Mixed) & MaxHt_Mixed > 0, MaxHt_Res := MaxHt_Mixed]
 
 # for mobile home parks with missing DU/acre, impute 5
 rflu[Zone == "MHP" & is.na(MaxDU_Res) & is.na(ResDU_lot), MaxDU_Res := 5]
 
 # subset of residential records that will get DU/acre imputed
-rflu.pred <- subset(rflu, is.na(MaxDU_Res) & is.na(ResDU_lot) & is.na(MaxFAR_Res))
+rflu.pred <- subset(rflu, (is.na(MaxDU_Res) | MaxDU_Res != 0) & 
+                        is.na(ResDU_lot) & (is.na(MaxFAR_Res) | MaxFAR_Res != 0))
 
 # summarize those records
 rflu.pred[, .N, by = .(hasLC = !is.na(LC_Res), hasHt = !is.na(MaxHt_Res), rural

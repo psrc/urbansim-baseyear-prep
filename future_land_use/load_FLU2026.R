@@ -12,8 +12,8 @@ fluall <- data.table(read_xlsx(new.flu.name))
 
 flu <- fluall[Zone != "ERROR"] # for now keep all records (bonus & no-bonus)
 
-# collect columnn names
-id.cols <- intersect(colnames(flu), c(str_subset(colnames(flu), "^Juris|Zone"), "Key", "Definition"))
+# collect column names
+id.cols <- intersect(colnames(flu), c(str_subset(colnames(flu), "^Juris|Zone|^juris"), "Key", "Definition"))
 use.cols <- str_subset(colnames(flu), "^[R|C|O|I|M].*_Use$")
 max.cols <- c(str_subset(colnames(flu), "^MaxD.*_[R].*"), str_subset(colnames(flu), "^MaxF.*_[C|O|I|M].*"))
 min.cols <- c(str_subset(colnames(flu), "^MinD.*_[R].*"), str_subset(colnames(flu), "^MinF.*_[C|O|I|M].*"))
@@ -26,7 +26,7 @@ cols.sets <- pmap(list(use.cols, min.cols, max.cols, maxht.cols, lc.cols), list)
     map(~set_names(.x, c("use", "min_dens", "max_dens", "height", "lc"))) %>% 
     set_names(c("Res", "Comm", "Office", "Indust", "Mixed"))
 
-# clean Use columns
+# clean Use columns and convert to logical
 for(col in use.cols){
     flu[, (col) := as.logical(ifelse(!is.na(get(col)) & tolower(get(col)) == "y", TRUE, FALSE))]
 }
@@ -51,7 +51,8 @@ for (col in clean.cols) {
     flu[get(col) == "unlimited", (col) := -1]   
 }
 
-# fix Ht (some records have info in terms of stories, e.g. "3 story")
+# fix Ht (some records have info in terms of stories, e.g. "3 story"),
+# assuming that a story is 12 feet high
 for(col in maxht.cols)
     flu[grepl(" story", get(col)), (col) := as.integer(gsub(" story", "", get(col))) * 12]
 
@@ -104,7 +105,7 @@ zn_max <- flu[juris_zn %in% zn, lapply(.SD, max, na.rm = TRUE), by = "juris_zn",
 flu <- rbind(flub[!juris_zn %in% zn],
              merge(zn_max, flub[juris_zn %in% zn, c("juris_zn", setdiff(colnames(flub), colnames(zn_max))), 
                                 with = FALSE], by = "juris_zn")
-)
+            )
 flu <- rbind(flu, flunob[!juris_zn %in% flu[, juris_zn]], fill = TRUE)[
     , `:=`(noNA = NULL, noNAbon = NULL)]
 
@@ -137,7 +138,23 @@ more_cleaning <- function(flu){
     
     # if use-specific LC not given but LC_Mixed given, set the use-specific LC to that
     for(use in c("Res", "Comm", "Office", "Indust")){
-        flu[get(paste0(use, "_Use")) == TRUE & is.na(get(paste0("LC_", use))) & !is.na(LC_Mixed),
+        flu[get(paste0(use, "_Use")) == TRUE & 
+                (is.na(get(paste0("LC_", use))) | get(paste0("LC_", use)) == 0) & 
+                (!is.na(LC_Mixed) & LC_Mixed > 0),
             (paste0("LC_", use)) := LC_Mixed]
+    }
+    # for allowed uses if some of the relevant density value is 0, set it to NA (i.e. treat it as missing)
+    for(use in names(cols.sets)) {
+        colset <- cols.sets[[use]]
+        for(dnstype in names(colset$max_dens)) { 
+            flu[get(colset$use) == TRUE & !is.na(get(colset$max_dens[[dnstype]])) &
+                    get(colset$max_dens[[dnstype]]) == 0, 
+                (colset$max_dens[[dnstype]]) := NA]
+        }
+        # the same for height and LC
+        for(col in c("height", "lc")) {
+            flu[get(colset$use) == TRUE & !is.na(get(colset[[col]])) & get(colset[[col]]) == 0, 
+                    (colset[[col]]) := NA]
+        }
     }
 }
