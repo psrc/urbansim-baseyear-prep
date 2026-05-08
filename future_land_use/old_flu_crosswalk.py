@@ -22,15 +22,15 @@ CURRENT_FLU_YEAR = 2026
 OLD_FLU_YEAR = 2019
 
 # Input data paths
-NEW_FLU_CSV_PATH = Path(
-    "C:/Users/JKolberg/OneDrive - PSRC/GIS - Projects/FLU/Zoning_2026_d2_cleaned.csv"
+NEW_FLU_XLSX_PATH = Path(
+    "C:/Users/JKolberg/OneDrive - PSRC/GIS - Projects/FLU/Zoning_2026_d3.xlsx"
 )
-NEW_FLU_CSV_ENCODING = "latin-1"
+NEW_FLU_XLSX_SHEET = "Zoning_2026_cleaned"
 
 NEW_FLU_GDB_PATH = Path(
     "C:/Users/JKolberg/OneDrive - PSRC/GIS - Projects/FLU/FLU_draft2.gdb"
 )
-NEW_FLU_GDB_LAYER = "FLU2025_cleaned"
+NEW_FLU_GDB_LAYER = "FLU2025"
 
 OLD_FLU_SHP_PATH = Path("W:/gis/projects/compplan_zoning/flu19_reviewed.shp")
 
@@ -124,7 +124,7 @@ def load_sources():
         .dropna()
     )
 
-    flu_table = pd.read_csv(NEW_FLU_CSV_PATH, encoding=NEW_FLU_CSV_ENCODING)
+    flu_table = pd.read_excel(NEW_FLU_XLSX_PATH, sheet_name=NEW_FLU_XLSX_SHEET)
     flu_table = (
         flu_table
         .drop(columns=[c for c in flu_table.columns if "Unnamed" in c])
@@ -138,7 +138,7 @@ def load_sources():
     old_flu_shp = old_flu[["Juris_zn", "FLUadj_Definition", "geometry"]].copy()
 
     flu_shp = gpd.read_file(NEW_FLU_GDB_PATH, layer=NEW_FLU_GDB_LAYER)[
-        ["Juris_zn", "Definition", "geometry"]
+        ["Juris_zn", "geometry"]
     ]
 
     return flu_table, old_flu_table, old_flu_shp, flu_shp

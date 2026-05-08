@@ -23,6 +23,6 @@ def check_multi_pins(prcls_flu, out_dir, pin_name = 'PIN'):
         pins_multi.to_csv(os.path.join(out_dir, r'pins_multi_'+ str(date.today()) +'.csv'), index=False) 
         # export point shapefile of where overlapping zones occur for GIS staff to reconcile
         prcls_multi_ptid = prcls_flu[prcls_flu[pin_name].isin(pins_multi[pin_name].tolist())]
-        prcls_multi_ptid = prcls_multi_ptid[[pin_name, 'geometry', 'PINFIPS', 'FIPS', 'Jurisdicti', 'Juris_zn', 'Zone_adj', 'plan_type_id']]
+        prcls_multi_ptid = prcls_multi_ptid[[pin_name, 'geometry', 'juris_zn', 'plan_type_id']]
         prcls_multi_ptid.to_file(os.path.join(out_dir, r'prcls_multi_ptid_'+ str(date.today()) +'.shp'))
         print('exported list of multi ptid instances as csv and shp to ' + out_dir)
