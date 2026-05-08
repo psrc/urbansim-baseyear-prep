@@ -14,7 +14,7 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 # root outdir
-dir = "."
+dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU/unroll_constraints"
 
 # flu input directory
 flu_input_dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU"
