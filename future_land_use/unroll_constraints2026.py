@@ -25,7 +25,7 @@ flu_layer = "FLU2025" # name of layer within gdb
 juris_zn_shp_id = 'Juris_zn' # unique id column
 
 # imputed FLU data
-flu_imp = "final_flu_imputed_2026-05-06.csv"
+flu_imp = "final_flu_imputed_2026-05-11.csv"
 flu_imp_path = os.path.join(flu_input_dir, flu_imp)
 juris_zn_imputed_id = 'juris_zn' # unique id column
 
@@ -34,6 +34,12 @@ base_year_prcl_layer = "parcels_urbansim_2023_pts" # ElmerGeo layer name for par
 
 # urbansim baseyear cache
 cache = 'L:/base_year_2023_inputs/JobParcel/base_year_data/2023/parcels'  # BY 2023
+
+# optional: path to old_flu_crosswalk for comparison of unmatched juris_zn zones
+# comment out below if not needed for comparison/troubleshooting
+old_flu_crosswalk_path = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU/Full_FLU_Master_Corres_File.xlsx"
+crosswalk_current_juris_zn_col = 'juris_zn_26'
+crosswalk_old_juris_zn_col = 'juris_zn_19'
 
 # read/process files ----------------------------------------------------
 
@@ -85,6 +91,32 @@ unmatched_flu = gpd.sjoin_nearest(unmatched, flu)
 prcls_flu = prcls_flu.loc[~prcls_flu['juris_zn'].isna()].copy()
 # concat the sjoin nearest results back to prcls_flu
 prcls_flu = pd.concat([prcls_flu, unmatched_flu], ignore_index=True)
+
+# check parcels with no match in imputed data f, grouped by juris_zn
+no_f_match = (
+    prcls_flu[prcls_flu['plan_type_id'].isna() & prcls_flu['juris_zn'].notna()]
+    .groupby('juris_zn')[pin_name]
+    .count()
+    .reset_index(name='n_parcels_no_f_match')
+)
+print(f'juris_zn zones in flu_shp with no match in imputed data f: {len(no_f_match)}')
+print(f'total parcels with no match in imputed data f: {no_f_match["n_parcels_no_f_match"].sum()}')
+print(no_f_match)
+
+# join to crosswalk to include old juris_zn for reference
+if old_flu_crosswalk_path is not None:
+    crosswalk = (
+        pd.read_excel(old_flu_crosswalk_path, dtype=str)
+        [[crosswalk_current_juris_zn_col, crosswalk_old_juris_zn_col]]
+        .drop_duplicates(subset=[crosswalk_current_juris_zn_col])
+    )
+    no_f_match = no_f_match.merge(
+        crosswalk.rename(columns={crosswalk_current_juris_zn_col: 'juris_zn'}),
+        on='juris_zn',
+        how='left'
+    )
+
+no_f_match.to_csv(os.path.join(dir, r'parcels_no_table_match_' + str(date.today()) + '.csv'), index=False)
 
 # QC FLU shapefile------------------------------------------------------------------
 
@@ -166,7 +198,7 @@ mixed_du = f[(f['Mixed_Use'] == 'Y')]
 mixed_du['generic_land_use_type_id'] = 6
 mixed_du['constraint_type'] = 'units_per_acre'
 mixed_du = mixed_du[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Mixed', 'MaxHt_Mixed']]
-mixed_du = mixed_du.rename(columns = {'MinDU_Mixed': 'minimum', 'MaxDU_Mixed': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
+mixed_du = mixed_du.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
 # combine together and add lockouts
 lockout_id = 9999
