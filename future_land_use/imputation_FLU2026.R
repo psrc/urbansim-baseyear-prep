@@ -2,7 +2,7 @@
 # estimated via the estimation_FLU2026.R script.
 # Adapted from development_constraints_imputation.R (originally written by Christy Lam)
 # Hana Sevcikova (PSRC)
-# 05/06/2026
+# 05/11/2026
 
 library(stringr)
 library(purrr)
@@ -174,19 +174,27 @@ flu <- merge(flu, lu[, .(FLU_master_id, Key = juris_zn_26)], all.x = TRUE,
 lu.oflu <- lu[, .(FLU_master_id, Key = juris_zn_19)]
 oflu <- merge(oflu, lu.oflu, all.x = TRUE, by.x = "juris_zn", by.y = "Key")
 # 
-# 
 # Join flu to old flu -----------------------------------------------------
 # 
 # 
 # _new = flu, _prev = old flu (2019)
-# create union; see what joins and what doesn't
 # TODO: deal with the duplicates in the flu object!!!
-flu.join <- merge(flu[!duplicated(FLU_master_id)], oflu, by = c("FLU_master_id"), 
-                  suffixes = c("_new", "_prev"), all = TRUE)
+# first the part that joins to the old flu
+flu.join <- merge(flu[!is.na(FLU_master_id)], oflu, by = c("FLU_master_id"), 
+                  suffixes = c("_new", "_prev"), all.x = TRUE #all = TRUE
+                  )
+# part that is new
+addflu <- flu[is.na(FLU_master_id)]
+# rename the column names of the new part to *_new so that it matches to the part above
+renamecols <- setdiff(colnames(addflu), colnames(flu.join)) 
+setnames(addflu, renamecols, paste0(renamecols, "_new"))
+# put it together
+flu.join <- rbind(flu.join, addflu, fill = TRUE)
+
 
 # Collected & previous values -------------------------------------------
 
-flu.imp <- copy(flu.join)
+flu.imp <- flu.join[order(juris_zn_new)]
 
 ## densities ----
  
@@ -268,7 +276,7 @@ for (stype in names(cols.sets)) {
  
 # Impute values -----------------------------------------------------------
 
-flu.imp <- flu.imp[!is.na(Juris_new)]
+#flu.imp <- flu.imp[!is.na(Juris_new)]
  
 
 # coefficients (estimated via estimation_FLU2026.R)
@@ -385,7 +393,7 @@ for (i in 1:length(cols.sets)) {
 }
 
 # exclude _prev records that didn't match current flu records
-flu.fin.prep <- flu.imp[!is.na(Juris_new)]
+flu.fin.prep <- flu.imp[!is.na(juris_zn_new)]
 
 # convert logical types to integer
 for(col in use.cols){
@@ -431,3 +439,33 @@ flu.fin <- unique(flu.fin.prep[, ..gb.cols], by = gb.cols, fromLast = T)
 fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".csv")))
 
 #flu.fin[MaxDU_Res_src == "prev"]
+
+# summary of changes
+dt <- flu.fin[, str_subset(colnames(flu.fin), "_src"), with = FALSE]
+
+# 3 counts
+dcast(
+  melt(dt,
+       measure.vars = names(dt),
+       variable.name = "column",
+       value.name = "value"
+  )[
+    , .N, by = .(value, column)
+  ],
+  value ~ column,
+  value.var = "N",
+  fill = 0
+)
+# percentages
+dcast(
+  melt(dt,
+       measure.vars = names(dt),
+       variable.name = "column",
+       value.name = "value"
+  )[
+    , .(pct = round(.N / nrow(dt) * 100, 1)), by = .(value, column)
+  ],
+  value ~ column,
+  value.var = "pct",
+  fill = 0
+)
