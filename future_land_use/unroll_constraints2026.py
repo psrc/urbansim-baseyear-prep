@@ -20,8 +20,9 @@ dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU/unroll_constraints"
 flu_input_dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU"
 
 # flu gis layer
-flu_shp_path = os.path.join(flu_input_dir, "FLU_draft2.gdb")
-flu_layer = "FLU2025" # name of layer within gdb
+#flu_shp_path = os.path.join(flu_input_dir, "FLU_draft2.gdb")
+# flu_layer = "FLU2025" # name of layer within gdb
+flu_shp_path = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_20260512/QC/flu2025_intersect.shp"
 juris_zn_shp_id = 'Juris_zn' # unique id column
 
 # imputed FLU data
@@ -45,7 +46,8 @@ crosswalk_old_juris_zn_col = 'juris_zn_19'
 
 # read in flu gis layer
 flu_shp = (
-    gpd.read_file(flu_shp_path, layer = flu_layer)
+    # gpd.read_file(flu_shp_path, layer = flu_layer)
+    gpd.read_file(flu_shp_path)
     .rename(columns={juris_zn_shp_id:'juris_zn'})
 )[['juris_zn', 'geometry']]
 
@@ -92,31 +94,9 @@ prcls_flu = prcls_flu.loc[~prcls_flu['juris_zn'].isna()].copy()
 # concat the sjoin nearest results back to prcls_flu
 prcls_flu = pd.concat([prcls_flu, unmatched_flu], ignore_index=True)
 
-# check parcels with no match in imputed data f, grouped by juris_zn
-no_f_match = (
-    prcls_flu[prcls_flu['plan_type_id'].isna() & prcls_flu['juris_zn'].notna()]
-    .groupby('juris_zn')[pin_name]
-    .count()
-    .reset_index(name='n_parcels_no_f_match')
-)
-print(f'juris_zn zones in flu_shp with no match in imputed data f: {len(no_f_match)}')
-print(f'total parcels with no match in imputed data f: {no_f_match["n_parcels_no_f_match"].sum()}')
-print(no_f_match)
-
-# join to crosswalk to include old juris_zn for reference
-if old_flu_crosswalk_path is not None:
-    crosswalk = (
-        pd.read_excel(old_flu_crosswalk_path, dtype=str)
-        [[crosswalk_current_juris_zn_col, crosswalk_old_juris_zn_col]]
-        .drop_duplicates(subset=[crosswalk_current_juris_zn_col])
-    )
-    no_f_match = no_f_match.merge(
-        crosswalk.rename(columns={crosswalk_current_juris_zn_col: 'juris_zn'}),
-        on='juris_zn',
-        how='left'
-    )
-
-no_f_match.to_csv(os.path.join(dir, r'parcels_no_table_match_' + str(date.today()) + '.csv'), index=False)
+# flag parcels with no match in imputed flu data
+prcls_flu['no_flu_match'] = 0
+prcls_flu.loc[prcls_flu['plan_type_id'].isna() & prcls_flu['juris_zn'].notna(),'no_flu_match'] = 1
 
 # QC FLU shapefile------------------------------------------------------------------
 
@@ -131,16 +111,35 @@ dup_df = prcls_flu[prcls_flu[pin_name].isin(duplicate[pin_name])].sort_values(by
 dup_pin_freq = dup_df.groupby([pin_name])[pin_name].count().reset_index(name='counts')
 triple_pin = dup_pin_freq[dup_pin_freq['counts']>2] # handle triple count pins separately
 
-# re-assemble all parcels
+# de-duplicate parcels with multiple matches in flu spatial join, 
+# keeping non-county-level juris_zn matches where possible (i.e. prioritize city-level over county-level matches)
+county_juris_zns = [
+    'king_county',
+    'snohomish_county',
+    'pierce_county',
+    'kitsap_county',
+    'king',
+    'pierce',
+    'kitsap'
+    'snoco'
+    # snohomish # leave out Snohomish because it is also a muni
+]
 
+# re-assemble all parcels
 unjoined = prcls[~prcls[pin_name].isin(prcls_flu[pin_name])] # 4237 recs (BY 2018)
 x1 = prcls_flu[~prcls_flu[pin_name].isin(dup_df[pin_name])] # records with no duplicates
 
 x2 = dup_df[~dup_df['plan_type_id'].isnull() & ~dup_df[pin_name].isin(triple_pin[pin_name])] # duplicates where plan_type_id is not null. Excludes triple_pin
 x2a = dup_df[dup_df[pin_name].isin(triple_pin[pin_name]) & ~dup_df['plan_type_id'].isnull()] # triple_pin where plan_type_id is not null
 
-x2_kp_first = x2.drop_duplicates(subset=[pin_name], keep='first') # remove duplicates (keep first)
-x2a_kp_first = x2a.drop_duplicates(subset=[pin_name], keep='first') # remove duplicates amongst triple pins (keep first)
+# sort so county-level juris_zn rows (lowest priority) come last within each pin group
+x2['_is_county'] = x2['juris_zn'].str.lower().str.startswith(tuple(county_juris_zns))
+x2 = x2.sort_values(by=[pin_name, '_is_county'])
+x2_kp_first = x2.drop_duplicates(subset=[pin_name], keep='first').drop(columns=['_is_county']) # remove duplicates (keep first non-county)
+
+x2a['_is_county'] = x2a['juris_zn'].str.lower().str.startswith(tuple(county_juris_zns))
+x2a = x2a.sort_values(by=[pin_name, '_is_county'])
+x2a_kp_first = x2a.drop_duplicates(subset=[pin_name], keep='first').drop(columns=['_is_county']) # remove duplicates amongst triple pins (keep first non-county)
 
 # append all tables
 len(prcls) - (len(x1) + len(unjoined) + len(x2_kp_first) + len(x2a_kp_first))
@@ -152,49 +151,49 @@ all_df = pd.concat([x1, x2_kp_first, x2a_kp_first, unjoined])
 id_cols = ['plan_type_id', 'generic_land_use_type_id', 'constraint_type']
 
 # sf
-sf = f[(f['MaxDU_Res'] < 35.1) & (f['Res_Use'] == 'Y')]
+sf = f[(f['MaxDU_Res'] < 35.1) & (f['Res_Use'] == 1)]
 sf['generic_land_use_type_id'] = 1
 sf['constraint_type'] = 'units_per_acre'
 sf = sf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']]
 sf = sf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # mf
-mf = f[(f['MaxDU_Res'] > 11.9) & (f['Res_Use'] == 'Y')]
+mf = f[(f['MaxDU_Res'] > 11.9) & (f['Res_Use'] == 1)]
 mf['generic_land_use_type_id'] = 2
 mf['constraint_type'] = 'units_per_acre'
 mf = mf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']]
 mf = mf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # off
-off = f[(f['Office_Use'] == 'Y')]
+off = f[(f['Office_Use'] == 1)]
 off['generic_land_use_type_id'] = 3
 off['constraint_type'] = 'far'
 off = off[id_cols + ['MinFAR_Office', 'MaxFAR_Office', 'LC_Office', 'MaxHt_Office']]
 off = off.rename(columns = {'MinFAR_Office': 'minimum', 'MaxFAR_Office': 'maximum', 'LC_Office':'lc', 'MaxHt_Office':'maxht'})
 
 # comm
-comm = f[(f['Comm_Use'] == 'Y')]
+comm = f[(f['Comm_Use'] == 1)]
 comm['generic_land_use_type_id'] = 4
 comm['constraint_type'] = 'far'
 comm = comm[id_cols + ['MinFAR_Comm', 'MaxFAR_Comm', 'LC_Comm', 'MaxHt_Comm']]
 comm = comm.rename(columns = {'MinFAR_Comm': 'minimum', 'MaxFAR_Comm': 'maximum', 'LC_Comm':'lc', 'MaxHt_Comm':'maxht'})
 
 # ind
-ind = f[(f['Indust_Use'] == 'Y')]
+ind = f[(f['Indust_Use'] == 1)]
 ind['generic_land_use_type_id'] = 5
 ind['constraint_type'] = 'far'
 ind = ind[id_cols + ['MinFAR_Indust', 'MaxFAR_Indust', 'LC_Indust', 'MaxHt_Indust']]
 ind = ind.rename(columns = {'MinFAR_Indust': 'minimum', 'MaxFAR_Indust': 'maximum', 'LC_Indust':'lc', 'MaxHt_Indust':'maxht'})
 
 # mixed
-mixed = f[(f['Mixed_Use'] == 'Y')]
+mixed = f[(f['Mixed_Use'] == 1)]
 mixed['generic_land_use_type_id'] = 6
 mixed['constraint_type'] = 'far'
 mixed = mixed[id_cols + ['MinFAR_Mixed', 'MaxFAR_Mixed', 'LC_Mixed', 'MaxHt_Mixed']]
 mixed = mixed.rename(columns = {'MinFAR_Mixed': 'minimum', 'MaxFAR_Mixed': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
 # mixed du
-mixed_du = f[(f['Mixed_Use'] == 'Y')]
+mixed_du = f[(f['Mixed_Use'] == 1)]
 mixed_du['generic_land_use_type_id'] = 6
 mixed_du['constraint_type'] = 'units_per_acre'
 mixed_du = mixed_du[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Mixed', 'MaxHt_Mixed']]
