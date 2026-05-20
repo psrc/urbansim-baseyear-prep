@@ -219,32 +219,24 @@ mixed_du = mixed_du[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Mixed', 'MaxHt_Mixe
 mixed_du = mixed_du.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
 # sf du per lot
-sf_du_lot = f[(f['ResDU_lot'] > 0) & (f['Res_Use'] == 1) & (f['ResDU_lot'] == 1)]
+sf_du_lot = f[(f['Res_Use'] == 1) & (f['ResDU_lot'] > 0) & (f['ResDU_lot'] <= 2)]
 sf_du_lot['generic_land_use_type_id'] = 1
 sf_du_lot['constraint_type'] = 'units_per_lot'
-sf_du_lot['minimum'] = 1
+sf_du_lot['minimum'] = sf_du_lot['ResDU_lot']
 sf_du_lot = sf_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
 sf_du_lot = sf_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # mf du per lot
-mf_du_lot = f[(f['ResDU_lot'] > 0) & (f['Res_Use'] == 1) & (f['ResDU_lot'] > 1)]
+mf_du_lot = f[(f['Res_Use'] == 1) & (f['ResDU_lot'] > 2)]
 mf_du_lot['generic_land_use_type_id'] = 2
 mf_du_lot['constraint_type'] = 'units_per_lot'
-mf_du_lot['minimum'] = 2
+mf_du_lot['minimum'] = 3
 mf_du_lot = mf_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
 mf_du_lot = mf_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
-# mixed use du per lot
-mixed_du_lot = f[(f['ResDU_lot'] > 0) & (f['Mixed_Use'] == 1)]
-mixed_du_lot['generic_land_use_type_id'] = 6
-mixed_du_lot['constraint_type'] = 'units_per_lot'
-mixed_du_lot['minimum'] = 2
-mixed_du_lot = mixed_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Mixed', 'MaxHt_Mixed']]
-mixed_du_lot = mixed_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
-
 # combine together and add lockouts
 lockout_id = 9999
-devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du, sf_du_lot, mf_du_lot, mixed_du_lot], sort=False)
+devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du, sf_du_lot, mf_du_lot], sort=False)
 
 ## consistency check (ptids)
 ptid_qc_dir = os.path.join(dir, "ptid_qc")
