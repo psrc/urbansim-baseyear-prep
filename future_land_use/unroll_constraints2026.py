@@ -3,6 +3,7 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 from datetime import date
+from itertools import combinations
 
 from util.elmer_helpers import read_from_elmer_geo
 from util.unroll_constraints_functions import check_multi_pins
@@ -22,11 +23,11 @@ flu_input_dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU"
 # flu gis layer
 #flu_shp_path = os.path.join(flu_input_dir, "FLU_draft2.gdb")
 # flu_layer = "FLU2025" # name of layer within gdb
-flu_shp_path = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_20260512/QC/flu2025_intersect.shp"
+flu_shp_path = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_20260512/QC/flu2025_dis.shp"
 juris_zn_shp_id = 'Juris_zn' # unique id column
 
 # imputed FLU data
-flu_imp = "final_flu_imputed_2026-05-11.csv"
+flu_imp = "final_flu_imputed_2026-05-20.csv"
 flu_imp_path = os.path.join(flu_input_dir, flu_imp)
 juris_zn_imputed_id = 'juris_zn' # unique id column
 
@@ -36,12 +37,6 @@ base_year_prcl_layer = "parcels_urbansim_2023_pts" # ElmerGeo layer name for par
 # urbansim baseyear cache
 cache = 'L:/base_year_2023_inputs/JobParcel/base_year_data/2023/parcels'  # BY 2023
 
-# optional: path to old_flu_crosswalk for comparison of unmatched juris_zn zones
-# comment out below if not needed for comparison/troubleshooting
-old_flu_crosswalk_path = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU/Full_FLU_Master_Corres_File.xlsx"
-crosswalk_current_juris_zn_col = 'juris_zn_26'
-crosswalk_old_juris_zn_col = 'juris_zn_19'
-
 # read/process files ----------------------------------------------------
 
 # read in flu gis layer
@@ -50,6 +45,7 @@ flu_shp = (
     gpd.read_file(flu_shp_path)
     .rename(columns={juris_zn_shp_id:'juris_zn'})
 )[['juris_zn', 'geometry']]
+flu_shp = flu_shp.to_crs(epsg=2285)
 
 # read in flu imputed data
 f = (
@@ -87,6 +83,9 @@ prcls = prcls.merge(lu_type, on = pin_name)
 prcls_flu = gpd.sjoin(prcls, flu,how = 'left')
 # separate out parcels that did not join to flu (i.e. those with no juris_zn match)
 unmatched = prcls_flu.loc[prcls_flu['juris_zn'].isna(),['parcel_id','geometry','lu_type','tod_id']].copy()
+print(f"Number of parcels with no spatial match to FLU shp: {len(unmatched)} out of {len(prcls)} total parcels. Unmatched parcels will be joined to nearest FLU polygon.")
+if len(unmatched) > len(prcls) * 0.05: # if more than 5% of parcels have no match throw an error
+    raise RuntimeError(f"Warning: {len(unmatched)} parcels have no spatial match to FLU shapefile, which is more than 5% of total parcels. Check data and spatial join parameters.")
 # for unmatched parcels, assign plan_type_id based on nearest flu polygon
 unmatched_flu = gpd.sjoin_nearest(unmatched, flu)
 # remove unmatched parcels from prcls_flu
@@ -94,9 +93,9 @@ prcls_flu = prcls_flu.loc[~prcls_flu['juris_zn'].isna()].copy()
 # concat the sjoin nearest results back to prcls_flu
 prcls_flu = pd.concat([prcls_flu, unmatched_flu], ignore_index=True)
 
-# flag parcels with no match in imputed flu data
+# flag parcels with no match in imputed flu data (plan_type_id is still null)
 prcls_flu['no_flu_match'] = 0
-prcls_flu.loc[prcls_flu['plan_type_id'].isna() & prcls_flu['juris_zn'].notna(),'no_flu_match'] = 1
+prcls_flu.loc[prcls_flu['plan_type_id'].isna(),'no_flu_match'] = 1
 
 # QC FLU shapefile------------------------------------------------------------------
 
@@ -126,7 +125,7 @@ county_juris_zns = [
 ]
 
 # re-assemble all parcels
-unjoined = prcls[~prcls[pin_name].isin(prcls_flu[pin_name])] # 4237 recs (BY 2018)
+unjoined = prcls[~prcls[pin_name].isin(prcls_flu[pin_name])]
 x1 = prcls_flu[~prcls_flu[pin_name].isin(dup_df[pin_name])] # records with no duplicates
 
 x2 = dup_df[~dup_df['plan_type_id'].isnull() & ~dup_df[pin_name].isin(triple_pin[pin_name])] # duplicates where plan_type_id is not null. Excludes triple_pin
@@ -144,6 +143,26 @@ x2a_kp_first = x2a.drop_duplicates(subset=[pin_name], keep='first').drop(columns
 # append all tables
 len(prcls) - (len(x1) + len(unjoined) + len(x2_kp_first) + len(x2a_kp_first))
 all_df = pd.concat([x1, x2_kp_first, x2a_kp_first, unjoined])
+
+# For each duplicated parcel_id, collect the sorted set of juris_zn values it intersects,
+# then enumerate all juris_zn pairs and count how often each pair co-occurs on a parcel.
+juris_pairs = (
+    dup_df.groupby(pin_name)['juris_zn']
+          .apply(lambda s: list(combinations(sorted(s.dropna().unique()), 2)))
+)
+
+pair_counts = (
+    pd.Series([p for pairs in juris_pairs for p in pairs])
+      .value_counts()
+      .rename_axis('juris_zn_pair')
+      .reset_index(name='n_duplicated_parcels')
+)
+
+pair_counts[['juris_zn_1', 'juris_zn_2']] = pd.DataFrame(
+    pair_counts['juris_zn_pair'].tolist(), index=pair_counts.index
+)
+pair_counts = pair_counts[['juris_zn_1', 'juris_zn_2', 'n_duplicated_parcels']]
+pair_counts.to_csv(os.path.join(dir,"flu_qc", 'flu_juris_zn_pair_counts_' + str(date.today()) + '.csv'), index=False)
 
 #### create development constraints table------------------------------------------------------------------
 
@@ -199,9 +218,33 @@ mixed_du['constraint_type'] = 'units_per_acre'
 mixed_du = mixed_du[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Mixed', 'MaxHt_Mixed']]
 mixed_du = mixed_du.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
+# sf du per lot
+sf_du_lot = f[(f['ResDU_lot'] > 0) & (f['Res_Use'] == 1) & (f['ResDU_lot'] == 1)]
+sf_du_lot['generic_land_use_type_id'] = 1
+sf_du_lot['constraint_type'] = 'units_per_lot'
+sf_du_lot['minimum'] = 1
+sf_du_lot = sf_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
+sf_du_lot = sf_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+
+# mf du per lot
+mf_du_lot = f[(f['ResDU_lot'] > 0) & (f['Res_Use'] == 1) & (f['ResDU_lot'] > 1)]
+mf_du_lot['generic_land_use_type_id'] = 2
+mf_du_lot['constraint_type'] = 'units_per_lot'
+mf_du_lot['minimum'] = 2
+mf_du_lot = mf_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
+mf_du_lot = mf_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+
+# mixed use du per lot
+mixed_du_lot = f[(f['ResDU_lot'] > 0) & (f['Mixed_Use'] == 1)]
+mixed_du_lot['generic_land_use_type_id'] = 6
+mixed_du_lot['constraint_type'] = 'units_per_lot'
+mixed_du_lot['minimum'] = 2
+mixed_du_lot = mixed_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Mixed', 'MaxHt_Mixed']]
+mixed_du_lot = mixed_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
+
 # combine together and add lockouts
 lockout_id = 9999
-devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du], sort=False)
+devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du, sf_du_lot, mf_du_lot, mixed_du_lot], sort=False)
 
 ## consistency check (ptids)
 ptid_qc_dir = os.path.join(dir, "ptid_qc")
@@ -292,3 +335,11 @@ all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 9007 # Vacant undevelopabl
 prcls_flu_ptid_lockouts = all_df[[pin_name, 'plan_type_id', 'tod_id']]
 prcls_flu_ptid_lockouts.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
 devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_v2_' + str(date.today()) + '.csv'), index=False)
+
+# QC check on number of parcels with missing FLU match (plan_type_id 9999)
+(all_df[all_df['plan_type_id'] == 9999]
+    .groupby('juris_zn').size().reset_index(name='num_parcels')
+    .sort_values(by='num_parcels', ascending=False)
+    .to_csv(os.path.join(dir,'flu_qc', r'parcels_no_table_match_' + str(date.today()) + '.csv'), index=False)
+)
+print(f"Number of parcels with missing FLU match: {len(all_df[all_df['plan_type_id'] == 9999])} parcels will be assigned plan type id 9999")
