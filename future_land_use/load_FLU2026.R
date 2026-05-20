@@ -66,7 +66,7 @@ for(col in clean.cols){
 col <- "MaxDU_Res"
 flu[, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
 flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
-flu[!is.na(rng2), (col) := round(rng1 + (rng2 - rng1)/2)][
+flu[!is.na(rng2), (col) := rng1 + (rng2 - rng1)/2][
     , `:=`(rng1 = NULL, rng2 = NULL)]
 
 for (col in clean.cols) {

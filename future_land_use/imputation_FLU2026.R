@@ -52,7 +52,6 @@ more_cleaning(flu)
 paste(sort(setdiff(unique(flu[Res_Use == TRUE & (is.na(rural) | rural == TRUE), Juris]), 
         flu[!is.na(ResDU_lot)  & ResDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
 
-
 # if use-specific Height not given but MaxHt_Mixed given, set the use-specific height to that
 for(use in c("Res", "Comm", "Office", "Indust")){
   equat <- parse(text = paste0("\`:=\`( MaxHt_", use, " = MaxHt_Mixed, MaxHt_",  
@@ -100,20 +99,26 @@ for (i in 1:length(cols.sets)) {
   use.col <-cols.sets[[i]]$use
   ht.col <- cols.sets[[i]]$height
   lc.col <- cols.sets[[i]]$lc
-  
-  if(! "far" %in% names(cols.sets[[i]]$max_dens)) next
-  density.col <- cols.sets[[i]]$max_dens$far
+  if("far" %in% names(cols.sets[[i]]$max_dens)) {
+    density.col <- cols.sets[[i]]$max_dens$far
+  } else {
+    if(is.null(names(cols.sets[[i]]$max_dens))) {
+      density.col <- cols.sets[[i]]$max_dens
+    } else next
+  } 
   newcolnm <- density.col
   newcolnm_tag <- paste0(density.col, "_src")
   
   newcolnm.ht <- ht.col
   newcolnm_tag.ht <- paste0(ht.col, "_src")
+
+  # for missing lot coverage values, use its median (separate for rural and not rural)
+  med_lc_rural <- flu[get(use.col) == TRUE & !is.na(get(lc.col)) & get(lc.col) > 0 & rural == TRUE, median(get(lc.col))]
+  med_lc_notrural <- flu[get(use.col) == TRUE & !is.na(get(lc.col)) & get(lc.col) > 0 & rural == FALSE, median(get(lc.col))]
+  flu[get(use.col) == TRUE & (is.na(get(lc.col)) | get(lc.col) == 0) & rural == TRUE, (lc.col) := med_lc_rural]
+  flu[get(use.col) == TRUE & (is.na(get(lc.col)) | get(lc.col) == 0) & rural == FALSE, (lc.col) := med_lc_notrural]
   
-  # for missing lot coverage values, use its median 
-  med_lc <- flu[get(use.col) == TRUE & !is.na(get(lc.col)) & get(lc.col) > 0, median(get(lc.col))]
-  flu[get(use.col) == TRUE & is.na(get(lc.col)) | get(lc.col) == 0, (lc.col) := med_lc]
-  
-  # impute FAR for via
+  # impute FAR via
   # FAR = height * lot_coverage / 12
   equat <- parse(text = paste0("\`:=\`(", newcolnm, " = ", newcolnm.ht, 
                                " * 0.01 * ", lc.col, " / 12, ", newcolnm_tag, "= 'estimated')"))
@@ -124,7 +129,6 @@ for (i in 1:length(cols.sets)) {
   flu[get(use.col) == TRUE & impute == TRUE &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)), eval(equat)]
-  
 }
 flu[, impute := NULL]
 
@@ -132,17 +136,20 @@ flu[, impute := NULL]
 # first compute floors to get efficiency (from ChatGPT)
 idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(ResDU_lot))
 flu[idx & !is.na(MaxHt_Res), floors := round(MaxHt_Res/12)]
-flu[idx, eff := ifelse(is.na(floors) | floors < 12, 0.8, 0.7)]
-# for MF (if it allows Mixed use), use 800sf per unit
-flu[idx & Mixed_Use == TRUE, MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 800)]
-# for SF (if Mixed use is not allowed), use 1000sf per unit
-flu[idx & Mixed_Use == FALSE, MaxDU_Res := round(MaxFAR_Res * 43560 * eff / 1000)]
+flu[idx, eff := ifelse((is.na(floors) | floors < 12) & rural == FALSE, 0.8, 0.7)]
+# for non-rural MF (if it allows Mixed use), use 800sf per unit
+flu[idx & Mixed_Use == TRUE & rural == FALSE, MaxDU_Res := MaxFAR_Res * 43560 * eff / 800]
+# for SF (if Mixed use is not allowed) or rural MF, use 1000sf per unit
+flu[idx & ((Mixed_Use == FALSE & rural == FALSE) | (Mixed_Use == TRUE & rural == TRUE)), 
+    MaxDU_Res := MaxFAR_Res * 43560 * eff / 1000]
+# for SF (if Mixed use is not allowed) in rural areas, use 2000sf per unit
+flu[idx & Mixed_Use == FALSE & rural == TRUE, MaxDU_Res := MaxFAR_Res * 43560 * eff / 2000]
 flu[idx, MaxDU_Res_src := "estimated"]
 flu[, `:=`(floors = NULL, eff = NULL)]
 
 # something simpler and more conservative for MinFAR_Res -> MinDU_Res
 flu[Res_Use == TRUE & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(ResDU_lot),
-    `:=`(MinDU_Res = pmin(round(MinFAR_Res * 43560 * 0.8 / 1200), MaxDU_Res, na.rm = TRUE),
+    `:=`(MinDU_Res = pmin(MinFAR_Res * 43560 * 0.8 / 2000, MaxDU_Res, na.rm = TRUE),
          MinDU_Res_src = 'estimated')]
 
 # check which records are only Mixed use and nothing else
