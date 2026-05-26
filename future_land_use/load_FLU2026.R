@@ -2,8 +2,9 @@ library(stringr)
 library(purrr)
 
 # read new FLU and old FLU files
+# (need to assume that everything is text, otherwise it converts some character values to NA)
 #fluall <- fread(new.flu.name)
-fluall <- data.table(read_xlsx(new.flu.name))
+fluall <- data.table(read_xlsx(new.flu.name, col_types = "text"))
 
 # extract bonus/no-bonus records
 #flubonus <- fluall[Bonus_included == "Y"]
@@ -12,18 +13,21 @@ fluall <- data.table(read_xlsx(new.flu.name))
 
 flu <- fluall[Zone != "ERROR"] # for now keep all records (bonus & no-bonus)
 
-# collect column names
+# collect column names (make sure the ordering of the uses is the same for all objects below)
 id.cols <- intersect(colnames(flu), c(str_subset(colnames(flu), "^Juris|Zone|^juris"), "Key", "Definition"))
 use.cols <- str_subset(colnames(flu), "^[R|C|O|I|M].*_Use$")
 max.cols <- c(str_subset(colnames(flu), "^MaxD.*_[R].*"), str_subset(colnames(flu), "^MaxF.*_[C|O|I|M].*"))
 min.cols <- c(str_subset(colnames(flu), "^MinD.*_[R].*"), str_subset(colnames(flu), "^MinF.*_[C|O|I|M].*"))
 maxht.cols <- str_subset(colnames(flu), "^MaxHt.*_[R|C|O|I|M].*")
 lc.cols <- str_subset(colnames(flu), "^LC_[R|C|O|I|M].*")
-
+# For FAR imputation, set different floor heights for different uses 
+# (taken from ChatGPT and checked on averages from this dataset)
+floor.heights <- c(12, 20, 15, 33, 18) # Res, Office, Comm, Indust, Mixed
+    
 # organize column names into sets of lists
 # an iterator for loops
-cols.sets <- pmap(list(use.cols, min.cols, max.cols, maxht.cols, lc.cols), list) %>% 
-    map(~set_names(.x, c("use", "min_dens", "max_dens", "height", "lc"))) %>% 
+cols.sets <- pmap(list(use.cols, min.cols, max.cols, maxht.cols, lc.cols, floor.heights), list) %>% 
+    map(~set_names(.x, c("use", "min_dens", "max_dens", "height", "lc", "floor_height"))) %>% 
     set_names(c("Res", "Comm", "Office", "Indust", "Mixed"))
 
 # clean Use columns and convert to logical
@@ -53,8 +57,10 @@ for (col in clean.cols) {
 
 # fix Ht (some records have info in terms of stories, e.g. "3 story"),
 # assuming that a story is 12 feet high
-for(col in maxht.cols)
-    flu[grepl(" story", get(col)), (col) := as.integer(gsub(" story", "", get(col))) * 12]
+for(i in 1:length(cols.sets)){
+    col <- cols.sets[[i]]$height
+    flu[grepl(" story", get(col)), (col) := as.integer(gsub(" story", "", get(col))) * cols.sets[[i]]$floor_height]
+}
 
 # there are some values in parentheses, remove it (but double check if it makes sense)
 #flu[,.N, by = "MaxFAR_Mixed"]
@@ -63,11 +69,14 @@ for(col in clean.cols){
 }
 
 # In Sumner MaxDU_Res there are values defined as ranges, take the middle
-col <- "MaxDU_Res"
-flu[, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
-flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
-flu[!is.na(rng2), (col) := rng1 + (rng2 - rng1)/2][
-    , `:=`(rng1 = NULL, rng2 = NULL)]
+cols <- c("MaxDU_Res", "MaxHt_Res")
+for(col in cols) {
+    idx <- !is.na(flu[[col]]) & is.na(as.numeric(flu[[col]]))
+    flu[idx, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
+    flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
+    flu[!is.na(rng2), (col) := rng1 + (rng2 - rng1)/2][
+        , `:=`(rng1 = NULL, rng2 = NULL)]
+}
 
 for (col in clean.cols) {
     # convert cols to double type

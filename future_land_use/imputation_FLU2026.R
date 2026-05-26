@@ -99,6 +99,8 @@ for (i in 1:length(cols.sets)) {
   use.col <-cols.sets[[i]]$use
   ht.col <- cols.sets[[i]]$height
   lc.col <- cols.sets[[i]]$lc
+  floor.ht <- cols.sets[[i]]$floor_height
+  
   if("far" %in% names(cols.sets[[i]]$max_dens)) {
     density.col <- cols.sets[[i]]$max_dens$far
   } else {
@@ -119,9 +121,10 @@ for (i in 1:length(cols.sets)) {
   flu[get(use.col) == TRUE & (is.na(get(lc.col)) | get(lc.col) == 0) & rural == FALSE, (lc.col) := med_lc_notrural]
   
   # impute FAR via
-  # FAR = height * lot_coverage / 12
+  # FAR = height * lot_coverage / floor_height
   equat <- parse(text = paste0("\`:=\`(", newcolnm, " = ", newcolnm.ht, 
-                               " * 0.01 * ", lc.col, " / 12, ", newcolnm_tag, "= 'estimated')"))
+                               " * 0.01 * ", lc.col, " / ", floor.ht, ", ", 
+                               newcolnm_tag, "= 'estimated')"))
   if(use.col == "Res_Use") {
     flu[, impute := ifelse(is.na(ResDU_lot) & (is.na(MaxDU_Res) | MaxDU_Res == 0), TRUE, FALSE)]
   } else flu[, impute := TRUE]
@@ -135,7 +138,7 @@ flu[, impute := NULL]
 # convert FAR to DU/acre
 # first compute floors to get efficiency (from ChatGPT)
 idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(ResDU_lot))
-flu[idx & !is.na(MaxHt_Res), floors := round(MaxHt_Res/12)]
+flu[idx & !is.na(MaxHt_Res), floors := round(MaxHt_Res/cols.sets$Res$floor_height)]
 flu[idx, eff := ifelse((is.na(floors) | floors < 12) & rural == FALSE, 0.8, 0.7)]
 # for non-rural MF (if it allows Mixed use), use 800sf per unit
 flu[idx & Mixed_Use == TRUE & rural == FALSE, MaxDU_Res := MaxFAR_Res * 43560 * eff / 800]
@@ -450,7 +453,7 @@ fwrite(flu.fin, file.path(out.path, paste0("final_flu_imputed_", Sys.Date(), ".c
 # summary of changes
 dt <- flu.fin[, str_subset(colnames(flu.fin), "_src"), with = FALSE]
 
-# 3 counts
+# counts
 dcast(
   melt(dt,
        measure.vars = names(dt),
