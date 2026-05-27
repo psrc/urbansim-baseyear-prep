@@ -27,7 +27,7 @@ flu_shp_path = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_2026
 juris_zn_shp_id = 'Juris_zn' # unique id column
 
 # imputed FLU data
-flu_imp = "final_flu_imputed_2026-05-21.csv"
+flu_imp = "final_flu_imputed_2026-05-26.csv"
 flu_imp_path = os.path.join(flu_input_dir, flu_imp)
 juris_zn_imputed_id = 'juris_zn' # unique id column
 
