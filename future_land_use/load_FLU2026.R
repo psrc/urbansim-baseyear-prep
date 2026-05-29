@@ -15,7 +15,7 @@ flu <- fluall[Zone != "ERROR"] # for now keep all records (bonus & no-bonus)
 
 # collect column names (make sure the ordering of the uses is the same for all objects below)
 id.cols <- intersect(colnames(flu), c(str_subset(colnames(flu), "^Juris|Zone|^juris"), "Key", "Definition"))
-use.cols <- str_subset(colnames(flu), "^[R|C|O|I|M].*_Use$")
+use.cols <- str_subset(colnames(flu), "^(Res|Comm|Office|Indust|Mixed)_Use$")
 max.cols <- c(str_subset(colnames(flu), "^MaxD.*_[R].*"), str_subset(colnames(flu), "^MaxF.*_[C|O|I|M].*"))
 min.cols <- c(str_subset(colnames(flu), "^MinD.*_[R].*"), str_subset(colnames(flu), "^MinF.*_[C|O|I|M].*"))
 maxht.cols <- str_subset(colnames(flu), "^MaxHt.*_[R|C|O|I|M].*")
@@ -39,7 +39,7 @@ for(col in use.cols){
 cols.sets[['Mixed']][['max_dens']] <- list(du = "MaxDU_Mixed", far = cols.sets[['Mixed']][['max_dens']])
 cols.sets[['Mixed']][['min_dens']] <- list(du = "MinDU_Mixed", far = cols.sets[['Mixed']][['min_dens']])
 cols.sets[['Res']][['max_dens']] <- list(du = cols.sets[['Res']][['max_dens']], far = "MaxFAR_Res", lot = "ResDU_lot")
-cols.sets[['Res']][['min_dens']] <- list(du = cols.sets[['Res']][['min_dens']], far = "MinFAR_Res")
+cols.sets[['Res']][['min_dens']] <- list(du = cols.sets[['Res']][['min_dens']], far = "MinFAR_Res", lot = "MinDU_lot")
 
 
 # Clean FLU ---------------------------------------------------------------
