@@ -12,7 +12,8 @@ library(foreign)
 library(readxl)
 
 in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
-#in.path <- "J:/Staff/Christy/usim-baseyear/flu"
+# in.path <- "."
+
 out.path <- in.path
 #out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
 
@@ -50,7 +51,7 @@ more_cleaning(flu)
 
 
 paste(sort(setdiff(unique(flu[Res_Use == TRUE & (is.na(rural) | rural == TRUE), Juris]), 
-        flu[!is.na(ResDU_lot)  & ResDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
+        flu[!is.na(MaxDU_lot)  & MaxDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
 
 # if use-specific Height not given but MaxHt_Mixed given, set the use-specific height to that
 for(use in c("Res", "Comm", "Office", "Indust")){
@@ -73,16 +74,16 @@ equat <- parse(text = "\`:=\`( LC_Mixed = pmax(LC_Res,  LC_Comm, LC_Office, LC_I
 flu[Mixed_Use == TRUE & (is.na(LC_Mixed) | LC_Mixed == 0), eval(equat)]
 
 
-# for residential records without MaxDU_Res, MaxFAR_Res, ResDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
-flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(ResDU_lot) & !is.na(MaxDU_Mixed) & MaxDU_Mixed != 0, 
+# for residential records without MaxDU_Res, MaxFAR_Res, MaxDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
+flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(MaxDU_lot) & !is.na(MaxDU_Mixed) & MaxDU_Mixed != 0, 
     `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'asserted')]
 
 # similarly for missing MinDU_Res - take it from MinDU_Mixed
-flu[Res_Use == TRUE & !is.na(MinDU_Mixed) & is.na(ResDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
+flu[Res_Use == TRUE & !is.na(MinDU_Mixed) & is.na(MaxDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
     `:=`(MinDU_Res = MinDU_Mixed)]
 
 # for mobile home parks with missing DU/acre, impute 5
-flu[Zone == "MHP" & Res_Use == TRUE & is.na(MaxDU_Res) & is.na(ResDU_lot), 
+flu[Zone == "MHP" & Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxDU_lot), 
     `:=`(MaxDU_Res = 5, MaxDU_Res_src = 'asserted')]
 
 # adjust MaxHt_Res column
@@ -126,7 +127,7 @@ for (i in 1:length(cols.sets)) {
                                " * 0.01 * ", lc.col, " / ", floor.ht, ", ", 
                                newcolnm_tag, "= 'estimated')"))
   if(use.col == "Res_Use") {
-    flu[, impute := ifelse(is.na(ResDU_lot) & (is.na(MaxDU_Res) | MaxDU_Res == 0), TRUE, FALSE)]
+    flu[, impute := ifelse(is.na(MaxDU_lot) & (is.na(MaxDU_Res) | MaxDU_Res == 0), TRUE, FALSE)]
   } else flu[, impute := TRUE]
 
   flu[get(use.col) == TRUE & impute == TRUE &
@@ -137,7 +138,7 @@ flu[, impute := NULL]
 
 # convert FAR to DU/acre
 # first compute floors to get efficiency (from ChatGPT)
-idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(ResDU_lot))
+idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(MaxDU_lot))
 flu[idx & !is.na(MaxHt_Res), floors := round(MaxHt_Res/cols.sets$Res$floor_height)]
 flu[idx, eff := ifelse((is.na(floors) | floors < 12) & rural == FALSE, 0.8, 0.7)]
 # for non-rural MF (if it allows Mixed use), use 800sf per unit
@@ -151,7 +152,7 @@ flu[idx, MaxDU_Res_src := "estimated"]
 flu[, `:=`(floors = NULL, eff = NULL)]
 
 # something simpler and more conservative for MinFAR_Res -> MinDU_Res
-flu[Res_Use == TRUE & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(ResDU_lot),
+flu[Res_Use == TRUE & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(MaxDU_lot),
     `:=`(MinDU_Res = pmin(MinFAR_Res * 43560 * 0.8 / 2000, MaxDU_Res, na.rm = TRUE),
          MinDU_Res_src = 'estimated')]
 
@@ -227,7 +228,7 @@ for (i in 1:length(cols.sets)) {
 
      # update col ending '_imp' with original du/far
      if(density.col == "MaxDU_Res") 
-       flu.imp[, impute := ifelse(is.na(ResDU_lot), TRUE, FALSE)]
+       flu.imp[, impute := ifelse(is.na(MaxDU_lot), TRUE, FALSE)]
      else flu.imp[, impute := TRUE]
      
      flu.imp[!is.na(Juris_new) &
@@ -296,7 +297,7 @@ coeff <- list(a = -1.382108, b = 0.852237, c = 0.017928, q = -0.839707,
 
 
 no.info.rows <- flu.imp[Res_Use == TRUE & is.na(LC_Res) & is.na(MaxHt_Res_imp) & 
-                          is.na(MaxFAR_Res) & is.na(MaxDU_Res_imp) & is.na(ResDU_lot)]
+                          is.na(MaxFAR_Res) & is.na(MaxDU_Res_imp) & is.na(MaxDU_lot)]
 
 # Impute max DU/ac, height, and FAR
 # Update 'Max_XXX_imp' columns with imputed values if criteria is met and tag 'Max_XXX_src' column as 'imputed'
@@ -308,7 +309,7 @@ for (i in 1:length(cols.sets)) {
   lc.col <- cols.sets[[i]]$lc
   
   for (j in cols.sets[[i]]$max_dens) {
-    if(j %in% c("MaxFAR_Res", "ResDU_lot")) next
+    if(j %in% c("MaxFAR_Res", "MaxDU_lot")) next
     print(j)
 
     newcolnm <- paste0(j, "_imp")
@@ -329,7 +330,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$q, "*I(rural))),",
                                     newcolnm_tag, "= 'imputed')"))
       
-      flu.imp[get(use.col) == TRUE & is.na(ResDU_lot) &
+      flu.imp[get(use.col) == TRUE & is.na(MaxDU_lot) &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)) & get(newcolnm.ht) > 0 &
             !is.na(get(lc.col)) & get(lc.col) > 0 & 
@@ -342,7 +343,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$r, "*I(rural))),",
                                     newcolnm_tag, "= 'imputed')"))
 
-      flu.imp[get(use.col) == TRUE  & is.na(ResDU_lot) &
+      flu.imp[get(use.col) == TRUE  & is.na(MaxDU_lot) &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)) & 
               is.na(get(lc.col)) & get(lc.col) > 0 &
@@ -439,7 +440,7 @@ colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new
 gb.cols <- setdiff(colnames(flu.fin.prep), c("Bonus_avail", "MinDU_Comm", "MinDU_Office",
                                              "MinDU_Indust", "MinDU_Mixed", "MinFAR_Res", "MaxDU_Mixed"))
 # order the columns the way they should be in the output file
-ordered.cols <- c("FLU_master_id", id.cols, "Bonus_included", use.cols, "ResDU_lot", 
+ordered.cols <- c("FLU_master_id", id.cols, "Bonus_included", use.cols, "MaxDU_lot", 
                   min.cols, max.cols, maxht.cols, lc.cols, "rural")
 gb.cols <- intersect(c(ordered.cols, setdiff(gb.cols, ordered.cols)), gb.cols)
 
@@ -479,3 +480,5 @@ dcast(
   value.var = "pct",
   fill = 0
 )
+
+

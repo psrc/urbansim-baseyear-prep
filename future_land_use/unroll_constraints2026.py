@@ -27,7 +27,7 @@ flu_shp_path = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_2026
 juris_zn_shp_id = 'Juris_zn' # unique id column
 
 # imputed FLU data
-flu_imp = "final_flu_imputed_2026-05-26.csv"
+flu_imp = "final_flu_imputed_2026-05-29.csv"
 flu_imp_path = os.path.join(flu_input_dir, flu_imp)
 juris_zn_imputed_id = 'juris_zn' # unique id column
 
@@ -172,21 +172,53 @@ for lc_col in ['LC_Res', 'LC_Office', 'LC_Comm', 'LC_Indust', 'LC_Mixed']:
 # unroll constraints from plan_type
 id_cols = ['plan_type_id', 'generic_land_use_type_id', 'constraint_type']
 
-# sf
-sf = f[(f['MaxDU_Res'] < 35.1) & (f['Res_Use'] == 1)]
-sf['generic_land_use_type_id'] = 1
-sf['constraint_type'] = 'units_per_acre'
-sf = sf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']]
-sf = sf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+# --- Residential SF/MF unroll -----------------------------------------------
+# Logic:
+#   * If SingleFamily_Use / MultiFamily_Use flags are populated ('Y'), use them.
+#   * If both flags are NA, fall back to the old density-based logic:
+#       - MaxDU_Res < 11.9  -> SF
+#       - MaxDU_Res >= 11.9  -> MF
 
-# mf
-mf = f[(f['MaxDU_Res'] > 11.9) & (f['Res_Use'] == 1)]
-mf['generic_land_use_type_id'] = 2
-mf['constraint_type'] = 'units_per_acre'
-mf = mf[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']]
-mf = mf.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+res        = f['Res_Use'] == 1
+flags_na   = f['SingleFamily_Use'].isna() & f['MultiFamily_Use'].isna()
+sf_flagged = (f['SingleFamily_Use'] == 'Y') & (f['MultiFamily_Use'] != 'Y')  # if both flags are Y, default to MF
+mf_flagged = (f['MultiFamily_Use'] == 'Y')
 
-# off
+res_cols   = ['MinDU_Res', 'MaxDU_Res', 'LC_Res', 'MaxHt_Res']
+res_rename = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum',
+              'LC_Res': 'lc', 'MaxHt_Res': 'maxht'}
+
+def _build_res(mask, glu_id):
+    out = f.loc[mask].copy()
+    out['generic_land_use_type_id'] = glu_id
+    out['constraint_type'] = 'units_per_acre'
+    return out[id_cols + res_cols].rename(columns=res_rename)
+
+# --- SF ---
+sf_old_mask = res & flags_na & (f['MaxDU_Res'] < 11.9)
+sf_new_mask = res & sf_flagged
+sf_old = _build_res(sf_old_mask, 1)
+sf_new = _build_res(sf_new_mask, 1)
+sf = pd.concat([sf_old, sf_new], ignore_index=True)
+print(f"SF (old/density-only, flags NA & MaxDU_Res < 11.9): {len(sf_old)}")
+print(f"SF (new flag, SingleFamily_Use == 'Y'):              {len(sf_new)}")
+print(f"SF total rows going into devconstr:                  {len(sf)}")
+
+# --- MF ---
+mf_old_mask = res & flags_na & (f['MaxDU_Res'] >= 11.9)
+mf_new_mask = res & mf_flagged
+mf_old = _build_res(mf_old_mask, 2)
+mf_new = _build_res(mf_new_mask, 2)
+mf = pd.concat([mf_old, mf_new], ignore_index=True)
+print(f"MF (old/density-only, flags NA & MaxDU_Res >= 11.9):  {len(mf_old)}")
+print(f"MF (new flag, MultiFamily_Use == 'Y'):               {len(mf_new)}")
+print(f"MF total rows going into devconstr:                  {len(mf)}")
+
+# --- Diagnostics (optional) ---
+print(f"Res_Use==1 rows captured by none of the four subsets: "
+      f"{int((res & ~(sf_old_mask | mf_old_mask | sf_new_mask | mf_new_mask)).sum())}")
+
+# --- Office ---
 off = f[(f['Office_Use'] == 1)]
 off['generic_land_use_type_id'] = 3
 off['constraint_type'] = 'far'
@@ -225,17 +257,15 @@ mixed_du = mixed_du.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maxi
 sf_du_lot = f[(f['Res_Use'] == 1) & (f['ResDU_lot'] > 0) & (f['ResDU_lot'] <= 2)]
 sf_du_lot['generic_land_use_type_id'] = 1
 sf_du_lot['constraint_type'] = 'units_per_lot'
-sf_du_lot['minimum'] = sf_du_lot['ResDU_lot']
-sf_du_lot = sf_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
-sf_du_lot = sf_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+sf_du_lot = sf_du_lot[id_cols + ['MinDU_lot','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
+sf_du_lot = sf_du_lot.rename(columns = {'MinDU_lot': 'minimum', 'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # mf du per lot
 mf_du_lot = f[(f['Res_Use'] == 1) & (f['ResDU_lot'] > 2)]
 mf_du_lot['generic_land_use_type_id'] = 2
 mf_du_lot['constraint_type'] = 'units_per_lot'
-mf_du_lot['minimum'] = 3
-mf_du_lot = mf_du_lot[id_cols + ['minimum','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
-mf_du_lot = mf_du_lot.rename(columns = {'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+mf_du_lot = mf_du_lot[id_cols + ['MinDU_lot','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
+mf_du_lot = mf_du_lot.rename(columns = {'MinDU_lot': 'minimum', 'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # combine together and add lockouts
 lockout_id = 9999

@@ -38,7 +38,7 @@ for(col in use.cols){
 # add missing density items
 cols.sets[['Mixed']][['max_dens']] <- list(du = "MaxDU_Mixed", far = cols.sets[['Mixed']][['max_dens']])
 cols.sets[['Mixed']][['min_dens']] <- list(du = "MinDU_Mixed", far = cols.sets[['Mixed']][['min_dens']])
-cols.sets[['Res']][['max_dens']] <- list(du = cols.sets[['Res']][['max_dens']], far = "MaxFAR_Res", lot = "ResDU_lot")
+cols.sets[['Res']][['max_dens']] <- list(du = cols.sets[['Res']][['max_dens']], far = "MaxFAR_Res", lot = "MaxDU_lot")
 cols.sets[['Res']][['min_dens']] <- list(du = cols.sets[['Res']][['min_dens']], far = "MinFAR_Res", lot = "MinDU_lot")
 
 
@@ -136,14 +136,14 @@ process_rural <- function(flu){
 }
 
 more_cleaning <- function(flu){
-    flu[!is.na(ResDU_lot) & ResDU_lot > 100, ResDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
-    # set to residential use if ResDU_lot given (three records found)
-    flu[((!is.na(ResDU_lot) & ResDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
+    flu[!is.na(MaxDU_lot) & MaxDU_lot > 100, MaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
+    # set to residential use if MaxDU_lot given (three records found)
+    flu[((!is.na(MaxDU_lot) & MaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
     
-    # if "missing middle" is in the description but neither ResDU_lot nor MaxDU_Res given,
-    # set ResDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
-    flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(ResDU_lot) & is.na(MaxDU_Res),
-        ResDU_lot := -1]
+    # if "missing middle" is in the description but neither MaxDU_lot nor MaxDU_Res given,
+    # set MaxDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
+    flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(MaxDU_lot) & is.na(MaxDU_Res),
+        MaxDU_lot := -1]
     
     # if use-specific LC not given but LC_Mixed given, set the use-specific LC to that
     for(use in c("Res", "Comm", "Office", "Indust")){
