@@ -254,22 +254,29 @@ mixed_du = mixed_du[id_cols + ['MinDU_Res', 'MaxDU_Res', 'LC_Mixed', 'MaxHt_Mixe
 mixed_du = mixed_du.rename(columns = {'MinDU_Res': 'minimum', 'MaxDU_Res': 'maximum', 'LC_Mixed':'lc', 'MaxHt_Mixed':'maxht'})
 
 # sf du per lot
-sf_du_lot = f[(f['Res_Use'] == 1) & (f['ResDU_lot'] > 0) & (f['ResDU_lot'] <= 2)]
+sf_du_lot = f[(f['Res_Use'] == 1) & (f['MaxDU_lot'] > 0) & (f['MaxDU_lot'] <= 2)].copy()
 sf_du_lot['generic_land_use_type_id'] = 1
 sf_du_lot['constraint_type'] = 'units_per_lot'
-sf_du_lot = sf_du_lot[id_cols + ['MinDU_lot','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
-sf_du_lot = sf_du_lot.rename(columns = {'MinDU_lot': 'minimum', 'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+sf_du_lot['MinDU_lot'] = sf_du_lot['MinDU_lot'].fillna(2)  # default min for SF
+sf_du_lot = sf_du_lot[id_cols + ['MinDU_lot','MaxDU_lot', 'LC_Res', 'MaxHt_Res']]
+sf_du_lot = sf_du_lot.rename(columns = {'MinDU_lot': 'minimum', 'MaxDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # mf du per lot
-mf_du_lot = f[(f['Res_Use'] == 1) & (f['ResDU_lot'] > 2)]
+mf_du_lot = f[(f['Res_Use'] == 1) & (f['MaxDU_lot'] > 2)].copy()
 mf_du_lot['generic_land_use_type_id'] = 2
 mf_du_lot['constraint_type'] = 'units_per_lot'
-mf_du_lot = mf_du_lot[id_cols + ['MinDU_lot','ResDU_lot', 'LC_Res', 'MaxHt_Res']]
-mf_du_lot = mf_du_lot.rename(columns = {'MinDU_lot': 'minimum', 'ResDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
+mf_du_lot['MinDU_lot'] = mf_du_lot['MinDU_lot'].fillna(3)  # default min for MF
+mf_du_lot = mf_du_lot[id_cols + ['MinDU_lot','MaxDU_lot', 'LC_Res', 'MaxHt_Res']]
+mf_du_lot = mf_du_lot.rename(columns = {'MinDU_lot': 'minimum', 'MaxDU_lot': 'maximum', 'LC_Res':'lc', 'MaxHt_Res':'maxht'})
 
 # combine together and add lockouts
 lockout_id = 9999
 devconstr = pd.concat([sf, mf, off, comm, ind, mixed, mixed_du, sf_du_lot, mf_du_lot], sort=False)
+
+# clamp minimum to maximum when minimum > maximum (ignore NaNs)
+_min_gt_max = devconstr['minimum'].notna() & devconstr['maximum'].notna() & (devconstr['minimum'] > devconstr['maximum'])
+print(f"Rows where minimum > maximum (clamped to maximum): {int(_min_gt_max.sum())}")
+devconstr.loc[_min_gt_max, 'minimum'] = devconstr.loc[_min_gt_max, 'maximum']
 
 ## consistency check (ptids)
 ptid_qc_dir = os.path.join(dir, "ptid_qc")
