@@ -28,6 +28,13 @@ source("load_FLU2026.R")
 # read old FLU
 ofluall <- fread(old.flu.name)
 lu <- read_xlsx(master.lookup) %>% as.data.table
+setnames(ofluall, c("Jurisdicti", "Juris_zn"), c("Juris", "juris_zn"))
+# attach master_ID to old flu
+lu.oflu <- lu[, .(FLU_master_id, Key = juris_zn_19)]
+ofluall <- merge(ofluall, lu.oflu, all.x = TRUE, by.x = "juris_zn", by.y = "Key")
+# attach master id to new flu
+flu <- merge(flu, lu[, .(FLU_master_id, Key = juris_zn_26)], all.x = TRUE, 
+             by.x = "juris_zn", by.y = "Key")
 
 # set the source of the density columns to "collected"
 for (i in 1:length(cols.sets)) {
@@ -95,12 +102,48 @@ flu[adj1, `:=`(MaxHt_Res = round(MaxHt_Res * MaxFAR_Res/MaxFAR_Mixed),
 flu[adj2, `:=`(MaxHt_Res = round(MaxHt_Res * MaxFAR_Res/(MaxFAR_Mixed + MaxFAR_Res)),
                    MaxHt_Res_src = 'adjusted')]
 
+
+# for imputing FAR from height, get assumed floor height from the old flu
+for (i in 1:length(cols.sets)) {
+  use.col <-cols.sets[[i]]$use
+  ht.col <- cols.sets[[i]]$height
+  lc.col <- cols.sets[[i]]$lc
+  if("far" %in% names(cols.sets[[i]]$max_dens) && cols.sets[[i]]$max_dens$far %in% colnames(ofluall)) {
+    density.col <- cols.sets[[i]]$max_dens$far
+  } else {
+    if(is.null(names(cols.sets[[i]]$max_dens))) {
+      density.col <- cols.sets[[i]]$max_dens
+    } else next
+  }
+  if(! density.col %in% colnames(ofluall)) next
+  newcolnm <- paste0("floor_height_", names(cols.sets)[i])
+  density.src.col <- paste0(density.col, "_src")
+  ht.src.col <- paste0(ht.col, "_src")
+  equat1 <- parse(text = paste0("\`:=\`(", newcolnm, " = ", ht.col, 
+                               " * ", lc.col, " / ", density.col, ")"))
+  equat2 <- parse(text = paste0("\`:=\`(", newcolnm, " = ", ht.col, 
+                                " * ", 0.95, " / ", density.col, ")"))
+  ofluall[get(use.col) == "Y" & !is.na(get(lc.col)) & 
+            !is.na(get(density.col)) & get(density.src.col) != "imputed" &
+            !is.na(get(ht.col)) & get(ht.src.col) != "imputed", eval(equat1)]
+  ofluall[get(use.col) == "Y" & is.na(get(lc.col)) & 
+            !is.na(get(density.col)) & get(density.src.col) != "imputed" & 
+            !is.na(get(ht.col)) & get(ht.src.col) != "imputed", eval(equat2)]
+  # put it into the new flu
+  newflu.col <- paste0("floor_height_", names(cols.sets)[i], "_prev")
+  flu[ofluall, (newflu.col) := get(paste0("i.", newcolnm)), on = "FLU_master_id"]
+  # clip the value within the 1st and 3rd quartile
+  qrt <- summary(flu[, get(newflu.col)])[c(2, 5)]
+  flu[!is.na(get(newflu.col)), (newflu.col) := pmin(pmax(qrt[1], get(newflu.col)), qrt[2])]
+}
+
 # if only height is given, impute FAR
 for (i in 1:length(cols.sets)) {
   use.col <-cols.sets[[i]]$use
   ht.col <- cols.sets[[i]]$height
   lc.col <- cols.sets[[i]]$lc
   floor.ht <- cols.sets[[i]]$floor_height
+  floor.ht.col <- paste0("floor_height_", names(cols.sets)[i], "_prev")
   
   if("far" %in% names(cols.sets[[i]]$max_dens)) {
     density.col <- cols.sets[[i]]$max_dens$far
@@ -123,16 +166,25 @@ for (i in 1:length(cols.sets)) {
   
   # impute FAR via
   # FAR = height * lot_coverage / floor_height
-  equat <- parse(text = paste0("\`:=\`(", newcolnm, " = ", newcolnm.ht, 
+  # if previous floor height not known
+  equat1 <- parse(text = paste0("\`:=\`(", newcolnm, " = ", newcolnm.ht, 
                                " * 0.01 * ", lc.col, " / ", floor.ht, ", ", 
                                newcolnm_tag, "= 'estimated')"))
+  # if we have previous floor height from old flu
+  equat2 <- parse(text = paste0("\`:=\`(", newcolnm, " = ", newcolnm.ht, 
+                                " * 0.01 * ", lc.col, " / ", floor.ht.col, ", ", 
+                                newcolnm_tag, "= 'estimated')"))
   if(use.col == "Res_Use") {
     flu[, impute := ifelse(is.na(MaxDU_lot) & (is.na(MaxDU_Res) | MaxDU_Res == 0), TRUE, FALSE)]
   } else flu[, impute := TRUE]
 
-  flu[get(use.col) == TRUE & impute == TRUE &
+  if(! floor.ht.col %in% colnames(flu)) flu[, (floor.ht.col) := NA]
+  flu[get(use.col) == TRUE & impute == TRUE & is.na(get(floor.ht.col)) & 
             (is.na(get(density.col)) | get(density.col) == 0) &
-            !is.na(get(newcolnm.ht)), eval(equat)]
+            !is.na(get(newcolnm.ht)), eval(equat1)]
+  flu[get(use.col) == TRUE & impute == TRUE & !is.na(get(floor.ht.col)) & 
+        (is.na(get(density.col)) | get(density.col) == 0) &
+        !is.na(get(newcolnm.ht)), eval(equat2)]
 }
 flu[, impute := NULL]
 
@@ -172,24 +224,14 @@ for(col in oflu.max.cols){
 }
 
 oflu.cols <- intersect(colnames(ofluall), 
-                       c("Jurisdicti", "Key", "Juris_zn", "Definition", "edit", oflu.max.cols))
+                       c("FLU_master_id", "Juris", "Key", "juris_zn", "Definition", "edit", oflu.max.cols))
 oflu <- ofluall[, ..oflu.cols]
-setnames(oflu, c("Jurisdicti", "Juris_zn"), c("Juris", "juris_zn"))
 
-# Join with lookup ------------------------------------------------------------
-
-# # attach master id to flu and oflu
-flu <- merge(flu, lu[, .(FLU_master_id, Key = juris_zn_26)], all.x = TRUE, 
-             by.x = "juris_zn", by.y = "Key")
-# 
-lu.oflu <- lu[, .(FLU_master_id, Key = juris_zn_19)]
-oflu <- merge(oflu, lu.oflu, all.x = TRUE, by.x = "juris_zn", by.y = "Key")
 # 
 # Join flu to old flu -----------------------------------------------------
 # 
 # 
 # _new = flu, _prev = old flu (2019)
-# TODO: deal with the duplicates in the flu object!!!
 # first the part that joins to the old flu
 flu.join <- merge(flu[!is.na(FLU_master_id)], oflu, by = c("FLU_master_id"), 
                   suffixes = c("_new", "_prev"), all.x = TRUE #all = TRUE
