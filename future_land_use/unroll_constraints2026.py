@@ -195,22 +195,22 @@ def _build_res(mask, glu_id):
     return out[id_cols + res_cols].rename(columns=res_rename)
 
 # --- SF ---
-sf_old_mask = res & flags_na & (f['MaxDU_Res'] < 11.9)
+sf_old_mask = res & flags_na & (f['MaxDU_Res'] < 35.1)
 sf_new_mask = res & sf_flagged
 sf_old = _build_res(sf_old_mask, 1)
 sf_new = _build_res(sf_new_mask, 1)
 sf = pd.concat([sf_old, sf_new], ignore_index=True)
-print(f"SF (old/density-only, flags NA & MaxDU_Res < 11.9): {len(sf_old)}")
+print(f"SF (old/density-only, flags NA & MaxDU_Res < 35.1): {len(sf_old)}")
 print(f"SF (new flag, SingleFamily_Use == 'Y'):              {len(sf_new)}")
 print(f"SF total rows going into devconstr:                  {len(sf)}")
 
 # --- MF ---
-mf_old_mask = res & flags_na & (f['MaxDU_Res'] >= 11.9)
+mf_old_mask = res & flags_na & (f['MaxDU_Res'] > 11.9)
 mf_new_mask = res & mf_flagged
 mf_old = _build_res(mf_old_mask, 2)
 mf_new = _build_res(mf_new_mask, 2)
 mf = pd.concat([mf_old, mf_new], ignore_index=True)
-print(f"MF (old/density-only, flags NA & MaxDU_Res >= 11.9):  {len(mf_old)}")
+print(f"MF (old/density-only, flags NA & MaxDU_Res > 11.9):  {len(mf_old)}")
 print(f"MF (new flag, MultiFamily_Use == 'Y'):               {len(mf_new)}")
 print(f"MF total rows going into devconstr:                  {len(mf)}")
 
