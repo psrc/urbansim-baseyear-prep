@@ -80,17 +80,17 @@ flu[Mixed_Use == TRUE & (is.na(MaxFAR_Mixed) | MaxFAR_Mixed == 0), eval(equat)]
 equat <- parse(text = "\`:=\`( LC_Mixed = pmax(LC_Res,  LC_Comm, LC_Office, LC_Indust, na.rm = TRUE))")
 flu[Mixed_Use == TRUE & (is.na(LC_Mixed) | LC_Mixed == 0), eval(equat)]
 
-
+valid.units.per.lot <- function()
 # for residential records without MaxDU_Res, MaxFAR_Res, MaxDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
-flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & is.na(MaxDU_lot) & !is.na(MaxDU_Mixed) & MaxDU_Mixed != 0, 
+flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & DU_lot_valid == FALSE & !is.na(MaxDU_Mixed) & MaxDU_Mixed != 0, 
     `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'asserted')]
 
 # similarly for missing MinDU_Res - take it from MinDU_Mixed
-flu[Res_Use == TRUE & !is.na(MinDU_Mixed) & is.na(MaxDU_lot) & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
+flu[Res_Use == TRUE & !is.na(MinDU_Mixed) & DU_lot_valid == FALSE & (is.na(MinDU_Res) | MinDU_Res < MinDU_Mixed), 
     `:=`(MinDU_Res = MinDU_Mixed)]
 
 # for mobile home parks with missing DU/acre, impute 5
-flu[Zone == "MHP" & Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxDU_lot), 
+flu[Zone == "MHP" & Res_Use == TRUE & is.na(MaxDU_Res) & DU_lot_valid == FALSE, 
     `:=`(MaxDU_Res = 5, MaxDU_Res_src = 'asserted')]
 
 # adjust MaxHt_Res column
@@ -175,7 +175,7 @@ for (i in 1:length(cols.sets)) {
                                 " * 0.01 * ", lc.col, " / ", floor.ht.col, ", ", 
                                 newcolnm_tag, "= 'estimated')"))
   if(use.col == "Res_Use") {
-    flu[, impute := ifelse(is.na(MaxDU_lot) & (is.na(MaxDU_Res) | MaxDU_Res == 0), TRUE, FALSE)]
+    flu[, impute := ifelse(DU_lot_valid == FALSE & (is.na(MaxDU_Res) | MaxDU_Res == 0), TRUE, FALSE)]
   } else flu[, impute := TRUE]
 
   if(! floor.ht.col %in% colnames(flu)) flu[, (floor.ht.col) := NA]
@@ -190,7 +190,7 @@ flu[, impute := NULL]
 
 # convert FAR to DU/acre
 # first compute floors to get efficiency (from ChatGPT)
-idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & is.na(MaxDU_lot))
+idx <- with(flu, Res_Use == TRUE & !is.na(MaxFAR_Res) & MaxFAR_Res > 0 & is.na(MaxDU_Res) & DU_lot_valid == FALSE)
 flu[idx & !is.na(MaxHt_Res), floors := round(MaxHt_Res/cols.sets$Res$floor_height)]
 flu[idx, eff := ifelse((is.na(floors) | floors < 12) & rural == FALSE, 0.8, 0.7)]
 # for non-rural MF (if it allows Mixed use), use 800sf per unit
@@ -204,7 +204,7 @@ flu[idx, MaxDU_Res_src := "estimated"]
 flu[, `:=`(floors = NULL, eff = NULL)]
 
 # something simpler and more conservative for MinFAR_Res -> MinDU_Res
-flu[Res_Use == TRUE & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & is.na(MaxDU_lot),
+flu[Res_Use == TRUE & !is.na(MinFAR_Res) & MinFAR_Res > 0 & is.na(MinDU_Res) & DU_lot_valid == FALSE,
     `:=`(MinDU_Res = pmin(MinFAR_Res * 43560 * 0.8 / 2000, MaxDU_Res, na.rm = TRUE),
          MinDU_Res_src = 'estimated')]
 
@@ -270,7 +270,7 @@ for (i in 1:length(cols.sets)) {
 
      # update col ending '_imp' with original du/far
      if(density.col == "MaxDU_Res") 
-       flu.imp[, impute := ifelse(is.na(MaxDU_lot), TRUE, FALSE)]
+       flu.imp[, impute := ifelse(DU_lot_valid == FALSE, TRUE, FALSE)]
      else flu.imp[, impute := TRUE]
      
      flu.imp[!is.na(Juris_new) &
@@ -339,7 +339,7 @@ coeff <- list(a = -1.382108, b = 0.852237, c = 0.017928, q = -0.839707,
 
 
 no.info.rows <- flu.imp[Res_Use == TRUE & is.na(LC_Res) & is.na(MaxHt_Res_imp) & 
-                          is.na(MaxFAR_Res) & is.na(MaxDU_Res_imp) & is.na(MaxDU_lot)]
+                          is.na(MaxFAR_Res) & is.na(MaxDU_Res_imp) & DU_lot_valid == FALSE]
 
 # Impute max DU/ac, height, and FAR
 # Update 'Max_XXX_imp' columns with imputed values if criteria is met and tag 'Max_XXX_src' column as 'imputed'
@@ -372,7 +372,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$q, "*I(rural))),",
                                     newcolnm_tag, "= 'imputed')"))
       
-      flu.imp[get(use.col) == TRUE & is.na(MaxDU_lot) &
+      flu.imp[get(use.col) == TRUE & DU_lot_valid == FALSE &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)) & get(newcolnm.ht) > 0 &
             !is.na(get(lc.col)) & get(lc.col) > 0 & 
@@ -385,7 +385,7 @@ for (i in 1:length(cols.sets)) {
                                     coeff$r, "*I(rural))),",
                                     newcolnm_tag, "= 'imputed')"))
 
-      flu.imp[get(use.col) == TRUE  & is.na(MaxDU_lot) &
+      flu.imp[get(use.col) == TRUE  & DU_lot_valid == FALSE &
             (is.na(get(density.col)) | get(density.col) == 0) &
             !is.na(get(newcolnm.ht)) & 
               is.na(get(lc.col)) & get(lc.col) > 0 &
@@ -444,6 +444,10 @@ for (i in 1:length(cols.sets)) {
     }
   }
 }
+
+# remove invalid values of MaxDU_lot
+#flu.imp[!is.na(MaxDU_lot) & DU_lot_valid == FALSE, `:=`(MaxDU_lot = NA, MaxDU_lot_src = 'deleted')]
+flu.imp[, DU_lot_valid := NULL]
 
 # exclude _prev records that didn't match current flu records
 flu.fin.prep <- flu.imp[!is.na(juris_zn_new)]

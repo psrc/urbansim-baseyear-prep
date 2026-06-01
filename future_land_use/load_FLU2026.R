@@ -128,8 +128,8 @@ process_rural <- function(flu){
     # set various zones as "rural" (21 records)
     # found via flu[grepl("rural", Definition) & is.na(rural)]
     flu[(Zone %in% c("FL", "EPF-RAN", "RIC", "RNC", "RSR", "RR", "RW", "RCO", "SVLR", "FRL", "ARL", "RSep") |
-             juris_zn %in% c("Pierce_County_GC", "Kenmore_GC", "Kenmore_P", "Kent_A-10", "Kitsap_RP",
-                             "Kitsap_RI", "Kitsap_REC", "Kitsap_TTEC", "Arlington_RULC")) 
+             juris_zn %in% c("Pierce_County_GC", "Kenmore_GC", "Kenmore_P", "Kent_A-10", "Kitsap_RP", 
+                             "Kitsap_RI", "Kitsap_REC", "Kitsap_TTEC", "Auburn_R-1", "Arlington_RULC")) 
         & is.na(rural), rural := TRUE]
     # set NA rural records to FALSE 
     flu[is.na(rural), rural := FALSE]
@@ -140,13 +140,14 @@ process_rural <- function(flu){
 
 more_cleaning <- function(flu){
     flu[!is.na(MaxDU_lot) & MaxDU_lot > 100, MaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
+    flu[, DU_lot_valid := !is.na(MaxDU_lot) & MaxDU_lot <= 6]
     # set to residential use if MaxDU_lot given (three records found)
     flu[((!is.na(MaxDU_lot) & MaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
     
     # if "missing middle" is in the description but neither MaxDU_lot nor MaxDU_Res given,
     # set MaxDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
-    flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(MaxDU_lot) & is.na(MaxDU_Res),
-        MaxDU_lot := -1]
+    #flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(MaxDU_lot) & is.na(MaxDU_Res),
+    #    MaxDU_lot := -1]
     
     # if use-specific LC not given but LC_Mixed given, set the use-specific LC to that
     for(use in c("Res", "Comm", "Office", "Indust")){
