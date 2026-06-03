@@ -25,12 +25,13 @@ OLD_FLU_YEAR = 2019
 NEW_FLU_XLSX_PATH = Path(
     "C:/Users/JKolberg/OneDrive - PSRC/GIS - Projects/FLU/Zoning_2026_d3.xlsx"
 )
-NEW_FLU_XLSX_SHEET = "Zoning_2026_cleaned"
+NEW_FLU_XLSX_SHEET = "Sheet1"
 
-NEW_FLU_GDB_PATH = Path(
-    "C:/Users/JKolberg/OneDrive - PSRC/GIS - Projects/FLU/FLU_draft2.gdb"
-)
-NEW_FLU_GDB_LAYER = "FLU2025"
+# NEW_FLU_GDB_PATH = Path(
+#     "C:/Users/JKolberg/OneDrive - PSRC/GIS - Projects/FLU/FLU_draft2.gdb"
+# )
+# NEW_FLU_GDB_LAYER = "FLU2025"
+NEW_FLU_SHP_PATH = Path("Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_20260522/QC/FLU2025_final.shp")
 
 OLD_FLU_SHP_PATH = Path("W:/gis/projects/compplan_zoning/flu19_reviewed.shp")
 
@@ -40,7 +41,7 @@ OLD_XWALK_PATH = Path(
 OLD_XWALK_SHEET = "Full Master FLU Corres File"
 
 # Output directory (files written here).
-OUTPUT_DIR = Path(__file__).parent
+OUTPUT_DIR = Path("Q:/Projects/2023_Baseyear/FLU_and_Lockouts/old_flu_crosswalk")
 
 # Matching parameters
 FUZZY_MATCH_CUTOFF = 0.4       # SequenceMatcher ratio required to accept a fuzzy name match
@@ -68,9 +69,12 @@ NEW_YR = str(CURRENT_FLU_YEAR)[-2:]
 OLD_YR = str(OLD_FLU_YEAR)[-2:]
 
 # Output file paths
-WORKING_XLSX = OUTPUT_DIR / f"flu_crosswalk_{OLD_YR}_to_{NEW_YR}_working.xlsx"
-OLD_ZONES_XLSX = OUTPUT_DIR / f"old_zones_{OLD_YR}.xlsx"
-FINAL_MASTER_XLSX = OUTPUT_DIR / "Full_FLU_Master_Corres_File.xlsx"
+DATA_DIR = OUTPUT_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+WORKING_XLSX = DATA_DIR / f"flu_crosswalk_{OLD_YR}_to_{NEW_YR}_working.xlsx"
+OLD_ZONES_XLSX = DATA_DIR / f"old_zones_{OLD_YR}.xlsx"
+TODAY = pd.Timestamp.now().strftime("%Y-%m-%d")
+FINAL_MASTER_XLSX = OUTPUT_DIR / f"Full_FLU_Master_Corres_File_{TODAY}.xlsx"
 FINAL_MASTER_SHEET = "Full FLU Master Corres File"
 
 # Column names after add_suffix is applied to the two source tables.
@@ -137,9 +141,12 @@ def load_sources():
     old_flu_table = old_flu.drop(columns=["geometry"]).copy().add_suffix(f"_{OLD_YR}")
     old_flu_shp = old_flu[["Juris_zn", "FLUadj_Definition", "geometry"]].copy()
 
-    flu_shp = gpd.read_file(NEW_FLU_GDB_PATH, layer=NEW_FLU_GDB_LAYER)[
+    # flu_shp = gpd.read_file(NEW_FLU_GDB_PATH, layer=NEW_FLU_GDB_LAYER)[
+    #     ["Juris_zn", "geometry"]
+    # ].copy()
+    flu_shp = gpd.read_file(NEW_FLU_SHP_PATH)[
         ["Juris_zn", "geometry"]
-    ]
+    ].copy()
 
     return flu_table, old_flu_table, old_flu_shp, flu_shp
 

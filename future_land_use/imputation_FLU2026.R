@@ -11,16 +11,19 @@ library(data.table)
 library(foreign)
 library(readxl)
 
-in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
-# in.path <- "."
+# in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
+in.path <- "Q:/Projects/2023_Baseyear/FLU_and_Lockouts"
 
-out.path <- in.path
-#out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
+out.path <- file.path(in.path, "imputation_data")
+# out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
 
-master.lookup <- file.path(in.path, "data2026", "Full_FLU_Master_Corres_File.xlsx")
-new.flu.name <- file.path(in.path, "data2026", "Zoning_2026_d3.xlsx")
-old.flu.name <- file.path(in.path, "data", "final_flu_postprocessed_2023-01-10.csv")
-#old.flu.name <- file.path(in.path, "density_table_4_gis.csv")
+# master.lookup <- file.path(in.path, "data2026", "Full_FLU_Master_Corres_File.xlsx")
+# new.flu.name <- file.path(in.path, "data2026", "Zoning_2026_d3.xlsx")
+# old.flu.name <- file.path(in.path, "data", "final_flu_postprocessed_2023-01-10.csv")
+# old.flu.name <- file.path(in.path, "density_table_4_gis.csv")
+master.lookup <- file.path(in.path, "old_flu_crosswalk", "Full_FLU_Master_Corres_File_2026-06-03.xlsx")
+new.flu.name <- file.path(in.path, "FLU", "Zoning_2026_d3_06-03.xlsx")
+old.flu.name <- file.path(in.path, "old_flu", "final_flu_postprocessed_2023-01-10.csv")
 
 # read new FLU and do some cleaning including removing duplicates
 source("load_FLU2026.R")
@@ -526,5 +529,8 @@ dcast(
   value.var = "pct",
   fill = 0
 )
+
+
+
 
 

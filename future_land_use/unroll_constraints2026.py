@@ -14,42 +14,43 @@ pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-# root outdir
-dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU/unroll_constraints"
+# root dir
+ROOT = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts"
 
-# flu input directory
-flu_input_dir = "J:/Projects/LandUseVision/LUV.4_Holding_Area/FLU"
+# output dir
+OUTPUT = os.path.join(ROOT, "unroll_constraints")
 
 # flu gis layer
-#flu_shp_path = os.path.join(flu_input_dir, "FLU_draft2.gdb")
+# flu_shp_path = os.path.join(flu_input_dir, "FLU_draft2.gdb")
 # flu_layer = "FLU2025" # name of layer within gdb
-flu_shp_path = "Q:/Projects/2023_Baseyear/FLU_and_Lockouts/GIS/FLU_2025/FLU_20260512/QC/flu2025_dis.shp"
+FLU_SHP_PATH = os.path.join(ROOT, "GIS/FLU_2025/FLU_20260522/QC/FLU2025_final.shp")
 juris_zn_shp_id = 'Juris_zn' # unique id column
 
-# imputed FLU data
-flu_imp = "final_flu_imputed_2026-05-29.csv"
-flu_imp_path = os.path.join(flu_input_dir, flu_imp)
+# imputed FLU data directory (output from imputation.R)
+FLU_INPUT_DIR = os.path.join(ROOT, "imputation_data")
+FLU_IMP =  "final_flu_imputed_2026-06-03.csv"
+FLU_IMP_PATH = os.path.join(FLU_INPUT_DIR, FLU_IMP)
 juris_zn_imputed_id = 'juris_zn' # unique id column
 
 # parcels file
-base_year_prcl_layer = "parcels_urbansim_2023_pts" # ElmerGeo layer name for parcel points
+BASE_YEAR_PRCL_LAYER = "parcels_urbansim_2023_pts" # ElmerGeo layer name for parcel points
 
 # urbansim baseyear cache
-cache = 'L:/base_year_2023_inputs/JobParcel/base_year_data/2023/parcels'  # BY 2023
+CACHE = 'L:/base_year_2023_inputs/JobParcel/base_year_data/2023/parcels'  # BY 2023
 
 # read/process files ----------------------------------------------------
 
 # read in flu gis layer
 flu_shp = (
     # gpd.read_file(flu_shp_path, layer = flu_layer)
-    gpd.read_file(flu_shp_path)
+    gpd.read_file(FLU_SHP_PATH)
     .rename(columns={juris_zn_shp_id:'juris_zn'})
 )[['juris_zn', 'geometry']]
 flu_shp = flu_shp.to_crs(epsg=2285)
 
 # read in flu imputed data
 f = (
-    pd.read_csv(flu_imp_path)
+    pd.read_csv(FLU_IMP_PATH)
     .rename(columns={juris_zn_imputed_id:'juris_zn'})
 )
 
@@ -64,15 +65,15 @@ flu = flu_shp.merge(f, on = ['juris_zn'], how = 'left')
 # spatial join parcels to flu to assign plan_type_id------------------------------------------------
 
 # read parcels file & lu type file
-prcls = read_from_elmer_geo(base_year_prcl_layer, cols = ['parcel_id'])
+prcls = read_from_elmer_geo(BASE_YEAR_PRCL_LAYER, cols = ['parcel_id'])
 #pin_name = "PIN" # BY 2018
 pin_name = "parcel_id" # BY 2023
 
-#prcls_pin = np.fromfile(os.path.join(cache, 'parcel_id.li4'), np.int32) # BY 2018
-#prcls_lu = np.fromfile(os.path.join(cache, 'land_use_type_id.li4'), np.int32) # BY 2018
-prcls_pin = np.fromfile(os.path.join(cache, 'parcel_id.li8'), np.int64) # BY 2023
-prcls_lu = np.fromfile(os.path.join(cache, 'land_use_type_id.li8'), np.int64) # BY 2023
-prcls_tod = np.fromfile(os.path.join(cache, 'tod_id.li4'), np.int32)
+#prcls_pin = np.fromfile(os.path.join(CACHE, 'parcel_id.li4'), np.int32) # BY 2018
+#prcls_lu = np.fromfile(os.path.join(CACHE, 'land_use_type_id.li4'), np.int32) # BY 2018
+prcls_pin = np.fromfile(os.path.join(CACHE, 'parcel_id.li8'), np.int64) # BY 2023
+prcls_lu = np.fromfile(os.path.join(CACHE, 'land_use_type_id.li8'), np.int64) # BY 2023
+prcls_tod = np.fromfile(os.path.join(CACHE, 'tod_id.li4'), np.int32)
 lu_type = pd.DataFrame({pin_name:prcls_pin, 'lu_type':prcls_lu, 'tod_id':prcls_tod}, index = prcls_pin)
 #lu_type['PIN'] = lu_type['PIN'].astype(np.int64) # BY 2018
 
@@ -99,7 +100,7 @@ prcls_flu.loc[prcls_flu['plan_type_id'].isna(),'no_flu_match'] = 1
 
 # QC FLU shapefile------------------------------------------------------------------
 
-check_multi_pins(prcls_flu, dir, pin_name = pin_name) #check code
+check_multi_pins(prcls_flu, OUTPUT, pin_name = pin_name) #check code
 
 # check for one-to-many records in flu overlay
 prcls_flu[pin_name].duplicated().any()
@@ -162,7 +163,7 @@ pair_counts[['juris_zn_1', 'juris_zn_2']] = pd.DataFrame(
     pair_counts['juris_zn_pair'].tolist(), index=pair_counts.index
 )
 pair_counts = pair_counts[['juris_zn_1', 'juris_zn_2', 'n_duplicated_parcels']]
-pair_counts.to_csv(os.path.join(dir,"flu_qc", 'flu_juris_zn_pair_counts_' + str(date.today()) + '.csv'), index=False)
+pair_counts.to_csv(os.path.join(OUTPUT,"flu_qc", 'flu_juris_zn_pair_counts_' + str(date.today()) + '.csv'), index=False)
 
 #### create development constraints table------------------------------------------------------------------
 # divide lot coverage by 100 to convert from percentage to proportion
@@ -279,7 +280,7 @@ print(f"Rows where minimum > maximum (clamped to maximum): {int(_min_gt_max.sum(
 devconstr.loc[_min_gt_max, 'minimum'] = devconstr.loc[_min_gt_max, 'maximum']
 
 ## consistency check (ptids)
-ptid_qc_dir = os.path.join(dir, "ptid_qc")
+ptid_qc_dir = os.path.join(OUTPUT, "ptid_qc")
 os.makedirs(ptid_qc_dir, exist_ok = True)
 
 common = f.merge(devconstr,on=['plan_type_id','plan_type_id'])
@@ -318,18 +319,18 @@ devconstr.loc[devconstr['maxht'].isnull(), 'maxht'] = 0
 devconstr['development_constraint_id']= np.arange(len(devconstr)) + 1
 
 # export files ---------------------------------------------------------------------
-res_constr_dir = os.path.join(dir, "dev_constraints")
+res_constr_dir = os.path.join(OUTPUT, "dev_constraints")
 os.makedirs(res_constr_dir, exist_ok = True)
 
-res_flu_dir = os.path.join(dir, "flu")
+res_flu_dir = os.path.join(OUTPUT, "flu")
 os.makedirs(res_flu_dir, exist_ok = True)
 
-devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_' + str(date.today()) + '.csv'), index=False) 
+devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_no_lockouts_' + str(date.today()) + '.csv'), index=False) 
 f.to_csv(os.path.join(res_flu_dir, r'flu_imputed_ptid_' + str(date.today()) + '.csv'), index=False) # flu imputed kitchen sink file
 
 prcls_flu_ptid = all_df[[pin_name, 'plan_type_id', 'tod_id']]
-prcls_flu_ptid.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_' + str(date.today()) + '.csv'), index=False)
-#all_df.to_file(os.path.join(dir, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp')) # Warning! Takes a long time to write!
+prcls_flu_ptid.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_no_lockouts_' + str(date.today()) + '.csv'), index=False)
+#all_df.to_file(os.path.join(OUTPUT, r'shapes\prclpt18_ptid_' + str(date.today()) + '.shp')) # Warning! Takes a long time to write!
 
 #### post-processing lockouts ----------------------------------------------------------
 
@@ -365,13 +366,13 @@ all_df.loc[all_df['lu_type'] == 27, 'plan_type_id'] = 9007 # Vacant undevelopabl
 
 # export post-processing lockouts version
 prcls_flu_ptid_lockouts = all_df[[pin_name, 'plan_type_id', 'tod_id']]
-prcls_flu_ptid_lockouts.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_v2_' + str(date.today()) + '.csv'), index=False)
-devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_v2_' + str(date.today()) + '.csv'), index=False)
+prcls_flu_ptid_lockouts.to_csv(os.path.join(res_constr_dir, r'prcls_ptid_final_' + str(date.today()) + '.csv'), index=False)
+devconstr.to_csv(os.path.join(res_constr_dir, r'devconstr_final_' + str(date.today()) + '.csv'), index=False)
 
 # QC check on number of parcels with missing FLU match (plan_type_id 9999)
 (all_df[all_df['plan_type_id'] == 9999]
     .groupby('juris_zn').size().reset_index(name='num_parcels')
     .sort_values(by='num_parcels', ascending=False)
-    .to_csv(os.path.join(dir,'flu_qc', r'parcels_no_table_match_' + str(date.today()) + '.csv'), index=False)
+    .to_csv(os.path.join(OUTPUT,'flu_qc', r'parcels_no_table_match_' + str(date.today()) + '.csv'), index=False)
 )
 print(f"Number of parcels with missing FLU match: {len(all_df[all_df['plan_type_id'] == 9999])} parcels will be assigned plan type id 9999")
