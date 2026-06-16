@@ -140,7 +140,8 @@ process_rural <- function(flu){
 
 more_cleaning <- function(flu){
     flu[!is.na(MaxDU_lot) & MaxDU_lot > 100, MaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
-    flu[, DU_lot_valid := !is.na(MaxDU_lot) & MaxDU_lot <= 6]
+    #flu[, DU_lot_valid := !is.na(MaxDU_lot) & MaxDU_lot <= 6]
+    flu[, DU_lot_valid := FALSE] # this causes that DU/acre is imputed even if DU/lot is given.
     # set to residential use if MaxDU_lot given (three records found)
     flu[((!is.na(MaxDU_lot) & MaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
     
