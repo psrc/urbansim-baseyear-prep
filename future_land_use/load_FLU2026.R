@@ -38,7 +38,7 @@ for(col in use.cols){
 # add missing density items
 cols.sets[['Mixed']][['max_dens']] <- list(du = "MaxDU_Mixed", far = cols.sets[['Mixed']][['max_dens']])
 cols.sets[['Mixed']][['min_dens']] <- list(du = "MinDU_Mixed", far = cols.sets[['Mixed']][['min_dens']])
-cols.sets[['Res']][['max_dens']] <- list(du = cols.sets[['Res']][['max_dens']], far = "MaxFAR_Res", lot = "MaxDU_lot")
+cols.sets[['Res']][['max_dens']] <- list(du = cols.sets[['Res']][['max_dens']], far = "MaxFAR_Res", lot = "FloorMaxDU_lot")
 cols.sets[['Res']][['min_dens']] <- list(du = cols.sets[['Res']][['min_dens']], far = "MinFAR_Res", lot = "MinDU_lot")
 
 
@@ -71,11 +71,13 @@ for(col in clean.cols){
 # In Sumner MaxDU_Res there are values defined as ranges, take the middle
 cols <- c("MaxDU_Res", "MaxHt_Res")
 for(col in cols) {
-    idx <- !is.na(flu[[col]]) & is.na(as.numeric(flu[[col]]))
-    flu[idx, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE)]
-    flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
-    flu[!is.na(rng2), (col) := rng1 + (rng2 - rng1)/2][
-        , `:=`(rng1 = NULL, rng2 = NULL)]
+    idx <- !is.na(flu[[col]]) & is.na(as.numeric(flu[[col]])) & grepl("-", flu[[col]])
+    if(any(idx)) {
+        flu[idx, c("rng1", "rng2") := tstrsplit(get(col), "-", type.convert = TRUE, fill = NA)]
+        flu[!is.na(rng2), c(col, "juris_zn", "rng1", "rng2"), with = FALSE] # view affected rows
+        flu[!is.na(rng2), (col) := rng1 + (rng2 - rng1)/2][
+            , `:=`(rng1 = NULL, rng2 = NULL)]
+    }
 }
 
 for (col in clean.cols) {
@@ -139,15 +141,15 @@ process_rural <- function(flu){
 }
 
 more_cleaning <- function(flu){
-    flu[!is.na(MaxDU_lot) & MaxDU_lot > 100, MaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
-    flu[, DU_lot_valid := !is.na(MaxDU_lot) & MaxDU_lot <= 6]
-    # set to residential use if MaxDU_lot given (three records found)
-    flu[((!is.na(MaxDU_lot) & MaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
+    flu[!is.na(FloorMaxDU_lot) & FloorMaxDU_lot > 100, FloorMaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
+    flu[, DU_lot_valid := !is.na(FloorMaxDU_lot) & FloorMaxDU_lot <= 6]
+    # set to residential use if FloorMaxDU_lot given (three records found)
+    flu[((!is.na(FloorMaxDU_lot) & FloorMaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
     
-    # if "missing middle" is in the description but neither MaxDU_lot nor MaxDU_Res given,
-    # set MaxDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
-    #flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(MaxDU_lot) & is.na(MaxDU_Res),
-    #    MaxDU_lot := -1]
+    # if "missing middle" is in the description but neither FloorMaxDU_lot nor MaxDU_Res given,
+    # set FloorMaxDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
+    #flu[grepl("missing middle", Definition) & Res_Use == TRUE & is.na(FloorMaxDU_lot) & is.na(MaxDU_Res),
+    #    FloorMaxDU_lot := -1]
     
     # if use-specific LC not given but LC_Mixed given, set the use-specific LC to that
     for(use in c("Res", "Comm", "Office", "Indust")){

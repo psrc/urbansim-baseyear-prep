@@ -13,6 +13,7 @@ library(readxl)
 
 # in.path <- "~/psrc/urbansim-baseyear-prep/future_land_use"
 in.path <- "Q:/Projects/2023_Baseyear/FLU_and_Lockouts"
+# in.path <- "."
 
 out.path <- file.path(in.path, "imputation_data")
 # out.path <- "C:/Users/clam/Desktop/urbansim-baseyear-prep/future_land_use"
@@ -22,7 +23,7 @@ out.path <- file.path(in.path, "imputation_data")
 # old.flu.name <- file.path(in.path, "data", "final_flu_postprocessed_2023-01-10.csv")
 # old.flu.name <- file.path(in.path, "density_table_4_gis.csv")
 master.lookup <- file.path(in.path, "old_flu_crosswalk", "Full_FLU_Master_Corres_File_2026-06-03.xlsx")
-new.flu.name <- file.path(in.path, "FLU", "Zoning_2026_d3_06-03.xlsx")
+new.flu.name <- file.path(in.path, "FLU", "Zoning_2026_d3_06-24.xlsx")
 old.flu.name <- file.path(in.path, "old_flu", "final_flu_postprocessed_2023-01-10.csv")
 
 # read new FLU and do some cleaning including removing duplicates
@@ -61,7 +62,7 @@ more_cleaning(flu)
 
 
 paste(sort(setdiff(unique(flu[Res_Use == TRUE & (is.na(rural) | rural == TRUE), Juris]), 
-        flu[!is.na(MaxDU_lot)  & MaxDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
+        flu[!is.na(FloorMaxDU_lot)  & FloorMaxDU_lot %in% 2:6, .N, by = "Juris"][, Juris])), collapse = ", ")
 
 # if use-specific Height not given but MaxHt_Mixed given, set the use-specific height to that
 for(use in c("Res", "Comm", "Office", "Indust")){
@@ -354,7 +355,7 @@ for (i in 1:length(cols.sets)) {
   lc.col <- cols.sets[[i]]$lc
   
   for (j in cols.sets[[i]]$max_dens) {
-    if(j %in% c("MaxFAR_Res", "MaxDU_lot")) next
+    if(j %in% c("MaxFAR_Res", "FloorMaxDU_lot")) next
     print(j)
 
     newcolnm <- paste0(j, "_imp")
@@ -489,7 +490,7 @@ colnames(flu.fin.prep) <- str_trim(str_replace_all(colnames(flu.fin.prep), "_new
 gb.cols <- setdiff(colnames(flu.fin.prep), c("Bonus_avail", "MinDU_Comm", "MinDU_Office",
                                              "MinDU_Indust", "MinDU_Mixed", "MinFAR_Res", "MaxDU_Mixed"))
 # order the columns the way they should be in the output file
-ordered.cols <- c("FLU_master_id", id.cols, "Bonus_included", use.cols, "MaxDU_lot", 
+ordered.cols <- c("FLU_master_id", id.cols, "Bonus_included", use.cols, "FloorMaxDU_lot", 
                   min.cols, max.cols, maxht.cols, lc.cols, "rural")
 gb.cols <- intersect(c(ordered.cols, setdiff(gb.cols, ordered.cols)), gb.cols)
 
