@@ -84,7 +84,6 @@ flu[Mixed_Use == TRUE & (is.na(MaxFAR_Mixed) | MaxFAR_Mixed == 0), eval(equat)]
 equat <- parse(text = "\`:=\`( LC_Mixed = pmax(LC_Res,  LC_Comm, LC_Office, LC_Indust, na.rm = TRUE))")
 flu[Mixed_Use == TRUE & (is.na(LC_Mixed) | LC_Mixed == 0), eval(equat)]
 
-valid.units.per.lot <- function()
 # for residential records without MaxDU_Res, MaxFAR_Res, MaxDU_lot but with MaxDU_Mixed, use that for MaxDU_Res
 flu[Res_Use == TRUE & is.na(MaxDU_Res) & is.na(MaxFAR_Res) & DU_lot_valid == FALSE & !is.na(MaxDU_Mixed) & MaxDU_Mixed != 0, 
     `:=`(MaxDU_Res = MaxDU_Mixed, MaxDU_Res_src = 'asserted')]

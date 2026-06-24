@@ -141,10 +141,11 @@ process_rural <- function(flu){
 }
 
 more_cleaning <- function(flu){
-    flu[!is.na(FloorMaxDU_lot) & FloorMaxDU_lot > 100, FloorMaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
-    flu[, DU_lot_valid := !is.na(FloorMaxDU_lot) & FloorMaxDU_lot <= 6]
-    # set to residential use if FloorMaxDU_lot given (three records found)
-    flu[((!is.na(FloorMaxDU_lot) & FloorMaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
+    flu[!is.na(MaxDU_lot) & MaxDU_lot > 100, MaxDU_lot := NA] # these records seem to contain sqft (and not DU) in this field 
+    #flu[, DU_lot_valid := !is.na(MaxDU_lot) & MaxDU_lot <= 6]
+    flu[, DU_lot_valid := FALSE] # this causes that DU/acre is imputed even if DU/lot is given.
+    # set to residential use if MaxDU_lot given (three records found)
+    flu[((!is.na(MaxDU_lot) & MaxDU_lot != 0) | (!is.na(MaxDU_Res) & MaxDU_Res > 0)) & Res_Use == FALSE, Res_Use := TRUE]
     
     # if "missing middle" is in the description but neither FloorMaxDU_lot nor MaxDU_Res given,
     # set FloorMaxDU_lot to -1 (i.e. follow the HC1110 law). It applies to two zones in Marysville
