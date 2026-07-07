@@ -1,3 +1,7 @@
+# As of July 2026 this file has been moved to the future_land_use repo: 
+# https://github.com/psrc/future_land_use
+
+
 """Build a crosswalk between two Future Land Use (FLU) vintages.
 
 The script matches zones from a new FLU vintage to the previous vintage using

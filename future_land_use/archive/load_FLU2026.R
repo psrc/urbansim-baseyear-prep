@@ -1,3 +1,7 @@
+# As of July 2026 this file has been moved to the future_land_use repo: 
+# https://github.com/psrc/future_land_use/blob/main/future_land_use/r_scripts/load_FLU2026.R
+
+
 library(stringr)
 library(purrr)
 
